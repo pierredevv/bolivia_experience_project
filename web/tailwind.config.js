@@ -1,0 +1,81 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: ["class"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#E3F2FD',
+          100: '#BBDEFB',
+          200: '#90CAF9',
+          300: '#64B5F6',
+          400: '#42A5F5',
+          500: '#2196F3',
+          600: '#1E88E5',
+          700: '#1976D2',
+          800: '#1565C0',
+          900: '#0D3B8A',
+        },
+        secondary: {
+          50: '#FFF3E0',
+          100: '#FFE0B2',
+          200: '#FFCC80',
+          300: '#FFB74D',
+          400: '#FFA726',
+          500: '#F57C00',
+          600: '#EF6C00',
+          700: '#E65100',
+          800: '#D84315',
+          900: '#BF360C',
+        },
+        success: {
+          100: '#C8E6C9',
+          300: '#81C784',
+          500: '#4CAF50',
+          700: '#2E7D32',
+          900: '#1B5E20',
+        },
+        error: {
+          100: '#FFCDD2',
+          300: '#EF9A9A',
+          500: '#F44336',
+          700: '#D32F2F',
+          900: '#B71C1C',
+        },
+        warning: {
+          100: '#FFF9C4',
+          300: '#FFF176',
+          500: '#FFEB3B',
+          700: '#F9A825',
+          900: '#F57F17',
+        },
+        neutral: {
+          50: '#FAFAFA',
+          100: '#F5F5F5',
+          200: '#E5E5E5',
+          300: '#D4D4D4',
+          400: '#A3A3A3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#2D2D2D',
+          900: '#1A1A1A',
+          950: '#0A0A0A',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+}
