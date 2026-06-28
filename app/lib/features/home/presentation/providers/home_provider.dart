@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 import '../../../../core/network/dio_provider.dart';
 import '../../data/home_service.dart';
 
@@ -61,10 +60,10 @@ class HomeNotifier extends StateNotifier<HomeState> {
     state = state.copyWith(status: HomeStatus.loading, errorMessage: null);
     try {
       final results = await Future.wait([
-        _homeService.getFeaturedPlaces(),
-        _homeService.getCategories(),
-        _homeService.getTodayEvents(),
-        _homeService.getPromotions(),
+        _homeService.getFeaturedPlaces().catchError((_) => <dynamic>[]),
+        _homeService.getCategories().catchError((_) => <dynamic>[]),
+        _homeService.getTodayEvents().catchError((_) => <dynamic>[]),
+        _homeService.getPromotions().catchError((_) => <dynamic>[]),
       ]);
 
       state = state.copyWith(
@@ -73,23 +72,6 @@ class HomeNotifier extends StateNotifier<HomeState> {
         categories: results[1],
         todayEvents: results[2],
         promotions: results[3],
-      );
-    } on DioException catch (e) {
-      String message = 'Error al cargar datos';
-      if (e.response != null) {
-        final statusCode = e.response?.statusCode;
-        if (statusCode == 401) {
-          message = 'Sesión expirada. Iniciá sesión nuevamente.';
-        } else if (statusCode == 500) {
-          message = 'Error del servidor. Intentá más tarde.';
-        }
-      } else if (e.type == DioExceptionType.connectionError ||
-          e.type == DioExceptionType.unknown) {
-        message = 'Sin conexión a internet. Verificá tu red.';
-      }
-      state = state.copyWith(
-        status: HomeStatus.error,
-        errorMessage: message,
       );
     } catch (e) {
       state = state.copyWith(

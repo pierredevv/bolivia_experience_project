@@ -312,11 +312,8 @@ class _PlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final photos = place['photos'] as List<dynamic>? ?? [];
     final photoUrl = photos.isNotEmpty ? photos[0]['url'] : null;
-    final rating = place['rating'] as Map<String, dynamic>? ?? {};
-    final averageRating = rating['average'] ?? 0;
+    final averageRating = place['ratingAvg'] ?? 0;
     final category = place['category'] as Map<String, dynamic>? ?? {};
-    final location = place['location'] as Map<String, dynamic>?;
-    final distance = location?['distance_meters'];
 
     return GestureDetector(
       onTap: onTap,
@@ -372,14 +369,6 @@ class _PlaceCard extends StatelessWidget {
                         Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
                         Text('$averageRating', style: Theme.of(context).textTheme.bodySmall),
-                        if (distance != null) ...[
-                          const Spacer(),
-                          Icon(Icons.location_on, size: 14, color: AppColors.neutral500),
-                          Text(
-                            '${(distance / 1000).toStringAsFixed(1)} km',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
                       ],
                     ),
                   ],
@@ -401,8 +390,7 @@ class _EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final photos = event['photos'] as List<dynamic>? ?? [];
-    final photoUrl = photos.isNotEmpty ? photos[0]['url'] : null;
+    final photoUrl = event['photoUrl'] as String?;
 
     return GestureDetector(
       onTap: onTap,
@@ -453,13 +441,13 @@ class _EventCard extends StatelessWidget {
                         Icon(Icons.access_time, size: 14, color: AppColors.neutral500),
                         const SizedBox(width: 4),
                         Text(
-                          event['start_time'] ?? '',
+                          event['dateStart'] ?? '',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
                     Text(
-                      event['venue'] ?? '',
+                      event['location'] ?? '',
                       style: Theme.of(context).textTheme.bodySmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -499,7 +487,7 @@ class _PromoCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${promotion['discount_percentage'] ?? 0}% OFF',
+                  '${promotion['discountPercentage'] ?? 0}% OFF',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -514,7 +502,7 @@ class _PromoCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                promotion['venue'] ?? '',
+                (promotion['place']?['name']) ?? '',
                 style: Theme.of(context).textTheme.bodySmall,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

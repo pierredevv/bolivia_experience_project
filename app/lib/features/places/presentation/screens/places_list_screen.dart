@@ -147,9 +147,8 @@ class _PlaceListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final photos = place.photos as List<dynamic>? ?? [];
     final photoUrl = photos.isNotEmpty ? photos[0]['url'] : null;
-    final rating = place.rating as Map<String, dynamic>? ?? {};
-    final averageRating = rating['average'] ?? 0;
-    final ratingCount = rating['count'] ?? 0;
+    final averageRating = place.ratingAvg ?? 0;
+    final ratingCount = place.ratingCount ?? 0;
     final category = place.category as Map<String, dynamic>? ?? {};
 
     return Card(

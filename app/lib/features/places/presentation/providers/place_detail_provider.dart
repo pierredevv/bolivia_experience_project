@@ -59,6 +59,7 @@ class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
   }
 
   Future<void> loadPlaceDetail() async {
+    if (!mounted) return;
     state = state.copyWith(status: PlaceDetailStatus.loading, errorMessage: null);
 
     try {
@@ -68,6 +69,7 @@ class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
         _placesService.getPlaceReviews(_placeId),
       ]);
 
+      if (!mounted) return;
       state = state.copyWith(
         status: PlaceDetailStatus.loaded,
         place: results[0] as Place,
@@ -75,6 +77,7 @@ class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
         reviews: results[2] as List<dynamic>,
       );
     } on DioException catch (e) {
+      if (!mounted) return;
       String message = 'Error al cargar detalles del lugar';
       if (e.response != null) {
         final statusCode = e.response?.statusCode;
@@ -94,6 +97,7 @@ class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
         errorMessage: message,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         status: PlaceDetailStatus.error,
         errorMessage: 'Error inesperado. Intentá de nuevo.',

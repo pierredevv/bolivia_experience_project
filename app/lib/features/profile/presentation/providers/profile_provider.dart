@@ -46,15 +46,18 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   }
 
   Future<void> loadProfile() async {
+    if (!mounted) return;
     state = state.copyWith(status: ProfileStatus.loading, errorMessage: null);
 
     try {
       final profile = await _profileService.getProfile();
+      if (!mounted) return;
       state = state.copyWith(
         status: ProfileStatus.loaded,
         profile: profile,
       );
     } on DioException catch (e) {
+      if (!mounted) return;
       String message = 'Error al cargar perfil';
       if (e.response != null) {
         final statusCode = e.response?.statusCode;
@@ -72,6 +75,7 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         errorMessage: message,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         status: ProfileStatus.error,
         errorMessage: 'Error inesperado. Intentá de nuevo.',

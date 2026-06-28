@@ -46,15 +46,18 @@ class EventsNotifier extends StateNotifier<EventsState> {
   }
 
   Future<void> loadEvents() async {
+    if (!mounted) return;
     state = state.copyWith(status: EventsStatus.loading, errorMessage: null);
 
     try {
       final events = await _eventsService.getEvents();
+      if (!mounted) return;
       state = state.copyWith(
         status: EventsStatus.loaded,
         events: events,
       );
     } on DioException catch (e) {
+      if (!mounted) return;
       String message = 'Error al cargar eventos';
       if (e.response != null) {
         final statusCode = e.response?.statusCode;
@@ -72,6 +75,7 @@ class EventsNotifier extends StateNotifier<EventsState> {
         errorMessage: message,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         status: EventsStatus.error,
         errorMessage: 'Error inesperado. Intentá de nuevo.',

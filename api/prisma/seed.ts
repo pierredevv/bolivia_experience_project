@@ -1,47 +1,694 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding database...');
+  console.log('Starting seed...');
 
-  const categories = await Promise.all(
-    [
-      { name: 'Restaurantes', nameEn: 'Restaurants', icon: 'restaurant', slug: 'restaurantes', description: 'Lugares para comer', displayOrder: 1 },
-      { name: 'Hoteles', nameEn: 'Hotels', icon: 'hotel', slug: 'hoteles', description: 'Alojamiento', displayOrder: 2 },
-      { name: 'Bares y Vida Nocturna', nameEn: 'Bars & Nightlife', icon: 'local_bar', slug: 'bares', description: 'Bares y discotecas', displayOrder: 3 },
-      { name: 'Cafeterías', nameEn: 'Cafés', icon: 'local_cafe', slug: 'cafeterias', description: 'Cafés', displayOrder: 4 },
-      { name: 'Atracciones Turísticas', nameEn: 'Tourist Attractions', icon: 'place', slug: 'atracciones', description: 'Lugares turísticos', displayOrder: 5 },
-      { name: 'Parques y Naturaleza', nameEn: 'Parks & Nature', icon: 'park', slug: 'parques', description: 'Parques y jardines', displayOrder: 6 },
-      { name: 'Museos y Galerías', nameEn: 'Museums & Galleries', icon: 'museum', slug: 'museos', description: 'Espacios culturales', displayOrder: 7 },
-      { name: 'Centros Comerciales', nameEn: 'Shopping Centers', icon: 'shopping_cart', slug: 'centros-comerciales', description: 'Malls', displayOrder: 8 },
-      { name: 'Deportes y Recreación', nameEn: 'Sports & Recreation', icon: 'sports_soccer', slug: 'deportes', description: 'Actividades deportivas', displayOrder: 9 },
-      { name: 'Servicios', nameEn: 'Services', icon: 'build', slug: 'servicios', description: 'Servicios esenciales', displayOrder: 10 },
-      { name: 'Iglesias y Templos', nameEn: 'Churches & Temples', icon: 'church', slug: 'iglesias', description: 'Patrimonio religioso', displayOrder: 11 },
-      { name: 'Transporte', nameEn: 'Transportation', icon: 'directions_bus', slug: 'transporte', description: 'Transporte', displayOrder: 12 },
-    ].map((cat) =>
-      prisma.category.upsert({
-        where: { slug: cat.slug },
-        update: cat,
-        create: cat,
-      }),
-    ),
-  );
-  console.log(`Created ${categories.length} categories`);
+  // Clean existing data (order matters for foreign keys)
+  await prisma.notification.deleteMany();
+  await prisma.searchHistory.deleteMany();
+  await prisma.reviewReply.deleteMany();
+  await prisma.review.deleteMany();
+  await prisma.favorite.deleteMany();
+  await prisma.promotion.deleteMany();
+  await prisma.placePhoto.deleteMany();
+  await prisma.placeHour.deleteMany();
+  await prisma.place.deleteMany();
+  await prisma.event.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.user.deleteMany();
+  console.log('Cleaned existing data');
 
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@boliviaexperience.com' },
-    update: {},
-    create: {
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
+  // ── Users ──────────────────────────────────────────────────
+  const admin = await prisma.user.create({
+    data: {
       email: 'admin@boliviaexperience.com',
       name: 'Administrador',
+      password: hashedPassword,
       role: 'admin',
       language: 'es',
     },
   });
-  console.log(`Created admin user: ${admin.email}`);
 
-  console.log('Seed completed!');
+  const empresaUser = await prisma.user.create({
+    data: {
+      email: 'empresa@boliviaexperience.com',
+      name: 'Carlos Mendoza',
+      password: hashedPassword,
+      role: 'empresa',
+      language: 'es',
+    },
+  });
+
+  const usuario1 = await prisma.user.create({
+    data: {
+      email: 'maria@gmail.com',
+      name: 'María García',
+      password: hashedPassword,
+      role: 'usuario',
+      language: 'es',
+    },
+  });
+
+  const usuario2 = await prisma.user.create({
+    data: {
+      email: 'juan@gmail.com',
+      name: 'Juan López',
+      password: hashedPassword,
+      role: 'usuario',
+      language: 'es',
+    },
+  });
+
+  const usuario3 = await prisma.user.create({
+    data: {
+      email: 'ana@gmail.com',
+      name: 'Ana Morales',
+      password: hashedPassword,
+      role: 'usuario',
+      language: 'es',
+    },
+  });
+
+  console.log('Created 5 users');
+
+  // ── Categories ─────────────────────────────────────────────
+  const cats = [
+    { name: 'Restaurantes', nameEn: 'Restaurants', icon: 'restaurant', slug: 'restaurantes', description: 'Lugares para comer en Santa Cruz', displayOrder: 1 },
+    { name: 'Hoteles', nameEn: 'Hotels', icon: 'hotel', slug: 'hoteles', description: 'Alojamiento y hospedaje', displayOrder: 2 },
+    { name: 'Bares y Vida Nocturna', nameEn: 'Bars & Nightlife', icon: 'nightlife', slug: 'bares', description: 'Bares, discotecas y vida nocturna', displayOrder: 3 },
+    { name: 'Cafeterías', nameEn: 'Cafés', icon: 'coffee', slug: 'cafeterias', description: 'Cafés y repostería', displayOrder: 4 },
+    { name: 'Atracciones Turísticas', nameEn: 'Tourist Attractions', icon: 'landscape', slug: 'atracciones', description: 'Sitios turísticos imperdibles', displayOrder: 5 },
+    { name: 'Parques y Naturaleza', nameEn: 'Parks & Nature', icon: 'park', slug: 'parques', description: 'Parques, plazas y áreas verdes', displayOrder: 6 },
+    { name: 'Museos y Galerías', nameEn: 'Museums & Galleries', icon: 'museum', slug: 'museos', description: 'Espacios culturales y artísticos', displayOrder: 7 },
+    { name: 'Centros Comerciales', nameEn: 'Shopping Centers', icon: 'shopping_bag', slug: 'centros-comerciales', description: 'Malls y centros de compras', displayOrder: 8 },
+    { name: 'Deportes y Recreación', nameEn: 'Sports & Recreation', icon: 'sports_soccer', slug: 'deportes', description: 'Actividades deportivas y recreativas', displayOrder: 9 },
+    { name: 'Gastronomía Local', nameEn: 'Local Cuisine', icon: 'restaurant_menu', slug: 'gastronomia', description: 'Comida típica cruceña', displayOrder: 10 },
+  ];
+
+  const categories = await Promise.all(
+    cats.map((c) => prisma.category.create({ data: c })),
+  );
+  console.log(`Created ${categories.length} categories`);
+
+  const [catRestaurantes, catHoteles, catBares, catCafes, catAtracciones, catParques, catMuseos, catComercios, catDeportes, catGastro] = categories;
+
+  // ── Places ─────────────────────────────────────────────────
+  const places = await Promise.all([
+    prisma.place.create({
+      data: {
+        name: 'El Palmar',
+        description: 'Restaurante de comida cruceña tradicional. Famous por sus anticuchos y saice.',
+        descriptionEn: 'Traditional Santa Cruz restaurant. Famous for its anticuchos and saice.',
+        address: 'Av. Monseñor Ángel Uría 456, Santa Cruz',
+        phone: '+591 3 345 6789',
+        website: 'https://elpalmar.com.bo',
+        latitude: -17.7833,
+        longitude: -63.1821,
+        ratingAvg: 4.5,
+        ratingCount: 128,
+        categoryId: catRestaurantes.id,
+        ownerId: empresaUser.id,
+        isFeatured: true,
+        isActive: true,
+      },
+    }),
+    prisma.place.create({
+      data: {
+        name: 'Cocina Mestiza',
+        description: 'Fusión de sabores bolivianos con influencias internacionales. Menú ejecutivo y carta.',
+        descriptionEn: 'Fusion of Bolivian flavors with international influences.',
+        address: 'Calle Warnes 123, Equipetrol, Santa Cruz',
+        phone: '+591 3 334 5678',
+        latitude: -17.7754,
+        longitude: -63.1715,
+        ratingAvg: 4.3,
+        ratingCount: 87,
+        categoryId: catRestaurantes.id,
+        ownerId: empresaUser.id,
+        isFeatured: true,
+        isActive: true,
+      },
+    }),
+    prisma.place.create({
+      data: {
+        name: 'Hotel Buganvilia',
+        description: 'Hotel boutique en el corazón de Equipetrol. Piscina, restaurante y spa.',
+        descriptionEn: 'Boutique hotel in the heart of Equipetrol. Pool, restaurant and spa.',
+        address: 'Av. San Martín 789, Equipetrol, Santa Cruz',
+        phone: '+591 3 342 0000',
+        website: 'https://hotelbuganvilia.com.bo',
+        latitude: -17.7801,
+        longitude: -63.1789,
+        ratingAvg: 4.7,
+        ratingCount: 203,
+        categoryId: catHoteles.id,
+        ownerId: empresaUser.id,
+        isFeatured: true,
+        isActive: true,
+      },
+    }),
+    prisma.place.create({
+      data: {
+        name: 'Parque Municipal Lomas de Arena',
+        description: 'Reserva natural con dunas de arena, lagunas ysenderismo. Ideal para un día de aventura.',
+        descriptionEn: 'Natural reserve with sand dunes, lagoons and hiking. Perfect for an adventure day.',
+        address: 'Av. San Juan de Pampagrande, Santa Cruz',
+        phone: '+591 3 335 1234',
+        latitude: -17.8200,
+        longitude: -63.2200,
+        ratingAvg: 4.4,
+        ratingCount: 342,
+        categoryId: catParques.id,
+        ownerId: null,
+        isFeatured: true,
+        isActive: true,
+      },
+    }),
+    prisma.place.create({
+      data: {
+        name: 'Museo de Historia Natural Noel Kempff',
+        description: 'Museo con exhibiciones de fauna y flora del departamento de Santa Cruz.',
+        descriptionEn: 'Museum with exhibitions of fauna and flora of the Santa Cruz department.',
+        address: 'Av. Iñigó de Balda 212, Santa Cruz',
+        phone: '+591 3 336 1234',
+        latitude: -17.7650,
+        longitude: -63.1500,
+        ratingAvg: 4.2,
+        ratingCount: 156,
+        categoryId: catMuseos.id,
+        ownerId: null,
+        isFeatured: true,
+        isActive: true,
+      },
+    }),
+    prisma.place.create({
+      data: {
+        name: 'Café Munaipata',
+        description: 'Café artesanal con granos de Yungas. Desayunos, tortas y ambiente acogedor.',
+        descriptionEn: 'Artisanal café with Yungas beans. Breakfasts, cakes and cozy atmosphere.',
+        address: 'Calle Florida 456, Santa Cruz',
+        phone: '+591 3 344 5678',
+        latitude: -17.7810,
+        longitude: -63.1850,
+        ratingAvg: 4.6,
+        ratingCount: 94,
+        categoryId: catCafes.id,
+        ownerId: empresaUser.id,
+        isFeatured: true,
+        isActive: true,
+      },
+    }),
+    prisma.place.create({
+      data: {
+        name: 'Blue Velvet Bar',
+        description: 'Bar de coctelería de autor con música en vivo. Noches de jazz y bossa nova.',
+        descriptionEn: 'Cocktail bar with live music. Jazz and bossa nova nights.',
+        address: 'Av. San Martín 321, Equipetrol, Santa Cruz',
+        phone: '+591 3 345 9876',
+        latitude: -17.7780,
+        longitude: -63.1760,
+        ratingAvg: 4.1,
+        ratingCount: 67,
+        categoryId: catBares.id,
+        ownerId: empresaUser.id,
+        isFeatured: false,
+        isActive: true,
+      },
+    }),
+    prisma.place.create({
+      data: {
+        name: 'Churrasquía Don Toto',
+        description: 'Parrilla criolla con cortes premium y ensaladas. El mejor asado de la ciudad.',
+        descriptionEn: 'Creole grill with premium cuts and salads. The best roast in town.',
+        address: 'Av. Busch 890, Santa Cruz',
+        phone: '+591 3 332 4567',
+        latitude: -17.7890,
+        longitude: -63.1950,
+        ratingAvg: 4.3,
+        ratingCount: 178,
+        categoryId: catGastro.id,
+        ownerId: empresaUser.id,
+        isFeatured: true,
+        isActive: true,
+      },
+    }),
+    prisma.place.create({
+      data: {
+        name: 'CC Ventura',
+        description: 'El centro comercial más grande de Santa Cruz. Tiendas, cine, gastronomía y entretenimiento.',
+        descriptionEn: 'The largest shopping center in Santa Cruz. Shops, cinema, dining and entertainment.',
+        address: 'Av. Santos Dumont 1500, Ventura, Santa Cruz',
+        phone: '+591 3 356 0000',
+        website: 'https://ccventura.com.bo',
+        latitude: -17.7600,
+        longitude: -63.1300,
+        ratingAvg: 4.4,
+        ratingCount: 521,
+        categoryId: catComercios.id,
+        ownerId: null,
+        isFeatured: false,
+        isActive: true,
+      },
+    }),
+    prisma.place.create({
+      data: {
+        name: 'Coliseo de Domingo Savio',
+        description: 'Coliseo deportivo para eventos, conciertos y encuentros deportivos.',
+        descriptionEn: 'Sports coliseum for events, concerts and sports competitions.',
+        address: 'Av. Pirai s/n, Santa Cruz',
+        phone: '+591 3 336 7890',
+        latitude: -17.7950,
+        longitude: -63.2050,
+        ratingAvg: 4.0,
+        ratingCount: 89,
+        categoryId: catDeportes.id,
+        ownerId: null,
+        isFeatured: false,
+        isActive: true,
+      },
+    }),
+    prisma.place.create({
+      data: {
+        name: 'Aero Club Santa Cruz',
+        description: 'Club deportivo con piscina olímpica, canchas de tenis, fútbol y gym.',
+        descriptionEn: 'Sports club with Olympic pool, tennis courts, soccer fields and gym.',
+        address: 'Av. Equipetrol 456, Santa Cruz',
+        phone: '+591 3 344 2222',
+        latitude: -17.7740,
+        longitude: -63.1680,
+        ratingAvg: 4.5,
+        ratingCount: 234,
+        categoryId: catDeportes.id,
+        ownerId: empresaUser.id,
+        isFeatured: false,
+        isActive: true,
+      },
+    }),
+    prisma.place.create({
+      data: {
+        name: 'Cristo Redentor',
+        description: 'Monumento icónico de Santa Cruz con vista panorámica de la ciudad.',
+        descriptionEn: 'Iconic monument of Santa Cruz with panoramic views of the city.',
+        address: 'Barrio San Joaquín, Santa Cruz',
+        latitude: -17.7730,
+        longitude: -63.1630,
+        ratingAvg: 4.6,
+        ratingCount: 412,
+        categoryId: catAtracciones.id,
+        ownerId: null,
+        isFeatured: true,
+        isActive: true,
+      },
+    }),
+  ]);
+  console.log(`Created ${places.length} places`);
+
+  // ── Place Photos ───────────────────────────────────────────
+  const photoUrls = [
+    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800',
+    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
+    'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800',
+    'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800',
+    'https://images.unsplash.com/photo-1424847651672-bf20a4b0982b?w=800',
+    'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800',
+    'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800',
+    'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800',
+  ];
+
+  for (let i = 0; i < places.length; i++) {
+    await prisma.placePhoto.create({
+      data: {
+        placeId: places[i].id,
+        url: photoUrls[i % photoUrls.length],
+        altText: `Foto de ${places[i].name}`,
+        displayOrder: 1,
+      },
+    });
+  }
+  console.log('Created place photos');
+
+  // ── Place Hours ────────────────────────────────────────────
+  function timeToDate(h: number, m = 0): Date {
+    const d = new Date(1970, 0, 1, h, m, 0);
+    return d;
+  }
+  for (const place of places) {
+    for (let day = 0; day < 7; day++) {
+      await prisma.placeHour.create({
+        data: {
+          placeId: place.id,
+          dayOfWeek: day,
+          openTime: day === 6 ? null : timeToDate(8),
+          closeTime: day === 6 ? null : timeToDate(day === 5 ? 23 : 22),
+          isClosed: day === 6,
+        },
+      });
+    }
+  }
+  console.log('Created place hours');
+
+  // ── Events ─────────────────────────────────────────────────
+  const now = new Date();
+  const events = await Promise.all([
+    prisma.event.create({
+      data: {
+        name: 'Festival de la Chinita',
+        description: 'Festival cultural con música, danza y gastronomía típica cruceña.',
+        descriptionEn: 'Cultural festival with music, dance and traditional Santa Cruz cuisine.',
+        dateStart: new Date(now.getTime() + 7 * 86400000),
+        dateEnd: new Date(now.getTime() + 10 * 86400000),
+        location: 'Parque Urbano Lomas de Arena',
+        latitude: -17.8200,
+        longitude: -63.2200,
+        category: 'Festival',
+        isActive: true,
+      },
+    }),
+    prisma.event.create({
+      data: {
+        name: 'Noche de Jazz en Equipetrol',
+        description: 'Presentación de bandas locales de jazz con entrada libre.',
+        descriptionEn: 'Local jazz bands performing with free admission.',
+        dateStart: new Date(now.getTime() + 3 * 86400000),
+        dateEnd: new Date(now.getTime() + 3 * 86400000 + 5 * 3600000),
+        location: 'Av. San Martín, Equipetrol',
+        latitude: -17.7754,
+        longitude: -63.1715,
+        category: 'Música',
+        isActive: true,
+      },
+    }),
+    prisma.event.create({
+      data: {
+        name: 'Feria Artesanal del Toro',
+        description: 'Más de 100 artesanos exponen y venden sus creaciones.',
+        descriptionEn: 'More than 100 artisans exhibiting and selling their creations.',
+        dateStart: new Date(now.getTime() + 14 * 86400000),
+        dateEnd: new Date(now.getTime() + 16 * 86400000),
+        location: 'Plaza 24 de Septiembre',
+        latitude: -17.7840,
+        longitude: -63.1810,
+        category: 'Feria',
+        isActive: true,
+      },
+    }),
+    prisma.event.create({
+      data: {
+        name: 'Maratón de Santa Cruz 2026',
+        description: 'Carrera oficial de 10K y 21K por las principales avenidas de la ciudad.',
+        descriptionEn: 'Official 10K and 21K race through the city main avenues.',
+        dateStart: new Date(now.getTime() + 21 * 86400000),
+        dateEnd: new Date(now.getTime() + 21 * 86400000 + 6 * 3600000),
+        location: 'Av. Principal, Santa Cruz',
+        latitude: -17.7833,
+        longitude: -63.1821,
+        category: 'Deporte',
+        isActive: true,
+      },
+    }),
+    prisma.event.create({
+      data: {
+        name: 'Festival Gastronómico Cruceño',
+        description: 'Degustación de platos típicos cruceños con chefs reconocidos.',
+        descriptionEn: 'Tasting of traditional Santa Cruz dishes with renowned chefs.',
+        dateStart: new Date(now.getTime() + 5 * 86400000),
+        dateEnd: new Date(now.getTime() + 7 * 86400000),
+        location: 'CC Ventura',
+        latitude: -17.7600,
+        longitude: -63.1300,
+        category: 'Gastronomía',
+        isActive: true,
+      },
+    }),
+    prisma.event.create({
+      data: {
+        name: 'Concierto Benéfico',
+        description: 'Concierto a beneficio de los damnificados por inundaciones.',
+        descriptionEn: 'Benefit concert for flood victims.',
+        dateStart: new Date(now.getTime() + 1 * 86400000),
+        dateEnd: new Date(now.getTime() + 1 * 86400000 + 4 * 3600000),
+        location: 'Teatro AQP',
+        latitude: -17.7810,
+        longitude: -63.1790,
+        category: 'Música',
+        isActive: true,
+      },
+    }),
+  ]);
+  console.log(`Created ${events.length} events`);
+
+  // ── Promotions ─────────────────────────────────────────────
+  const futureEnd = new Date(now.getTime() + 30 * 86400000);
+  const promotions = await Promise.all([
+    prisma.promotion.create({
+      data: {
+        placeId: places[0].id,
+        title: '2x1 en almuerzos',
+        titleEn: '2x1 on lunches',
+        description: 'Todos los martes y jueves, el segundo almuerzo es gratis.',
+        descriptionEn: 'Every Tuesday and Thursday, the second lunch is free.',
+        discountPercentage: 50,
+        startDate: now,
+        endDate: futureEnd,
+        isActive: true,
+      },
+    }),
+    prisma.promotion.create({
+      data: {
+        placeId: places[2].id,
+        title: '15% OFF en hospedaje',
+        titleEn: '15% OFF on lodging',
+        description: 'Descuento para reservas de 3 noches o más.',
+        descriptionEn: 'Discount for bookings of 3 nights or more.',
+        discountPercentage: 15,
+        startDate: now,
+        endDate: futureEnd,
+        isActive: true,
+      },
+    }),
+    prisma.promotion.create({
+      data: {
+        placeId: places[5].id,
+        title: 'Happy Hour todo el día',
+        titleEn: 'Happy Hour all day',
+        description: 'Todos los tragos a precio de happy hour los domingos.',
+        descriptionEn: 'All drinks at happy hour price on Sundays.',
+        discountPercentage: 30,
+        startDate: now,
+        endDate: futureEnd,
+        isActive: true,
+      },
+    }),
+    prisma.promotion.create({
+      data: {
+        placeId: places[7].id,
+        title: 'Combo familiar',
+        titleEn: 'Family combo',
+        description: 'Parrillada familiar para 4 personas con bebida incluida a precio especial.',
+        descriptionEn: 'Family grill for 4 people with drink included at special price.',
+        discountPercentage: 20,
+        startDate: now,
+        endDate: futureEnd,
+        isActive: true,
+      },
+    }),
+    prisma.promotion.create({
+      data: {
+        placeId: places[1].id,
+        title: 'Cena romántica',
+        titleEn: 'Romantic dinner',
+        description: 'Cena para dos con botella de vino incluida por solo Bs. 250.',
+        descriptionEn: 'Dinner for two with bottle of wine included for just Bs. 250.',
+        discountPercentage: 25,
+        startDate: now,
+        endDate: futureEnd,
+        isActive: true,
+      },
+    }),
+  ]);
+  console.log(`Created ${promotions.length} promotions`);
+
+  // ── Reviews ────────────────────────────────────────────────
+  const reviews = await Promise.all([
+    prisma.review.create({
+      data: {
+        userId: usuario1.id,
+        placeId: places[0].id,
+        rating: 5,
+        comment: 'Los anticuchos son los mejores de Santa Cruz. Atención excelente.',
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        userId: usuario2.id,
+        placeId: places[0].id,
+        rating: 4,
+        comment: 'Muy buena comida pero a veces tarda mucho en servir.',
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        userId: usuario3.id,
+        placeId: places[1].id,
+        rating: 4,
+        comment: 'La fusión de sabores es interesante. Recomiendo el lomo al trapo.',
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        userId: usuario1.id,
+        placeId: places[2].id,
+        rating: 5,
+        comment: 'Hotel increíble, la piscina y el spa son de primera.',
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        userId: usuario2.id,
+        placeId: places[3].id,
+        rating: 5,
+        comment: 'Lugar perfecto para desconectar. Las dunas son impresionantes.',
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        userId: usuario3.id,
+        placeId: places[4].id,
+        rating: 4,
+        comment: 'Muy interesante las exhibiciones. Los niños lo disfrutaron mucho.',
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        userId: usuario1.id,
+        placeId: places[5].id,
+        rating: 5,
+        comment: 'El mejor café de la ciudad. El latte es espectacular.',
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        userId: usuario2.id,
+        placeId: places[6].id,
+        rating: 4,
+        comment: 'Buen ambiente y cocteles creativos. La música en vivo es genial.',
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        userId: usuario3.id,
+        placeId: places[7].id,
+        rating: 5,
+        comment: 'El mejor asado que he probado. Los cortes son top.',
+        isApproved: true,
+      },
+    }),
+    prisma.review.create({
+      data: {
+        userId: usuario1.id,
+        placeId: places[11].id,
+        rating: 5,
+        comment: 'Vista panorámica hermosa. Obligatorio al atardecer.',
+        isApproved: true,
+      },
+    }),
+  ]);
+  console.log(`Created ${reviews.length} reviews`);
+
+  // ── Update place ratings based on reviews ──────────────────
+  for (const place of places) {
+    const placeReviews = await prisma.review.findMany({
+      where: { placeId: place.id, isApproved: true },
+    });
+    if (placeReviews.length > 0) {
+      const avg = placeReviews.reduce((sum, r) => sum + r.rating, 0) / placeReviews.length;
+      await prisma.place.update({
+        where: { id: place.id },
+        data: { ratingAvg: avg, ratingCount: placeReviews.length },
+      });
+    }
+  }
+  console.log('Updated place ratings');
+
+  // ── Favorites ──────────────────────────────────────────────
+  const favorites = await Promise.all([
+    prisma.favorite.create({ data: { userId: usuario1.id, placeId: places[0].id } }),
+    prisma.favorite.create({ data: { userId: usuario1.id, placeId: places[3].id } }),
+    prisma.favorite.create({ data: { userId: usuario1.id, placeId: places[11].id } }),
+    prisma.favorite.create({ data: { userId: usuario2.id, placeId: places[2].id } }),
+    prisma.favorite.create({ data: { userId: usuario2.id, placeId: places[5].id } }),
+    prisma.favorite.create({ data: { userId: usuario3.id, placeId: places[7].id } }),
+    prisma.favorite.create({ data: { userId: usuario3.id, placeId: places[4].id } }),
+  ]);
+  console.log(`Created ${favorites.length} favorites`);
+
+  // ── Search History ─────────────────────────────────────────
+  const searchHistory = await Promise.all([
+    prisma.searchHistory.create({ data: { userId: usuario1.id, query: 'restaurantes', resultsCount: 4 } }),
+    prisma.searchHistory.create({ data: { userId: usuario1.id, query: 'hoteles equipetrol', resultsCount: 2 } }),
+    prisma.searchHistory.create({ data: { userId: usuario2.id, query: 'café', resultsCount: 3 } }),
+    prisma.searchHistory.create({ data: { userId: usuario2.id, query: 'eventos hoy', resultsCount: 2 } }),
+    prisma.searchHistory.create({ data: { userId: usuario3.id, query: 'playa', resultsCount: 0 } }),
+  ]);
+  console.log(`Created ${searchHistory.length} search history entries`);
+
+  // ── Notifications ──────────────────────────────────────────
+  const notifications = await Promise.all([
+    prisma.notification.create({
+      data: {
+        userId: usuario1.id,
+        title: 'Nuevo evento cerca tuyo',
+        body: 'El Festival de la Chinita comenzará pronto. ¡No te lo pierdas!',
+        type: 'event',
+        data: { eventId: events[0].id },
+        isRead: false,
+      },
+    }),
+    prisma.notification.create({
+      data: {
+        userId: usuario1.id,
+        title: 'Promoción especial',
+        body: '2x1 en almuerzos en El Palmar. Solo por tiempo limitado.',
+        type: 'promotion',
+        data: { promotionId: promotions[0].id },
+        isRead: false,
+      },
+    }),
+    prisma.notification.create({
+      data: {
+        userId: usuario2.id,
+        title: 'Tu reseña fue aprobada',
+        body: 'Tu reseña sobre Hotel Buganvilia ya es visible para otros usuarios.',
+        type: 'review',
+        isRead: true,
+      },
+    }),
+    prisma.notification.create({
+      data: {
+        userId: usuario3.id,
+        title: 'Bienvenida a BoliviaExperience',
+        body: 'Explora los mejores lugares de Santa Cruz. ¡Comienza ahora!',
+        type: 'system',
+        isRead: false,
+      },
+    }),
+  ]);
+  console.log(`Created ${notifications.length} notifications`);
+
+  console.log('Seed completed successfully!');
 }
 
 main()

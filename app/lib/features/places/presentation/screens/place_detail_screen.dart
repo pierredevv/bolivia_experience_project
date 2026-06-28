@@ -57,11 +57,9 @@ class PlaceDetailScreen extends ConsumerWidget {
 
     final photos = state.photos;
     final reviews = state.reviews;
-    final rating = place.rating ?? {};
-    final averageRating = rating['average'] ?? 0;
-    final ratingCount = rating['count'] ?? 0;
+    final averageRating = place.ratingAvg ?? 0;
+    final ratingCount = place.ratingCount ?? 0;
     final category = place.category ?? {};
-    final location = place.location ?? {};
 
     return CustomScrollView(
       slivers: [
@@ -156,8 +154,8 @@ class PlaceDetailScreen extends ConsumerWidget {
                       label: 'Cómo llegar',
                       color: AppColors.primary700,
                       onTap: () async {
-                        final lat = location['latitude'];
-                        final lng = location['longitude'];
+                        final lat = place.latitude;
+                        final lng = place.longitude;
                         if (lat != null && lng != null) {
                           final url = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
                           if (await canLaunchUrl(Uri.parse(url))) {
@@ -205,16 +203,6 @@ class PlaceDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 24),
                 ],
 
-                if (place.hours != null) ...[
-                  Text(
-                    'Horarios',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildHours(context, place.hours!),
-                  const SizedBox(height: 24),
-                ],
-
                 Text(
                   'Contacto',
                   style: Theme.of(context).textTheme.titleLarge,
@@ -229,7 +217,7 @@ class PlaceDetailScreen extends ConsumerWidget {
 
                 const SizedBox(height: 24),
 
-                if (location['latitude'] != null && location['longitude'] != null) ...[
+                if (place.latitude != null && place.longitude != null) ...[
                   Text(
                     'Ubicación',
                     style: Theme.of(context).textTheme.titleLarge,
@@ -279,7 +267,7 @@ class PlaceDetailScreen extends ConsumerWidget {
                             Row(
                               children: List.generate(5, (index) {
                                 return Icon(
-                                  index < (averageRating as double).round()
+                                   index < (double.tryParse(averageRating.toString()) ?? 0).round()
                                       ? Icons.star
                                       : Icons.star_half,
                                   color: AppColors.secondary500,
@@ -314,7 +302,7 @@ class PlaceDetailScreen extends ConsumerWidget {
                     userName: review['user']?['name'] ?? 'Usuario',
                     rating: review['rating'] ?? 0,
                     comment: review['comment'] ?? '',
-                    date: review['created_at'] ?? '',
+                    date: review['createdAt'] ?? '',
                   );
                 }),
 
@@ -327,58 +315,6 @@ class PlaceDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHours(BuildContext context, Map<String, dynamic> hours) {
-    final days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    final dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-    final today = DateTime.now().weekday - 1;
-
-    return Column(
-      children: List.generate(days.length, (index) {
-        final dayHours = hours[days[index]];
-        final isOpen = dayHours != null && dayHours['open'] != null;
-        final isToday = index == today;
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 100,
-                child: Text(
-                  dayNames[index],
-                  style: TextStyle(
-                    fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                    color: isToday ? AppColors.primary700 : null,
-                  ),
-                ),
-              ),
-              Text(
-                isOpen ? '${dayHours['open']} - ${dayHours['close']}' : 'Cerrado',
-                style: TextStyle(
-                  fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                  color: isToday ? AppColors.primary700 : null,
-                ),
-              ),
-              if (isToday) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.success100,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'Hoy',
-                    style: TextStyle(color: AppColors.success700, fontSize: 10),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      }),
-    );
-  }
 }
 
 class _ActionButton extends StatelessWidget {

@@ -15,7 +15,6 @@ export class PromotionsService {
       },
       include: {
         place: {
-          select: { id: true, name: true, address: true },
           include: {
             photos: { take: 1, orderBy: { displayOrder: 'asc' } },
           },

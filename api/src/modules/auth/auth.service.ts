@@ -36,16 +36,13 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.role);
 
     return {
-      success: true,
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        },
-        ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
       },
+      ...tokens,
     };
   }
 
@@ -71,17 +68,14 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.role);
 
     return {
-      success: true,
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          photoUrl: user.photoUrl,
-        },
-        ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        photoUrl: user.photoUrl,
       },
+      ...tokens,
     };
   }
 
@@ -96,10 +90,7 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, user.role);
 
-    return {
-      success: true,
-      data: tokens,
-    };
+    return tokens;
   }
 
   private async generateTokens(userId: string, role: string) {

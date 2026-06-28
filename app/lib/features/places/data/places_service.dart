@@ -6,28 +6,32 @@ class Place {
   final String name;
   final String? description;
   final String? address;
-  final Map<String, dynamic>? location;
-  final Map<String, dynamic>? rating;
+  final double? latitude;
+  final double? longitude;
+  final dynamic ratingAvg;
+  final int? ratingCount;
   final Map<String, dynamic>? category;
   final List<dynamic>? photos;
   final String? phone;
   final String? website;
-  final Map<String, dynamic>? hours;
-  final String? priceLevel;
+  final bool? isFeatured;
+  final bool? isActive;
 
   Place({
     required this.id,
     required this.name,
     this.description,
     this.address,
-    this.location,
-    this.rating,
+    this.latitude,
+    this.longitude,
+    this.ratingAvg,
+    this.ratingCount,
     this.category,
     this.photos,
     this.phone,
     this.website,
-    this.hours,
-    this.priceLevel,
+    this.isFeatured,
+    this.isActive,
   });
 
   factory Place.fromJson(Map<String, dynamic> json) {
@@ -36,14 +40,16 @@ class Place {
       name: json['name'] ?? '',
       description: json['description'],
       address: json['address'],
-      location: json['location'],
-      rating: json['rating'],
-      category: json['category'],
-      photos: json['photos'],
+      latitude: json['latitude'] != null ? double.tryParse(json['latitude'].toString()) : null,
+      longitude: json['longitude'] != null ? double.tryParse(json['longitude'].toString()) : null,
+      ratingAvg: json['ratingAvg'] ?? 0,
+      ratingCount: json['ratingCount'] ?? 0,
+      category: json['category'] is Map ? json['category'] : null,
+      photos: json['photos'] is List ? json['photos'] : null,
       phone: json['phone'],
       website: json['website'],
-      hours: json['hours'],
-      priceLevel: json['price_level'],
+      isFeatured: json['isFeatured'],
+      isActive: json['isActive'],
     );
   }
 }

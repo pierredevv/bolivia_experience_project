@@ -25,7 +25,7 @@ class UserProfile {
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
-      photo: json['photo'],
+      photo: json['photoUrl'],
       country: json['country'],
       language: json['language'],
       createdAt: json['created_at'],

@@ -46,15 +46,18 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
   }
 
   Future<void> loadFavorites() async {
+    if (!mounted) return;
     state = state.copyWith(status: FavoritesStatus.loading, errorMessage: null);
 
     try {
       final favorites = await _favoritesService.getFavorites();
+      if (!mounted) return;
       state = state.copyWith(
         status: FavoritesStatus.loaded,
         favorites: favorites,
       );
     } on DioException catch (e) {
+      if (!mounted) return;
       String message = 'Error al cargar favoritos';
       if (e.response != null) {
         final statusCode = e.response?.statusCode;
@@ -72,6 +75,7 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
         errorMessage: message,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         status: FavoritesStatus.error,
         errorMessage: 'Error inesperado. Intentá de nuevo.',

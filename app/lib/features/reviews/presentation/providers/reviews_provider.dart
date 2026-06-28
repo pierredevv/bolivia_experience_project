@@ -44,15 +44,18 @@ class ReviewsNotifier extends StateNotifier<ReviewsState> {
   ReviewsNotifier(this._reviewsService) : super(const ReviewsState());
 
   Future<void> loadReviews(String placeId) async {
+    if (!mounted) return;
     state = state.copyWith(status: ReviewsStatus.loading, errorMessage: null);
 
     try {
       final reviews = await _reviewsService.getPlaceReviews(placeId);
+      if (!mounted) return;
       state = state.copyWith(
         status: ReviewsStatus.loaded,
         reviews: reviews,
       );
     } on DioException catch (e) {
+      if (!mounted) return;
       String message = 'Error al cargar reseñas';
       if (e.response != null) {
         final statusCode = e.response?.statusCode;
@@ -70,6 +73,7 @@ class ReviewsNotifier extends StateNotifier<ReviewsState> {
         errorMessage: message,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         status: ReviewsStatus.error,
         errorMessage: 'Error inesperado. Intentá de nuevo.',

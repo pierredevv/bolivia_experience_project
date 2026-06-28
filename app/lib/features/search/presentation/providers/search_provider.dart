@@ -78,6 +78,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
   }
 
   Future<void> search(String query) async {
+    if (!mounted) return;
     if (query.isEmpty) {
       state = state.copyWith(results: [], status: SearchStatus.initial);
       return;
@@ -87,11 +88,13 @@ class SearchNotifier extends StateNotifier<SearchState> {
 
     try {
       final results = await _searchService.search(query: query);
+      if (!mounted) return;
       state = state.copyWith(
         status: SearchStatus.loaded,
         results: results,
       );
     } on DioException catch (e) {
+      if (!mounted) return;
       String message = 'Error al buscar';
       if (e.response != null) {
         final statusCode = e.response?.statusCode;
@@ -109,6 +112,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         errorMessage: message,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         status: SearchStatus.error,
         errorMessage: 'Error inesperado. Intentá de nuevo.',

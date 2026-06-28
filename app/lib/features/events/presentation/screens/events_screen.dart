@@ -100,8 +100,7 @@ class _EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final photos = event.photos as List<dynamic>? ?? [];
-    final photoUrl = photos.isNotEmpty ? photos[0]['url'] : null;
+    final photoUrl = event.photoUrl;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -149,9 +148,9 @@ class _EventCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    if (event.venue != null)
+                    if (event.location != null)
                       Text(
-                        event.venue!,
+                        event.location!,
                         style: Theme.of(context).textTheme.bodySmall,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -162,24 +161,11 @@ class _EventCard extends StatelessWidget {
                         Icon(Icons.access_time, size: 14, color: AppColors.neutral500),
                         const SizedBox(width: 4),
                         Text(
-                          '${event.date ?? ''} ${event.startTime ?? ''}',
+                          event.dateStart ?? '',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
-                    if (event.price != null && event.price! > 0) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.attach_money, size: 14, color: AppColors.neutral500),
-                          const SizedBox(width: 4),
-                          Text(
-                            '\$${event.price!.toStringAsFixed(0)}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ],
                   ],
                 ),
               ),

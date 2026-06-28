@@ -5,29 +5,25 @@ class Event {
   final String id;
   final String name;
   final String? description;
-  final String? date;
-  final String? startTime;
-  final String? endTime;
-  final String? venue;
-  final String? address;
-  final Map<String, dynamic>? location;
+  final String? dateStart;
+  final String? dateEnd;
+  final String? location;
+  final double? latitude;
+  final double? longitude;
+  final String? photoUrl;
   final String? category;
-  final double? price;
-  final List<dynamic>? photos;
 
   Event({
     required this.id,
     required this.name,
     this.description,
-    this.date,
-    this.startTime,
-    this.endTime,
-    this.venue,
-    this.address,
+    this.dateStart,
+    this.dateEnd,
     this.location,
+    this.latitude,
+    this.longitude,
+    this.photoUrl,
     this.category,
-    this.price,
-    this.photos,
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
@@ -35,15 +31,13 @@ class Event {
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       description: json['description'],
-      date: json['date'],
-      startTime: json['start_time'],
-      endTime: json['end_time'],
-      venue: json['venue'],
-      address: json['address'],
+      dateStart: json['dateStart'],
+      dateEnd: json['dateEnd'],
       location: json['location'],
+      latitude: json['latitude'] != null ? double.tryParse(json['latitude'].toString()) : null,
+      longitude: json['longitude'] != null ? double.tryParse(json['longitude'].toString()) : null,
+      photoUrl: json['photoUrl'],
       category: json['category'],
-      price: json['price']?.toDouble(),
-      photos: json['photos'],
     );
   }
 }

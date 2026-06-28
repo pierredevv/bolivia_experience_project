@@ -60,6 +60,7 @@ class PlacesNotifier extends StateNotifier<PlacesState> {
   PlacesNotifier(this._placesService) : super(const PlacesState());
 
   Future<void> loadPlacesByCategory(String categorySlug) async {
+    if (!mounted) return;
     state = state.copyWith(
       status: PlacesStatus.loading,
       selectedCategory: categorySlug,
@@ -73,6 +74,7 @@ class PlacesNotifier extends StateNotifier<PlacesState> {
         limit: 10,
       );
 
+      if (!mounted) return;
       state = state.copyWith(
         status: PlacesStatus.loaded,
         places: result.data,
@@ -81,6 +83,7 @@ class PlacesNotifier extends StateNotifier<PlacesState> {
         hasNext: result.hasNext,
       );
     } on DioException catch (e) {
+      if (!mounted) return;
       String message = 'Error al cargar lugares';
       if (e.response != null) {
         final statusCode = e.response?.statusCode;
@@ -100,6 +103,7 @@ class PlacesNotifier extends StateNotifier<PlacesState> {
         errorMessage: message,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         status: PlacesStatus.error,
         errorMessage: 'Error inesperado. Intentá de nuevo.',
@@ -108,7 +112,7 @@ class PlacesNotifier extends StateNotifier<PlacesState> {
   }
 
   Future<void> loadMorePlaces() async {
-    if (!state.hasNext || state.status == PlacesStatus.loadingMore) return;
+    if (!mounted || !state.hasNext || state.status == PlacesStatus.loadingMore) return;
 
     state = state.copyWith(status: PlacesStatus.loadingMore);
 
@@ -119,6 +123,7 @@ class PlacesNotifier extends StateNotifier<PlacesState> {
         limit: 10,
       );
 
+      if (!mounted) return;
       state = state.copyWith(
         status: PlacesStatus.loaded,
         places: [...state.places, ...result.data],
@@ -127,11 +132,13 @@ class PlacesNotifier extends StateNotifier<PlacesState> {
         hasNext: result.hasNext,
       );
     } on DioException catch (_) {
+      if (!mounted) return;
       state = state.copyWith(
         status: PlacesStatus.loaded,
         errorMessage: 'Error al cargar más lugares',
       );
     } catch (_) {
+      if (!mounted) return;
       state = state.copyWith(
         status: PlacesStatus.loaded,
         errorMessage: 'Error inesperado',
