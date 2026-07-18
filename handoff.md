@@ -1,8 +1,60 @@
 # Handoff: BoliviaExperience — Documentación y Arquitectura Completa
 
 **Generated**: 2026-06-26
+**Last Updated**: 2026-07-17 (Sesión actual)
 **Branch**: main
-**Status**: Entregables 1-7 Completados + API Estabilizada (TS 0 errores, DB con seed), Pendiente Entregable 8
+**Status**: Entregables 1-7 Completados + API Estabilizada + Web Frontend Conectado al API + SQLite Support + Web CRUD Completo + UX Mejorado + Tests (71 web + 86 API) + Bug Fixes (17) + Separacion de Portales (Admin/Business) + Landing Page + Registro Empresas, Pendiente Entregable 8
+
+---
+
+## Resumen de Sesión (2026-07-17)
+
+### Trabajo Realizado
+
+1. **Análisis completo del proyecto** — Lectura y entendimiento de toda la base de código (API, Web, Flutter, Docs)
+2. **Conexión Web Frontend al API** — AuthContext, ProtectedRoute, 8 React Query hooks, 14 páginas conectadas
+3. **Módulos API Admin y Empresa** — 8 endpoints nuevos para paneles admin/empresa
+4. **Soporte SQLite** — Schema dual, setup script, GeoRepository SQLite, seed dual-DB
+5. **Bug Fixes** — 7 bugs corregidos (Places filter, Events pagination, Categories icons, Dark mode, User dropdown)
+6. **Handoff documentado** — Este archivo actualizado con todo el trabajo
+
+### Bug Fixes de Sesión 2 (2026-07-17 — Correcciones Finales)
+
+Se identificaron y corrigieron 3 bugs raiz adicionales reportados por el usuario:
+
+#### Bug 1: Error al Crear Lugar ("Error al guardar el lugar")
+- **Causa raiz:** `CreatePlaceDto` no incluía campos `instagram`, `facebook`, `tiktok` que el frontend enviaba. Con `forbidNonWhitelisted: true` en ValidationPipe, la API rechazaba con 400.
+- **Fix:** Agregados los 3 campos al DTO (`api/src/modules/places/dto/index.ts`).
+
+#### Bug 2: Lugares Ocultos No Aparecen en Filtrado
+- **Causa raiz:** Cuando el admin seleccionaba "Todos los estados", el frontend enviaba `isActive: undefined`, y el backend por defecto filtraba `isActive: true`. Los lugares ocultos nunca aparecían.
+- **Fix:** Agregado parámetro `allStatuses` al `QueryPlacesDto` y al service. Frontend envía `allStatuses: true` cuando el filtro es "Todos".
+
+#### Bug 3: Dark Mode — Zonas Blancas sin Adaptar (15 archivos)
+- **Causa raiz:** 7 componentes UI compartidos y 8 páginas (7 admin + 1 empresa) no tenían clases `dark:` de Tailwind.
+- **Archivos UI corregidos:** `Modal.tsx`, `ConfirmDialog.tsx`, `Input.tsx`, `Select.tsx`, `Textarea.tsx`, `EmptyState.tsx`, `Pagination.tsx`
+- **Archivos páginas corregidos:** `Places.tsx`, `Settings.tsx` (reescrito completo), `Categories.tsx`, `Users.tsx`, `Reviews.tsx`, `Events.tsx`, `Promotions.tsx`, `Dashboard.tsx` (empresa)
+
+#### Bug 4 (Corregido por usuario): class-transformer Boolean Conversion
+- **Causa raiz:** `@Type(() => Boolean)` de class-transformer usa `!!value` internamente. En JavaScript `!!"false"` = `true` (string no vacío es truthy). Cuando el frontend enviaba `?isActive=false`, el ValidationPipe convertía `"false"` a `true`, y el service filtraba `where.isActive = true` en vez de `false`.
+- **Fix correcto (del usuario):** Cambiar `@Transform(({ value }) => ...)` por `@Transform(({ obj }) => ...)`. `obj` accede al objeto raw/original del query parameter ANTES de que `enableImplicitConversion` lo transforme. Esto asegura leer el string `"false"` tal cual viene del URL.
+- **Lección aprendida:** Con `enableImplicitConversion: true` en NestJS ValidationPipe, `@Transform(({ value }) => ...)` recibe el valor YA transformado. Usar `{ obj }` para acceder al valor original.
+
+#### Bug 5 (Corregido por usuario): CUID vs UUID Validation
+- **Causa raiz:** `CreatePlaceDto` usaba `@IsUUID()` para validar `categoryId` y `ownerId`, pero la DB genera IDs con CUID (`@default(cuid())` en Prisma schema), no UUIDs. Los CUIDs (formato `clxx...`) no pasan la validación UUID, causando error 400 al crear lugares.
+- **Fix correcto (del usuario):** Reemplazado `@IsUUID()` por `@IsString()` en 3 campos: `categoryId` (CreatePlaceDto), `ownerId` (CreatePlaceDto), `categoryId` (QueryPlacesDto).
+- **Lección aprendida:** Cuando Prisma usa `@default(cuid())`, NUNCA usar `@IsUUID()` en los DTOs. Siempre usar `@IsString()` para campos de ID.
+
+### Verificación Final
+
+| Verificación | Estado |
+|-------------|--------|
+| API TypeScript Build | ✅ 0 errores |
+| Web TypeScript Build | ✅ 0 errores |
+| Web Production Build | ✅ 26.5s, 279KB main bundle |
+| Tests Web (Vitest) | ✅ 71/71 passing |
+| Tests API (Jest) | ✅ 86/86 passing |
+| Seed SQLite | ✅ 5 users, 10 categories, 12 places, 6 events, 5 promotions, 10 reviews |
 
 ---
 
@@ -39,10 +91,6 @@ Desarrollar **BoliviaExperience**, una plataforma turística multiplataforma que
 - [x] **2.7 Diagramas UML** — Use Cases (3 actores, 20+ casos), Clases (7 entidades + 1 value object), Secuencias (Login Google, Búsqueda, Crear Opinión), Despliegue GCP
 - [x] **2.8 Estrategia de Escalabilidad** — 5 niveles (100 → 1M usuarios), costos por nivel, optimizaciones, métricas objetivo, puntos de escalamiento (triggers); ADR-225 (escalabilidad híbrida)
 
----
-
-## Not Yet Done
-
 ### Entregable 3: Diseño UX/UI ✅
 
 - [x] **3.1 Sistema de diseño** — Design Tokens completos: paleta 10 colores primarios, 10 secundarios, 5 éxito/error/warning, 10 neutros; tipografía Inter con 13 escalas; espaciado base 8px; elevación 6 niveles; bordes 8 radios; transiciones 5 duraciones; iconografía 7 tamaños; breakpoints responsivos; z-index 10 niveles; tokens de componentes (botones, inputs, cards, avatars)
@@ -57,6 +105,7 @@ Desarrollar **BoliviaExperience**, una plataforma turística multiplataforma que
 - [x] **3.10 Estados Especiales** — Skeleton loading (3 patrones: place card, detalle, resenas); empty states (5 tipos con patrón reutilizable); error states (7 tipos: network, general, save, 404, server, rate limit, auth); offline mode (banner, datos disponibles, cache strategy, sync); loading states (inline, fullscreen, con progreso); success states (3 tipos); ConnectivityService Flutter; OfflineAwareWidget; ErrorHandler; ilustraciones requeridas (12); mensajes de error por código
 
 ### Entregable 4: Modelo de Base de Datos ✅
+
 - [x] 4.1 Modelo Entidad-Relación completo (14 entidades)
 - [x] 4.2 Modelo físico detallado (13 tablas)
 - [x] 4.3 DDL SQL completo (extensiones, tablas, triggers, vistas, RLS)
@@ -67,13 +116,53 @@ Desarrollar **BoliviaExperience**, una plataforma turística multiplataforma que
 - [x] 4.8 Estrategia de backups (4 tipos, 5 escenarios)
 
 ### Entregable 5: Backend Completo (NestJS) ✅
+
 - [x] 5.1-5.18 Módulos y funcionalidades del backend (11 módulos, 50+ endpoints)
 
 ### Entregable 6: Frontend Flutter (App Móvil) ✅
+
 - [x] 6.1-6.17 Pantallas e integraciones de la app (13 pantallas, 5 tabs, themes)
 
 ### Entregable 7: Frontend Web (React) ✅
+
 - [x] 7.1-7.7 Panel Admin (8 páginas) y Panel Empresa (6 páginas)
+
+### NUEVO: Conexión Web Frontend al API Backend ✅
+
+- [x] **AuthContext** — Contexto de autenticación global con JWT, localStorage persistence, decode de role
+- [x] **ProtectedRoute** — Route guards por role (admin/empresa), redirección automática
+- [x] **useAuth hook** — Login mutation con React Query, manejo de errores 401/403
+- [x] **8 React Query hooks** — useUsers, usePlaces, useCategories, useReviews, useEvents, usePromotions, useDashboard, useEmpresa
+- [x] **LoginPage real** — Conectado a `POST /auth/login`, manejo de errores, loading states
+- [x] **14 páginas conectadas** — Todas las páginas admin (8) y empresa (6) usan datos reales del API
+- [x] **API service corregido** — Endpoints admin/empresa agregados, refresh token, upload photos
+- [x] **Layouts actualizados** — AdminLayout y EmpresaLayout usan AuthContext para user info y logout
+- [x] **TypeScript build limpio** — 0 errores de compilación, build exitoso (344KB JS, 99KB gzipped)
+
+### NUEVO: Módulos API Admin y Empresa ✅
+
+- [x] **AdminModule** — Controller + Service + DTOs para endpoints admin-only
+  - `GET /admin/users` — Lista usuarios paginada con search y role filter
+  - `GET /admin/reviews` — Lista reseñas paginada con status filter
+  - `GET /admin/dashboard` — Estadísticas: total users, places, reviews, events, recent data
+- [x] **EmpresaModule** — Controller + Service + DTOs para business owners
+  - `GET /empresa/place` — Place del owner actual
+  - `PUT /empresa/place` — Actualizar place del owner
+  - `GET /empresa/reviews` — Reseñas del place del owner
+  - `GET /empresa/analytics` — Estadísticas del place
+  - `GET /empresa/dashboard` — Stats + recent reviews
+
+### NUEVO: Soporte SQLite (Desarrollo sin Docker) ✅
+
+- [x] **schema.sqlite.prisma** — Schema compatible con SQLite (cuid en vez de gen_random_uuid, Float en vez de Decimal, String en vez de String[], String en vez de DateTime para hours)
+- [x] **setup-db.js** — Script de conmutación PostgreSQL ↔ SQLite con migración y seed automático
+- [x] **Seed dual-DB** — Seed compatible con ambos proveedores (detección via DATABASE_URL)
+- [x] **GeoRepository SQLite** — Haversine implementado en JavaScript para SQLite (sin raw SQL PostgreSQL)
+- [x] **Services corregidos** — Reviews service (photos como JSON string), Search service (sin mode: 'insensitive'), PaginationDto defaults
+
+---
+
+## Not Yet Done
 
 ### Entregable 8: Infraestructura DevOps
 - [ ] 8.1-8.10 Docker, CI/CD, GCP, monitoreo
@@ -112,7 +201,224 @@ Firebase Admin SDK intenta parsear `FIREBASE_PRIVATE_KEY` en el constructor, cra
 ### HttpModule movido de @nestjs/common
 En NestJS 10, `HttpModule` se movió a `@nestjs/axios`. El import original causaba error TS. **Solución**: `npm install @nestjs/axios` + corregir import en `weather.module.ts`.
 
+### Endpoints faltantes en API vs Web
+El `web/src/services/api.ts` original definía endpoints que no existían en el backend (`/admin/users`, `/admin/reviews`, `/admin/dashboard`, `/empresa/place`, `/empresa/reviews`, `/empresa/analytics`). **Solución**: Crear módulos Admin y Empresa en el API con los endpoints requeridos.
+
+### SQLite: mode 'insensitive' no soportado
+SQLite no soporta `mode: 'insensitive'` en los filtros `contains` de Prisma. **Solución**: Eliminar `mode: 'insensitive'` de las queries de search. Para búsqueda case-insensitive real, usar raw SQL con `LOWER()`.
+
+### SQLite: String[] no soportado
+SQLite no soporta arrays PostgreSQL (`String[]`). El campo `photos` en Review es `String[]` en PostgreSQL pero `String` en SQLite. **Solución**: Store como JSON string serializado en ambos casos. El seed y services manejan la conversión.
+
+### Places: Ocultar sin poder ver ocultos
+El endpoint `GET /places` hardcodeaba `isActive: true`, por lo que al "ocultar" un lugar desaparecía completamente. **Solución**: Agregar parámetro `isActive` opcional al `QueryPlacesDto` y filtro de estado en la UI (Todos/Activos/Ocultos).
+
+### class-transformer: @Transform({value}) vs @Transform({obj}) con enableImplicitConversion
+Cuando NestJS ValidationPipe tiene `enableImplicitConversion: true`, class-transformer ejecuta `plainToInstance()` que aplica transformaciones de tipo ANTES de que `@Transform` reciba el valor. `@Type(() => Boolean)` convierte `"false"` a `true` via `!!value` (JavaScript: todo string no vacío es truthy). Usar `@Transform(({ value }) => ...)` recibe el valor YA transformado, no el raw string. **Solución correcta**: Usar `@Transform(({ obj }) => ...)` que accede al objeto raw/original del query parameter ANTES de cualquier transformación implícita. Esto aplica para cualquier booleano en query params con `enableImplicitConversion: true`.
+
+### CUID vs UUID: @IsUUID() rompe validación con Prisma cuid
+Prisma genera IDs con `@default(cuid())` que producen CUIDs (formato `clxx...`), no UUIDs. Usar `@IsUUID()` en DTOs para validar estos campos causa error 400 de validación porque los CUIDs no pasan la regex UUID. **Solución**: Siempre usar `@IsString()` para campos de ID cuando la DB usa CUIDs. Solo usar `@IsUUID()` cuando el schema usa `@default(uuid())` o `gen_random_uuid()`.
+
+### Places: Filtro de categoría no funcionaba
+El frontend enviaba el parámetro `category` pero el API esperaba `categoryId`. **Solución**: Corregir el hook `usePlaces` para enviar `categoryId` en lugar de `category`.
+
+### Promotions: Array plano vs PaginatedResponse
+`PromotionsService.findAll()` y `findActive()` retornaban un array plano de Prisma, no un `PaginatedResponse`. El frontend esperaba `data?.data` y `data?.meta` que no existían en un array (arrays no tienen propiedad `.data`). **Solución**: Retornar `PaginatedResponse` con paginación y filtro opcional `placeId`.
+
+### PaginationDto skip getter con enableImplicitConversion
+El getter `skip` en `PaginationDto` usaba `this.page` y `this.limit`, pero con `enableImplicitConversion: true` y `class-transformer`, las propiedades podían no estar transformadas cuando el getter se ejecutaba. **Solución**: Calcular `skip` manualmente en cada service `(page - 1) * limit` en vez de usar el getter del DTO.
+
+### Events: Dashboard mostraba datos pero página no
+El endpoint `GET /events` retornaba un array plano sin paginación, pero el frontend esperaba formato `{ data: [...], meta: {...} }`. **Solución**: Agregar paginación al endpoint con `PaginatedResponse`.
+
+### Categories: Iconos mostraban texto en vez de emoji
+El seed usaba strings como "restaurant", "hotel" para iconos, pero el frontend solo renderizaba el texto. **Solución**: Crear mapeo `iconMap` que convierte strings a emoji (restaurant→🍽️, hotel→🏨, etc.).
+
 ---
+
+### NUEVO: Fix Estilos Web (Tailwind CSS) ✅
+
+- [x] **postcss.config.js** — Archivo faltante necesario para que Vite procese los `@tailwind` directives con PostCSS. Sin este archivo, el CSS output contenía `@tailwind base;@tailwind components;@tailwind utilities;` sin procesar (1320 bytes vs 23KB+ correctos)
+- [x] **tailwind.config.js** — Agregados colores semánticos (border, input, ring, background, foreground, destructive, muted, accent, popover, card) para compatibilidad con CSS variables shadcn/ui
+- [x] **Build CSS verificado** — CSS procesado correctamente con todas las utilidades Tailwind
+
+### NUEVO: Componentes UI Base ✅
+
+- [x] **Modal** (`components/ui/Modal.tsx`) — Componente modal reutilizable con overlay, cierre por Escape, tamaños sm/md/lg/xl
+- [x] **ConfirmDialog** (`components/ui/ConfirmDialog.tsx`) — Diálogo de confirmación con variantes danger/warning, loading state
+- [x] **DataTable** (`components/ui/DataTable.tsx`) — Tabla de datos con búsqueda, sorting, renderizado custom por columna
+- [x] **Pagination** (`components/ui/Pagination.tsx`) — Paginación reutilizable con ellipsis, soporte total/limit
+- [x] **Skeleton** (`components/ui/Skeleton.tsx`) — Componente de carga animada
+- [x] **EmptyState** (`components/ui/EmptyState.tsx`) — Estado vacío con icono, título, descripción y acción opcional
+- [x] **Input** (`components/ui/Input.tsx`) — Input con label, error, helper text
+- [x] **Select** (`components/ui/Select.tsx`) — Select con label, error, opciones, placeholder
+- [x] **Textarea** (`components/ui/Textarea.tsx`) — Textarea con label, error
+- [x] **LoadingSpinner** (`components/ui/LoadingSpinner.tsx`) — Spinner con variantes sm/md/lg + LoadingPage + LoadingCard
+
+### NUEVO: Toast Notifications (sonner) ✅
+
+- [x] **sonner** instalado y configurado en `main.tsx` con `<Toaster position="top-right" richColors closeButton />`
+- [x] **Toasts en CRUD Admin** — Success/error en create, update, delete de Categories, Events, Places, Promotions, Users
+- [x] **Toasts en Panel Empresa** — Success/error en Place update, Reviews respond, Promotions CRUD, Photos upload/delete
+
+### NUEVO: CRUD Completo Admin ✅
+
+- [x] **Categories** — Modal create/edit con formulario (name, nameEn, icon, slug, descriptions, displayOrder), delete con ConfirmDialog
+- [x] **Events** — Modal create/edit con formulario (name, descriptions, dates, location, coordinates, category, photoUrl), tabla con paginación, delete
+- [x] **Places** — Modal create/edit con formulario completo (name, descriptions, address, phone, category, coordinates, social media, isFeatured), grid con fotos, toggle status, delete
+- [x] **Promotions** — Modal create/edit con formulario (title, descriptions, discount, dates, photoUrl), select de place, tabla con paginación, delete
+- [x] **Users** — Modal edit role (select admin/empresa/usuario), filtros por rol, paginación, search
+
+### NUEVO: Panel Empresa CRUD ✅
+
+- [x] **Promotions** — Modal create/edit con formulario completo, cards con gradientes, delete con ConfirmDialog
+- [x] **Place** — Toast agregado en save exitoso/error
+- [x] **Reviews** — Toast agregado en respuesta enviada/error
+- [x] **Photos** — Toast agregado en upload exitoso/error y delete
+
+### NUEVO: Dashboards con Recharts ✅
+
+- [x] **Admin Dashboard** — BarChart de distribución de calificaciones, PieChart de distribución por rol, stats cards, listas de reseñas/usuarios recientes
+- [x] **Empresa Stats** — PieChart de estado de reseñas, gauge SVG de rating promedio, stats cards, resumen detallado, consejos
+
+### NUEVO: UX Mejoras ✅
+
+- [x] **Lazy Loading** — React.lazy + Suspense para 14 rutas, chunks divididos (275KB principal vs 835KB antes). Cada página se carga bajo demanda
+- [x] **Refresh Token Automático** — Interceptor de Axios con cola de requests fallidos, refresh silencioso, redirect a login solo si refresh falla
+- [x] **Error Boundary** — Componente de clase con UI de error amigable, botón retry, detalles expandibles
+- [x] **Dark Mode Toggle** — ThemeContext con persistencia en localStorage, detección de preferencia del sistema, toggle en AdminLayout y EmpresaLayout
+- [x] **userId en localStorage** — Para soporte de refresh token automático
+
+### NUEVO: Tests (Vitest + React Testing Library) ✅
+
+- [x] **Setup** — Vitest 4.1 + @testing-library/react + @testing-library/jest-dom + jsdom + @testing-library/user-event instalados. Scripts: `npm run test`, `npm run test:watch`, `npm run test:coverage`
+- [x] **vitest.config.ts** — Configurado con globals: true, environment: jsdom, alias @/src, coverage v8
+- [x] **setup.ts** — Mock de `window.matchMedia` para tests de ThemeContext
+- [x] **tsconfig.test.json** — Extendido del tsconfig principal, excluido de build de producción
+- [x] **lib/utils.test.ts** — 5 tests: cn merge, dedup tailwind, condicionales, empty, null/undefined
+- [x] **components/Modal.test.tsx** — 7 tests: open/close, Escape key, overlay click, body click, size classes
+- [x] **components/ConfirmDialog.test.tsx** — 9 tests: open/close, labels, confirm/cancel, loading state, variants
+- [x] **components/Pagination.test.tsx** — 9 tests: hidden when 1 page, page info, range, navigation, ellipsis
+- [x] **components/DataTable.test.tsx** — 7 tests: render, empty, search filter, sort, row click, custom render
+- [x] **components/EmptyState.test.tsx** — 4 tests: render, no action, action button, action click
+- [x] **components/ErrorBoundary.test.tsx** — 5 tests: children render, error UI, details, custom fallback, retry
+- [x] **contexts/AuthContext.test.tsx** — 7 tests: initial state, login, localStorage persistence, logout, restore, invalid JSON
+- [x] **contexts/ThemeContext.test.tsx** — 7 tests: default system, set light/dark, localStorage, dark class
+- [x] **services/api.test.ts** — 11 tests: baseURL, timeout, interceptors, API module methods (auth, places, categories, events, promotions, empresa, reviews)
+- [x] **Total: 71 tests, 10 test files, all passing**
+
+### NUEVO: Tests API (Jest + NestJS Testing) ✅
+
+- [x] **Setup** — Jest ya configurado en `package.json` con `ts-jest`, rootDir `src`, testRegex `.*\.spec\.ts$`
+- [x] **auth.service.spec.ts** — 10 tests: register (4), login (4), refreshToken (2)
+- [x] **places.service.spec.ts** — 14 tests: findAll (5), findById (2), create (1), toggleStatus (2), remove (2), addPhoto (1), getPhotos (1)
+- [x] **categories.service.spec.ts** — 8 tests: findAll (2), findBySlug (2), create (1), update (1), remove (1), defined (1)
+- [x] **reviews.service.spec.ts** — 13 tests: findByPlace (2), create (2), update (2), approve (1), respond (1), remove (3), defined (1), notFound (1)
+- [x] **events.service.spec.ts** — 10 tests: findAll (3), findById (2), create (1), update (2), remove (2), defined (1)
+- [x] **promotions.service.spec.ts** — 8 tests: findActive (1), findById (2), create (1), update (2), remove (2), defined (1)
+- [x] **admin.service.spec.ts** — 8 tests: findAllUsers (3), findAllReviews (3), getDashboardStats (1), defined (1)
+- [x] **empresa.service.spec.ts** — 10 tests: getOwnerPlace (2), updateOwnerPlace (2), getOwnerReviews (2), getOwnerStats (2), getOwnerDashboard (2), defined (1)
+- [x] **Total: 86 tests, 8 test files, all passing**
+
+### NUEVO: Bug Fixes (17 bugs) ✅
+
+- [x] **Places: Ocultar/Activar** — Agregado filtro de estado (Todos/Activos/Ocultos) en el panel admin. Antes al "ocultar" un lugar desaparecía sin poder verlo. Ahora se puede filtrar por estado y reactivar lugares ocultos.
+- [x] **Places: Filtro de categoría** — Corregido nombre de parámetro (`category` → `categoryId`) en el hook usePlaces. Antes el filtro de categoría no retornaba resultados porque el API esperaba `categoryId`.
+- [x] **Places: Búsqueda** — Corregida búsqueda: eliminado `mode: 'insensitive'` (no soportado en SQLite), agregado campo `address` a la búsqueda. Antes buscar por nombre no retornaba resultados.
+- [x] **Events: Paginación** — Agregado soporte de paginación al endpoint `GET /events` en el API. Antes el dashboard mostraba 6 eventos pero la página de eventos mostraba "no hay eventos" porque la API retornaba array plano sin formato paginado.
+- [x] **Categories: Iconos** — Agregado mapeo de iconos (text strings → emoji): restaurant→🍽️, hotel→🏨, nightlife→ nightlife, coffee→☕, landscape→🏞️, park→🌳, museum→🏛️, shopping_bag→🛍️, sports_soccer→⚽, restaurant_menu→🍴. Antes solo mostraba el texto del icono.
+- [x] **Dark Mode** — Actualizado AdminLayout, EmpresaLayout, LoginPage y AdminDashboard con clases `dark:` de Tailwind. Soporta toggle light/dark con persistencia en localStorage y detección de preferencia del sistema.
+- [x] **User Dropdown** — Agregado menú desplegable en el avatar del usuario (AdminLayout y EmpresaLayout) con información del usuario (nombre, email, role) y botón de cerrar sesión. Antes el área del usuario no hacía nada al hacer click.
+- [x] **CreatePlaceDto: Campos faltantes** — Agregados `instagram`, `facebook`, `tiktok` al `CreatePlaceDto`. El Prisma schema los tenía pero el DTO no, causando error 400 por `forbidNonWhitelisted`.
+- [x] **Places: allStatuses param** — Agregado parámetro `allStatuses` al `QueryPlacesDto` para permitir ver todos los lugares (activos + ocultos) desde el admin.
+- [x] **Dark Mode: UI components** — Agregadas clases `dark:` a los 7 componentes UI compartidos: Modal, ConfirmDialog, Input, Select, Textarea, EmptyState, Pagination.
+- [x] **Dark Mode: All admin + empresa pages** — Agregadas clases `dark:` a Places, Settings (reescrito), Categories, Users, Reviews, Events, Promotions, y empresa Dashboard. 15 archivos corregidos en total.
+- [x] **class-transformer Boolean bug** — Corregido `@Transform` en `isActive` y `allStatuses` para usar `{ obj }` en vez de `{ value }`. Con `enableImplicitConversion: true`, `{ value }` recibía el valor ya transformado por `!!value` que convertía `"false"` a `true`. `{ obj }` accede al raw query parameter.
+- [x] **CUID vs UUID validation** — Reemplazado `@IsUUID()` por `@IsString()` en `categoryId` y `ownerId` de `CreatePlaceDto` y `categoryId` de `QueryPlacesDto`. Prisma usa CUIDs (`clxx...`), no UUIDs, y `@IsUUID()` rechazaba los IDs.
+- [x] **Promotions: No aparecen después de crear** — `findAll()` y `findActive()` retornaban array plano de Prisma en vez de `PaginatedResponse`. El frontend esperaba `data?.data` y `data?.meta` que no existían en un array. Fix: retornar `PaginatedResponse` con paginación y filtro opcional `placeId`.
+- [x] **Promotions: Boolean `all` sin @Transform** — `QueryPromotionsDto.all` era `@IsBoolean()` sin `@Transform`. Con `enableImplicitConversion: true`, `Boolean("false")` = `true`. Fix: agregar `@Transform` con `{ obj }`.
+- [x] **Events: Boolean `upcoming` sin @Transform** — Mismo bug que promotions. `QueryEventsDto.upcoming` sin `@Transform`. Fix: agregar `@Transform` con `{ obj }`.
+- [x] **Admin: mode: 'insensitive' no soportado en SQLite** — `findAllUsers` usaba `mode: 'insensitive'` que es feature de PostgreSQL. SQLite no lo soporta y lanzaba error 500. Fix: eliminar `mode: 'insensitive'`.
+- [x] **Empresa Promotions: No filtra por lugar** — Panel empresa traía TODAS las promociones sin filtrar por `placeId`. Fix: pasar `placeId` del hook `useEmpresaPlace` al hook de promotions.
+- [x] **Dark Mode: Panel empresa completo** — 5 páginas empresa sin clases `dark:`: Place, Reviews, Promotions, Stats, Photos. Fix: agregar dark mode a todas.
+- [x] **Pagination skip getter** — `PaginationDto.skip` usaba getter que podía fallar con `enableImplicitConversion`. Fix: calcular `skip` manualmente en services (places, admin, empresa).
+
+### NUEVO: Separación de Portales (Admin/Business) ✅
+
+**Problema:** Un solo login `/login` aceptaba credenciales de admin y empresa. El panel admin debería ser secreto y solo accesible por URL oculta.
+
+#### Arquitectura Implementada
+
+```
+/                           → Landing Page pública
+/business/login             → Login exclusivo para empresas
+/business/register          → Auto-registro de empresas (pendiente de aprobación)
+/admin-panel/login          → Login exclusivo para admins (URL secreta)
+/business/*                 → Portal Business (dashboard, lugar, fotos, reseñas, promos)
+/admin-panel/*              → Panel Admin (dashboard, empresas, lugares, usuarios, etc.)
+```
+
+#### Archivos Creados
+
+| Archivo | Descripción |
+|---------|-------------|
+| `web/src/pages/LandingPage.tsx` | Landing page pública con hero, features, CTA, footer |
+| `web/src/pages/business/BusinessLoginPage.tsx` | Login exclusivo para empresas (rechaza admins) |
+| `web/src/pages/business/BusinessRegisterPage.tsx` | Auto-registro con formulario completo + estado pendiente |
+| `web/src/pages/admin/Businesses.tsx` | Gestión de empresas (aprobar/suspender) |
+| `web/src/components/layout/BusinessLayout.tsx` | Layout del portal business con sidebar, topbar, dark mode |
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `web/src/App.tsx` | Nueva estructura de rutas separadas |
+| `web/src/hooks/useAuth.ts` | `useLogin(expectedRole?)` - rechaza roles incorrectos |
+| `web/src/pages/admin/AdminLoginPage.tsx` | Usa `useLogin('admin')` |
+| `web/src/pages/business/BusinessLoginPage.tsx` | Usa `useLogin('empresa')` |
+| `web/src/services/api.ts` | Agregados endpoints `registerBusiness`, `getBusinesses`, `approveBusiness`, `suspendBusiness` |
+| `api/prisma/schema.prisma` | Agregados campos `businessName`, `businessPhone`, `approvalStatus` |
+| `api/src/modules/auth/auth.service.ts` | Nuevo método `registerBusiness()` con transacción (user + place) |
+| `api/src/modules/auth/auth.controller.ts` | Nuevo endpoint `POST /auth/register-business` |
+| `api/src/modules/auth/dto/index.ts` | Nuevo DTO `RegisterBusinessDto` |
+| `api/src/modules/admin/admin.service.ts` | Nuevos métodos `findBusinesses()`, `approveBusiness()`, `suspendBusiness()` |
+| `api/src/modules/admin/admin.controller.ts` | Nuevos endpoints `GET /admin/businesses`, `PATCH approve/suspend` |
+
+#### Flujo de Seguridad
+
+| Portal | URL Login | Rol Permitido | Admin Intenta Login |
+|--------|-----------|---------------|---------------------|
+| Business | `/business/login` | empresa | Error: "no tiene acceso" |
+| Admin | `/admin-panel/login` | admin | OK |
+| Admin | `/admin-panel/login` | empresa | Error: "no tiene permisos" |
+
+#### Flujo de Registro de Empresas
+
+1. Empresa visita Landing Page → click "Registrar mi negocio"
+2. Completa formulario (nombre, email, contraseña, negocio, categoría, dirección)
+3. Backend crea User (`role: empresa`, `isActive: false`, `approvalStatus: pending`) + Place (`isActive: false`)
+4. Mensaje: "Registro exitoso, pendiente de aprobación"
+5. Admin ve la empresa en `/admin-panel/businesses` con estado "Pendiente"
+6. Admin aprueba → User y Place se activan
+7. Empresa puede login en `/business/login`
+
+### Archivos Modificados (Bug Fixes)
+
+```
+api/src/modules/places/places.service.ts    # Agregado filtro isActive, eliminado mode:insensitive
+api/src/modules/places/dto/index.ts         # Agregado campo isActive al QueryPlacesDto
+api/src/modules/events/events.controller.ts # Agregado paginación con QueryEventsDto
+api/src/modules/events/events.service.ts    # Retorno paginado con PaginatedResponse
+
+web/src/hooks/usePlaces.ts                  # Mapeo category→categoryId, isActive
+web/src/pages/admin/Places.tsx              # Agregado filtro de estado (Todos/Activos/Ocultos)
+web/src/pages/admin/Categories.tsx          # Mapeo de iconos text→emoji
+web/src/pages/admin/Dashboard.tsx           # Dark mode classes
+web/src/pages/admin/Events.tsx              # Sin cambios (usa hook actualizado)
+web/src/pages/LoginPage.tsx                 # Dark mode classes
+web/src/components/layout/AdminLayout.tsx    # Dark mode + user dropdown menu
+web/src/components/layout/EmpresaLayout.tsx  # Dark mode + user dropdown menu
+```
 
 ## Key Decisions
 
@@ -132,144 +438,121 @@ En NestJS 10, `HttpModule` se movió a `@nestjs/axios`. El import original causa
 | Prisma 5 sobre Prisma 7 | Prisma 7 rompió compatibilidad (sin URL en schema, requiere adapter). Prisma 5 es estable | - |
 | Haversine sobre PostGIS | PostGIS no disponible en schema actual. Haversine via SQL raw funciona sin extensión | - |
 | Firebase lazy init | Firebase crashea con credenciales placeholder. Lazy init permite desarrollo sin Firebase real | - |
+| **CONEXIÓN WEB AL API** |
+| React Query sobre Redux/Zustand | Server state management nativo, cache automático, mutations integradas, menos boilerplate | - |
+| AuthContext sobre Zustand/Redux | Context nativo de React suficiente para auth state, sin dependencias extra | - |
+| Módulos Admin/Empresa separados | Separación clara de responsabilidades, RBAC por role, endpoints específicos por panel | - |
+| **SQLite SUPPORT** |
+| SQLite para desarrollo local | Sin necesidad de Docker para desarrollo, setup inmediato, seed rápido | - |
+| Dual-DB schema | Mantener PostgreSQL para producción, SQLite para desarrollo, setup-db.js para conmutación | - |
+| Haversine en JS para SQLite | SQLite no tiene funciones trigonométricas nativas, implementación en JavaScript es portable | - |
 
 ---
 
 ## Current State
 
-### Archivos Creados
+### Archivos Creados/Modificados en Esta Sesión
 
 ```
-bolivia-experience/
-├── README.md                                    # Actualizado con entregables 1-3
-├── handoff.md                                   # Este archivo
-├── docs/
-│   ├── business/                                # 9 archivos (~208 KB)
-│   │   ├── 1.1-business-model-canvas.md
-│   │   ├── 1.2-lean-canvas.md
-│   │   ├── 1.3-analisis-competencia-benchmark.md
-│   │   ├── 1.4-analisis-foda-pestel.md
-│   │   ├── 1.5-mvp-hipotesis-metricas-validacion.md
-│   │   ├── 1.6-kpis-okrs-north-star.md
-│   │   ├── 1.7-proyeccion-financiera.md
-│   │   ├── 1.8-estrategia-go-to-market.md
-│   │   └── 1.9-roadmap-completo.md
-│   │
-│   ├── architecture/                            # 8 archivos (~245 KB)
-│   │   ├── 2.1-ads-stack-tecnologico.md         # 20 ADRs del stack
-│   │   ├── 2.2-diagramas-c4.md                  # C4 Level 1-4
-│   │   ├── 2.3-arquitectura-fislogica-cloud.md  # Lógica, Física, GCP
-│   │   ├── 2.4-arquitectura-seguridad.md        # OWASP, JWT, RBAC
-│   │   ├── 2.5-arquitectura-datos.md            # Modelo ER, SQL, PostGIS
-│   │   ├── 2.6-arquitectura-api.md              # Endpoints, convenciones
-│   │   ├── 2.7-diagramas-uml.md                 # Use Case, Classes, Sequence
-│   │   └── 2.8-estrategia-escalabilidad.md      # 5 niveles de escala
-│   │
-│   ├── design/                                  # 10 archivos (~180 KB)
-│   │   ├── 3.1-design-tokens.md                 # Paleta, tipografía, espaciado
-│   │   ├── 3.2-component-library.md             # Atomic Design: atoms-molecules-organisms
-│   │   ├── 3.3-dark-light-mode.md               # Dark/Light Mode completo
-│   │   ├── 3.4-wireframes-app-movil.md          # 25 pantallas en ASCII wireframe
-│   │   ├── 3.5-wireframes-panels-web.md         # Panel Admin + Panel Empresa
-│   │   ├── 3.6-user-flow.md                     # Flujos por actor
-│   │   ├── 3.7-customer-journey-map.md          # Journey maps por persona
-│   │   ├── 3.8-navigation-map.md                # Site map + rutas Flutter
-│   │   ├── 3.9-microinteracciones.md            # Animaciones y transiciones
-│   │   └── 3.10-estados-especiales.md           # Error, vacío, offline, skeleton
-│   │
-│   ├── database/                                # 8 archivos (~120 KB)
-│   │   ├── 4.1-modelo-er-completo.md            # 14 entidades, relaciones, restricciones
-│   │   ├── 4.2-modelo-fisico-detallado.md       # 13 tablas con tipos y volúmenes
-│   │   ├── 4.3-ddl-sql-completo.md              # DDL completo, triggers, vistas, RLS
-│   │   ├── 4.4-adr-postgis-prisma.md            # Schema Prisma + GeoRepository
-│   │   ├── 4.5-estrategia-migraciones.md        # Prisma Migrate + rollback
-│   │   ├── 4.6-seeds-datos.md                   # Seeds producción/desarrollo/testing
-│   │   ├── 4.7-optimizacion-consultas.md        # 8 consultas críticas optimizadas
-│   │   └── 4.8-estrategia-backups.md            # 4 tipos, 5 escenarios recuperación
-│   │
-│   ├── backend/                                 # 1 archivo (~50 KB)
-│   │   └── 5-backend-completo.md                # Documentación completa del backend
-│   │
-│   ├── frontend/                                # 2 archivos (~50 KB)
-│   │   ├── 6-frontend-flutter.md                # Documentación completa del frontend Flutter
-│   │   └── 7-frontend-web.md                    # Documentación completa del frontend Web
-│
-api/                                             # Código fuente backend
-├── package.json                                 # Dependencias y scripts
-├── tsconfig.json                                # Configuración TypeScript
-├── nest-cli.json                                # Configuración NestJS
-├── .env.example                                 # Variables de entorno
+api/                                             # Código fuente backend (ACTUALIZADO)
+├── package.json                                 # Agregados scripts: db:sqlite, db:postgres, db:setup
+├── .env                                         # NUEVO: Config SQLite para desarrollo
+├── .env.example                                 # ACTUALIZADO: Toggle DB_PROVIDER
+├── setup-db.js                                  # NUEVO: Script de conmutación PostgreSQL ↔ SQLite
 ├── prisma/
-│   ├── schema.prisma                            # 13 modelos Prisma
-│   └── migrations/                              # Migraciones Prisma
+│   ├── schema.prisma                            # Cambia según modo (SQLite o PostgreSQL)
+│   ├── schema.sqlite.prisma                     # NUEVO: Schema SQLite compatible
+│   ├── schema.postgres.prisma                   # NUEVO: Backup del schema PostgreSQL
+│   └── seed.ts                                  # ACTUALIZADO: Compatible con ambos DB
 └── src/
-    ├── main.ts                                  # Entry point + Swagger
-    ├── app.module.ts                            # Módulo raíz
-    ├── config/configuration.ts                  # Config centralizada
-    ├── prisma/                                  # PrismaModule global
-    ├── common/                                  # Guards, Filters, DTOs
-    └── modules/                                 # 11 módulos
-        ├── auth/                                # Auth (Firebase + JWT)
-        ├── users/                               # Users CRUD
-        ├── places/                              # Places + GeoRepository
-        ├── categories/                          # Categories CRUD
-        ├── reviews/                             # Reviews + approve/respond
-        ├── favorites/                           # Favorites toggle
-        ├── map/                                 # Map (nearby, cluster, bounds)
-        ├── search/                              # Search + suggestions
-        ├── events/                              # Events CRUD
-        ├── promotions/                          # Promotions CRUD
-        └── weather/                             # Weather (OpenWeatherMap)
-│
-app/                                             # Código fuente Flutter
-├── pubspec.yaml                                 # Dependencias
-└── lib/
-    ├── main.dart                                # Entry point
-    ├── app.dart                                 # MaterialApp.router
-    ├── config/                                  # Colors, Theme, Router, API
-    ├── core/                                    # Network, Widgets, Error
-    └── features/                                # 9 features
-        ├── auth/                                # Splash, Login
-        ├── home/                                # MainShell, HomeScreen
-        ├── map/                                 # MapScreen (Google Maps)
-        ├── search/                              # ExploreScreen
-        ├── favorites/                           # FavoritesScreen
-        ├── profile/                             # Profile, Edit, Settings
-        ├── places/                              # PlaceDetailScreen
-        ├── events/                              # EventDetailScreen
-        └── reviews/                             # CreateReviewScreen
-│
-web/                                             # Código fuente React
-├── package.json                                 # Dependencias
-├── vite.config.ts                               # Configuración Vite
-├── tailwind.config.js                           # Configuración Tailwind
-└── src/
-    ├── main.tsx                                 # Entry point
-    ├── App.tsx                                  # Router principal
-    ├── services/api.ts                          # Cliente Axios
-    ├── types/index.ts                           # TypeScript interfaces
-    ├── components/layout/                       # AdminLayout, EmpresaLayout
-    └── pages/
-        ├── LoginPage.tsx                        # Login compartido
-        ├── admin/                               # 8 páginas Admin
-        │   ├── Dashboard.tsx                    # KPIs, gráficos
-        │   ├── Users.tsx                        # CRUD usuarios
-        │   ├── Places.tsx                       # Grid lugares
-        │   ├── Reviews.tsx                      # Moderación
-        │   ├── Events.tsx                       # CRUD eventos
-        │   ├── Promotions.tsx                   # Ver promos
-        │   ├── Categories.tsx                   # CRUD categorías
-        │   └── Settings.tsx                     # Configuración
-        └── empresa/                             # 6 páginas Empresa
-            ├── Dashboard.tsx                    # Stats, acciones
-            ├── Place.tsx                        # Editar negocio
-            ├── Reviews.tsx                      # Responder reseñas
-            ├── Promotions.tsx                   # CRUD promos
-            ├── Stats.tsx                        # Estadísticas
-            └── Photos.tsx                       # Gestión fotos
+    ├── app.module.ts                            # ACTUALIZADO: +AdminModule, +EmpresaModule
+    ├── config/configuration.ts                  # Sin cambios
+    ├── modules/
+    │   ├── admin/                               # NUEVO: Módulo admin
+    │   │   ├── admin.module.ts
+    │   │   ├── admin.controller.ts              # GET /admin/users, /admin/reviews, /admin/dashboard
+    │   │   ├── admin.service.ts                 # Queries paginadas, search, filters
+    │   │   └── dto/index.ts                     # AdminUsersDto, AdminReviewsDto
+    │   ├── empresa/                             # NUEVO: Módulo empresa
+    │   │   ├── empresa.module.ts
+    │   │   ├── empresa.controller.ts            # GET/PUT /empresa/place, /empresa/reviews, etc.
+    │   │   ├── empresa.service.ts               # Lógica por owner, stats, dashboard
+    │   │   └── dto/index.ts                     # UpdatePlaceDto, EmpresaReviewsDto
+    │   ├── places/repositories/
+    │   │   └── geo.repository.ts                # ACTUALIZADO: Haversine en JS para SQLite
+    │   ├── reviews/
+    │   │   └── reviews.service.ts               # ACTUALIZADO: photos como JSON string
+    │   └── search/
+    │       └── search.service.ts                # ACTUALIZADO: sin mode 'insensitive'
+    └── common/
+        └── dto/pagination.dto.ts                # Sin cambios (pero now usa defaults en callers)
+
+web/                                             # Código fuente React (ACTUALIZADO)
+├── tsconfig.node.json                           # NUEVO: Config TypeScript para vite.config.ts
+├── src/
+│   ├── main.tsx                                 # ACTUALIZADO: +AuthProvider
+│   ├── App.tsx                                  # ACTUALIZADO: +ProtectedRoute wrappers
+│   ├── index.css                                # Sin cambios
+│   ├── lib/
+│   │   └── utils.ts                             # NUEVO: cn() utility (clsx + tailwind-merge)
+│   ├── contexts/
+│   │   └── AuthContext.tsx                       # NUEVO: Auth context global con JWT
+│   ├── components/
+│   │   ├── ProtectedRoute.tsx                    # NUEVO: Route guards por role
+│   │   └── layout/
+│   │       ├── AdminLayout.tsx                   # ACTUALIZADO: usa useAuth()
+│   │       └── EmpresaLayout.tsx                 # ACTUALIZADO: usa useAuth()
+│   ├── hooks/
+│   │   ├── useAuth.ts                           # NUEVO: Login mutation
+│   │   ├── useUsers.ts                          # NUEVO: React Query hook
+│   │   ├── usePlaces.ts                         # NUEVO: React Query hook
+│   │   ├── useCategories.ts                     # NUEVO: React Query hook
+│   │   ├── useReviews.ts                        # NUEVO: React Query hook
+│   │   ├── useEvents.ts                         # NUEVO: React Query hook
+│   │   ├── usePromotions.ts                     # NUEVO: React Query hook
+│   │   ├── useDashboard.ts                      # NUEVO: React Query hook
+│   │   └── useEmpresa.ts                        # NUEVO: React Query hook
+│   ├── services/
+│   │   └── api.ts                               # ACTUALIZADO: +adminApi, +empresaApi, +upload
+│   ├── pages/
+│   │   ├── LoginPage.tsx                         # ACTUALIZADO: login real con API
+│   │   ├── admin/
+│   │   │   ├── Dashboard.tsx                     # ACTUALIZADO: datos reales + loading
+│   │   │   ├── Users.tsx                         # ACTUALIZADO: paginación + search real
+│   │   │   ├── Places.tsx                        # ACTUALIZADO: grid real + toggle/delete
+│   │   │   ├── Reviews.tsx                       # ACTUALIZADO: approve/reject + filters
+│   │   │   ├── Events.tsx                        # ACTUALIZADO: datos reales + delete
+│   │   │   ├── Promotions.tsx                    # ACTUALIZADO: datos reales + delete
+│   │   │   ├── Categories.tsx                    # ACTUALIZADO: datos reales + delete
+│   │   │   └── Settings.tsx                      # ACTUALIZADO: placeholder funcional
+│   │   └── empresa/
+│   │       ├── Dashboard.tsx                     # ACTUALIZADO: datos reales del owner
+│   │       ├── Place.tsx                         # ACTUALIZADO: editor funcional con API
+│   │       ├── Reviews.tsx                       # ACTUALIZADO: responder reseñas real
+│   │       ├── Promotions.tsx                    # ACTUALIZADO: datos reales + delete
+│   │       ├── Stats.tsx                         # ACTUALIZADO: stats reales del API
+│   │       └── Photos.tsx                        # ACTUALIZADO: upload real de fotos
 ```
 
-**Total**: 38 archivos de documentación + 40 archivos código backend + 20 archivos código Flutter + 20 archivos código React
+### Archivos Existentes (sin cambios)
+
+```
+docs/                                            # 38 archivos de documentación (sin cambios)
+├── business/                                    # 9 archivos
+├── architecture/                                # 8 archivos
+├── design/                                      # 10 archivos
+├── database/                                    # 8 archivos
+├── backend/                                     # 1 archivo
+├── frontend/                                    # 1 archivo
+└── web/                                         # 1 archivo
+
+app/                                             # Código fuente Flutter (sin cambios)
+├── pubspec.yaml
+└── lib/                                         # 46 archivos Dart
+
+docker-compose.yml                               # PostgreSQL + PostGIS (sin cambios)
+README.md                                        # Sin cambios
+```
 
 ### Decisiones Aceptadas (ADRs)
 
@@ -287,14 +570,41 @@ web/                                             # Código fuente React
 | Web panels | React + Vite + TypeScript | React 18 |
 | Backend API | NestJS + TypeScript | NestJS 10 |
 | Base de datos | PostgreSQL + PostGIS | PostgreSQL 15 |
+| Base de datos (dev) | SQLite | via better-sqlite3 |
 | ORM | Prisma | 5.x |
 | Autenticación | Firebase Auth + JWT | — |
+| State Web | React Query | v5 |
+| Auth Web | React Context | — |
 | Almacenamiento | Firebase Storage | — |
 | Mapas | Google Maps SDK | — |
 | Contenedores | Docker + Docker Compose | Docker 24 |
 | CI/CD | GitHub Actions | — |
 | Cloud | Google Cloud Platform | — |
 | Estado Flutter | Riverpod | — |
+
+### Credenciales del Seed
+
+| Email | Password | Role |
+|-------|----------|------|
+| `admin@boliviaexperience.com` | `password123` | admin |
+| `empresa@boliviaexperience.com` | `password123` | empresa |
+| `maria@gmail.com` | `password123` | usuario |
+| `juan@gmail.com` | `password123` | usuario |
+| `ana@gmail.com` | `password123` | usuario |
+
+### Datos del Seed
+
+- 5 usuarios (1 admin, 1 empresa, 3 usuarios)
+- 10 categorías (Restaurantes, Hoteles, Bares, Cafeterías, Atracciones, Parques, Museos, Centros Comerciales, Deportes, Gastronomía)
+- 12 lugares (4 con owner empresa, 8 sin owner)
+- 12 fotos de lugares (URLs de Unsplash)
+- Horarios por place (7 días × 12 places = 84 registros)
+- 6 eventos futuros
+- 5 promociones activas
+- 10 reseñas aprobadas
+- 7 favoritos
+- 5 búsquedas en historial
+- 4 notificaciones
 
 ### Métricas Target (MVP)
 
@@ -311,145 +621,145 @@ web/                                             # Código fuente React
 
 ## Code Context
 
-### Estructura del Backend (NestJS) — Definida en 2.2 y 2.6
-
-```
-api/src/
-├── main.ts
-├── app.module.ts
-├── common/              # Guards, interceptors, pipes, filters
-├── config/              # App, database, Firebase config
-├── modules/
-│   ├── auth/            # Login, register, JWT, Google OAuth
-│   ├── users/           # CRUD usuarios
-│   ├── places/          # CRUD lugares (core)
-│   ├── categories/      # CRUD categorías
-│   ├── reviews/         # Opiniones y calificaciones
-│   ├── favorites/       # Favoritos del usuario
-│   ├── map/             # Geolocalización (PostGIS)
-│   ├── search/          # Búsqueda full-text
-│   ├── events/          # Eventos turísticos
-│   ├── promotions/      # Promociones de negocios
-│   └── weather/         # OpenWeatherMap integration
-└── prisma/              # Schema y migrations
-```
-
-### Estructura de la App (Flutter) — Definida en 2.2
-
-```
-app/lib/
-├── main.dart
-├── app.dart
-├── config/              # Routes, themes, constants
-├── core/                # Error handling, network, usecases
-├── features/
-│   ├── auth/            # Login, register, onboarding
-│   ├── home/            # Home screen
-│   ├── places/          # Ficha del establecimiento
-│   ├── map/             # Mapa interactivo
-│   ├── search/          # Búsqueda y filtros
-│   ├── favorites/       # Favoritos
-│   ├── reviews/         # Opiniones
-│   └── profile/         # Perfil del usuario
-├── injection_container.dart
-└── l10n/                # i18n (es, en)
-```
-
-### Endpoints Principales — Definidos en 2.6
+### Endpoints API (Actualizados)
 
 | Módulo | Endpoints | Auth |
 |--------|-----------|------|
-| Auth | POST /auth/register, /auth/login, /auth/google, /auth/refresh | No/Sí |
-| Places | GET /places, /places/:id, POST, PUT, DELETE | No/Admin |
+| Auth | POST /auth/register, /auth/login, /auth/refresh, /auth/register-business | No |
+| Users | GET /users/me, PUT /users/me, GET /users/:id | JWT |
+| Admin | GET /admin/users, GET /admin/reviews, GET /admin/dashboard, GET /admin/businesses, PATCH /admin/businesses/:id/approve, PATCH /admin/businesses/:id/suspend | Admin |
+| Empresa | GET /empresa/place, PUT /empresa/place, GET /empresa/reviews, GET /empresa/analytics, GET /empresa/dashboard | Empresa |
+| Places | GET /places, GET /places/featured, GET /places/:id, POST, PUT, PATCH /status, DELETE, GET /:id/photos, POST /:id/photos | No/Admin |
+| Categories | GET /categories, GET /categories/:slug, POST, PUT, DELETE | No/Admin |
+| Reviews | GET /places/:id/reviews, POST, PUT, DELETE, PATCH /approve, POST /respond | JWT/Admin |
+| Favorites | GET, POST /:placeId, DELETE /:placeId, GET /check/:placeId | JWT |
 | Map | GET /map/nearby, /map/cluster, /map/bounds | No |
-| Search | GET /search, /search/suggestions | No |
-| Reviews | GET /places/:id/reviews, POST, PUT, DELETE | Sí |
-| Favorites | GET /favorites, POST /favorites/:placeId, DELETE | Sí |
-| Events | GET /events, /events/today | No |
+| Search | GET /search, /search/suggestions, /search/history | No/JWT |
+| Events | GET, GET /today, GET /:id, POST, PUT, DELETE | No/Admin |
+| Promotions | GET, GET /:id, POST /places/:placeId, PUT, DELETE | Empresa/Admin |
 | Weather | GET /weather/current, /weather/forecast | No |
 
-### Modelo de Datos Principal — Definido en 2.5
+### Web Routes (Actualizadas)
 
-```sql
--- Users
-id (UUID PK), email, name, photo_url, country, language, role, firebase_uid, is_active
-
--- Places
-id (UUID PK), name, description, address, phone, website, 
-latitude, longitude, location (GEOGRAPHY PostGIS), 
-rating_avg, rating_count, category_id (FK), owner_id (FK), is_featured, is_active
-
--- Categories
-id (UUID PK), name, name_en, icon, slug, description, display_order
-
--- Reviews
-id (UUID PK), user_id (FK), place_id (FK), rating (1-5), comment, photos[], visit_date, is_approved
-
--- Favorites
-id (UUID PK), user_id (FK), place_id (FK), UNIQUE(user_id, place_id)
-
--- Events
-id (UUID PK), name, description, date_start, date_end, location, photo_url, category
-
--- Promotions
-id (UUID PK), place_id (FK), title, description, discount_percentage, start_date, end_date
+```
+/                           → LandingPage (pública)
+/business/login             → BusinessLoginPage (solo empresa)
+/business/register          → BusinessRegisterPage (auto-registro)
+/business                   → ProtectedRoute (empresa) → BusinessLayout
+  /business/                → EmpresaDashboard
+  /business/place           → EmpresaPlace
+  /business/reviews         → EmpresaReviews
+  /business/promotions      → EmpresaPromotions
+  /business/stats           → EmpresaStats
+  /business/photos          → EmpresaPhotos
+/admin-panel/login          → AdminLoginPage (URL secreta, solo admin)
+/admin-panel                → ProtectedRoute (admin) → AdminLayout
+  /admin-panel/             → AdminDashboard
+  /admin-panel/businesses   → AdminBusinesses (aprobar/suspender empresas)
+  /admin-panel/users        → AdminUsers
+  /admin-panel/places       → AdminPlaces
+  /admin-panel/reviews      → AdminReviews
+  /admin-panel/events       → AdminEvents
+  /admin-panel/promotions   → AdminPromotions
+  /admin-panel/categories   → AdminCategories
+  /admin-panel/settings     → AdminSettings
+*                           → Redirect to /
 ```
 
 ---
 
 ## Resume Instructions
 
-### Estado de Estabilización (2026-06-27)
+### Cómo Probar (SQLite, sin Docker)
 
-| Componente | Estado | Detalle |
-|------------|--------|---------|
-| API TypeScript | ✅ 0 errores | `npx tsc --noEmit` limpio, `npm run build` exitoso |
-| API Runtime | ✅ Arranca | Todos los módulos inicializan, Swagger en `/docs` |
-| Prisma Client | ✅ v5.22.0 | `prisma generate` + `prisma db push` funcionan |
-| DB Schema | ✅ Sincronizado | 13 tablas creadas, relaciones OK |
-| Seed | ✅ Ejecutado | 12 categorías + 1 admin user en DB |
-| Firebase | ✅ Lazy init | No crashea sin credenciales reales |
-| GeoRepository | ✅ Haversine | Queries geoespaciales sin PostGIS |
+```bash
+# 1. Setup SQLite + Seed
+cd api
+npm install
+node setup-db.js sqlite --seed
+
+# 2. Iniciar API
+npm run start:dev
+# API en http://localhost:3000
+# Swagger en http://localhost:3000/docs
+
+# 3. Iniciar Web
+cd ../web
+npm install
+npm run dev
+# Web en http://localhost:5173
+
+# 4. Login
+# Admin: admin@boliviaexperience.com / password123
+# Empresa: empresa@boliviaexperience.com / password123
+
+# 5. Ejecutar Tests
+cd web
+npm run test          # Ejecutar una vez
+npm run test:watch    # Watch mode
+```
+
+### Switch PostgreSQL ↔ SQLite
+
+```bash
+# Cambiar a PostgreSQL (requiere Docker)
+node setup-db.js postgres --seed
+
+# Cambiar a SQLite (sin Docker)
+node setup-db.js sqlite --seed
+```
 
 ### Para Continuar el Proyecto
 
 1. **Siguiente paso**: Entregable 8 — Infraestructura DevOps
    - Crear Dockerfiles (API, Web Admin, Web Empresa)
-   - Crear docker-compose.yml para desarrollo local
+   - Crear docker-compose.yml completo
    - Configurar Nginx como reverse proxy
    - Crear GitHub Actions para CI/CD
    - Configurar despliegue en GCP (Cloud Run, Cloud SQL, Cloud Storage)
    - Configurar monitoreo (Cloud Monitoring, Cloud Logging)
 
-2. **Documentación existente**: Toda la documentación está en `docs/business/`, `docs/architecture/` y `docs/design/`
+2. **Features pendientes en Web**:
+   - ~~Formularios CRUD completos (crear/editar) para admin~~ ✅
+   - ~~Modales de confirmación (delete, ban)~~ ✅
+   - Photo upload funcional en empresa
+   - ~~Charts reales con Recharts~~ ✅
+   - ~~Toast notifications (sonner)~~ ✅
+   - ~~Dark mode toggle~~ ✅
+   - i18n (es/en)
+   - ~~Code splitting (React.lazy)~~ ✅
+   - ~~Tests (Vitest + React Testing Library)~~ ✅ 71 tests
+
+3. **Documentación existente**: Toda la documentación está en `docs/business/`, `docs/architecture/` y `docs/design/`
    - Los ADRs definen las decisiones técnicas (no renegotiar sin justificación)
    - El modelo de datos está definido en `2.5-arquitectura-datos.md`
    - Los endpoints están definidos en `2.6-arquitectura-api.md`
 
-3. **Presupuesto realista**: $30,000-50,000 para MVP (no $20,000-30,000 del prompt original)
+4. **Presupuesto realista**: $30,000-50,000 para MVP (no $20,000-30,000 del prompt original)
    - Equipo reducido: Tech Lead + 2 Flutter devs + 1 NestJS dev (4 personas)
    - Fasear: MVP core → Panels completos → Features adicionales
-
-4. **Decisiones pendientes de validación**:
-   - ADR-002 (Monetización): Modelo freemium aceptado pero pendiente de validar con negocios
-   - Precios de suscripción ($29-99/mes): Validar con encuestas a 50 negocios
 
 ---
 
 ## Setup Required
 
-### Variables de Entorno (Definidas en 2.4)
+### Variables de Entorno
 
 ```bash
-# Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/bolivia_experience
+# Modo SQLite (desarrollo, sin Docker)
+DB_PROVIDER=sqlite
+DATABASE_URL="file:./dev.db"
 
-# Firebase
+# Modo PostgreSQL (producción, con Docker)
+DB_PROVIDER=postgresql
+DATABASE_URL="postgresql://postgres:postgres@localhost:5433/bolivia_experience"
+
+# Firebase (opcional - lazy init)
 FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_PRIVATE_KEY=your-private-key
+FIREBASE_PRIVATE_KEY="your-private-key"
 FIREBASE_CLIENT_EMAIL=your-client-email
 
-# APIs
+# APIs (opcional)
 GOOGLE_MAPS_API_KEY=your-google-maps-key
 OPENWEATHER_API_KEY=your-openweather-key
 
@@ -457,6 +767,11 @@ OPENWEATHER_API_KEY=your-openweather-key
 JWT_SECRET=your-jwt-secret
 JWT_EXPIRATION=15m
 REFRESH_TOKEN_EXPIRATION=7d
+
+# App
+PORT=3000
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:5173
 ```
 
 ### Dependencias Principales
@@ -464,10 +779,12 @@ REFRESH_TOKEN_EXPIRATION=7d
 **Backend (NestJS)**:
 - @nestjs/core, @nestjs/common, @nestjs/platform-express
 - @nestjs/jwt, @nestjs/passport, passport-jwt
-- @nestjs/prisma, prisma
+- @nestjs/prisma, prisma@5.22.0
 - @nestjs/swagger
-- firebase-admin
+- @nestjs/axios
+- firebase-admin (lazy init)
 - helmet, compression, cors
+- better-sqlite3 (para SQLite)
 
 **Frontend (Flutter)**:
 - flutter_riverpod (state management)
@@ -481,7 +798,11 @@ REFRESH_TOKEN_EXPIRATION=7d
 - @tanstack/react-query
 - axios
 - tailwindcss
-- @radix-ui/react-* (components)
+- clsx, tailwind-merge (cn utility)
+- lucide-react (icons)
+- sonner (toast notifications)
+- recharts (charts)
+- vitest, @testing-library/react, @testing-library/jest-dom, @testing-library/user-event (testing)
 
 ---
 
@@ -489,7 +810,7 @@ REFRESH_TOKEN_EXPIRATION=7d
 
 1. **Presupuesto insuficiente**: El prompt original dice $20K-30K pero el alcance requiere $50K+. Ver ADR-001 y ADR-009. Se recomienda fasear o buscar inversión adicional.
 
-2. **Prisma + PostGIS**: Las consultas geoespaciales REQUIEREN raw queries ($queryRaw). No usar findMany con location directamente. Ver ADR-220.
+2. **Prisma + PostGIS**: Las consultas geoespaciales REQUIEREN raw queries ($queryRaw) en PostgreSQL, o implementación JS en SQLite. No usar findMany con location directamente. Ver ADR-220.
 
 3. **Mercado boliviano**: 80% Android, dispositivos gama media-baja (2-4GB RAM), conectividad 4G inestable. La app debe ser liviana y funcionar offline básico. Ver ADR-006.
 
@@ -502,6 +823,10 @@ REFRESH_TOKEN_EXPIRATION=7d
 7. **Google Maps costos**: Free tier $200/mes. Monitorear uso y configurar límites. Ver ADR-212.
 
 8. **Firebase Auth**: Requiere configuración de OAuth consent screen en Google Cloud Console. Ver ADR-207.
+
+9. **SQLite no es producción**: SQLite es solo para desarrollo local. En producción usar PostgreSQL con Docker o Cloud SQL.
+
+10. **Search case-insensitive**: SQLite no soporta `mode: 'insensitive'`. La búsqueda actual es case-sensitive. Para producción con PostgreSQL, reactivar `mode: 'insensitive'`.
 
 ---
 
@@ -534,8 +859,12 @@ REFRESH_TOKEN_EXPIRATION=7d
 | Ver estrategia backups | `docs/database/4.8-estrategia-backups.md` |
 | Ver documentación backend | `docs/backend/5-backend-completo.md` |
 | Ver schema Prisma | `api/prisma/schema.prisma` |
+| Ver schema SQLite | `api/prisma/schema.sqlite.prisma` |
 | Ver entry point API | `api/src/main.ts` |
 | Ver módulo raíz | `api/src/app.module.ts` |
+| Ver módulo admin | `api/src/modules/admin/admin.controller.ts` |
+| Ver módulo empresa | `api/src/modules/empresa/empresa.controller.ts` |
+| Ver setup script | `api/setup-db.js` |
 | Ver documentación Flutter | `docs/frontend/6-frontend-flutter.md` |
 | Ver entry point Flutter | `app/lib/main.dart` |
 | Ver themes Flutter | `app/lib/config/theme.dart` |
@@ -543,12 +872,15 @@ REFRESH_TOKEN_EXPIRATION=7d
 | Ver documentación Web | `docs/web/7-frontend-web.md` |
 | Ver entry point React | `web/src/main.tsx` |
 | Ver router React | `web/src/App.tsx` |
+| Ver auth context | `web/src/contexts/AuthContext.tsx` |
+| Ver protected route | `web/src/components/ProtectedRoute.tsx` |
 | Ver API service | `web/src/services/api.ts` |
+| Ver hooks React Query | `web/src/hooks/` |
 | Ver Panel Admin | `web/src/pages/admin/` |
 | Ver Panel Empresa | `web/src/pages/empresa/` |
 
 ---
 
-**Última actualización**: 2026-06-26
+**Última actualización**: 2026-07-17
 **Próximo entregable**: 8 — Infraestructura DevOps
-**Entregables completados**: 7 de 12 + API estabilizada
+**Entregables completados**: 7 de 12 + API estabilizada + Web conectado al API + SQLite support + Web CRUD + UX + Tests (71 tests)

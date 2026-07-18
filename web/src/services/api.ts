@@ -8,6 +8,20 @@ const api = axios.create({
   },
 })
 
+let isRefreshing = false
+let failedQueue: Array<{ resolve: (value: unknown) => void; reject: (reason?: unknown) => void }> = []
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
@@ -18,11 +32,66 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      window.location.href = '/login'
+  async (error) => {
+    const originalRequest = error.config
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            return api(originalRequest)
+          })
+          .catch((err) => Promise.reject(err))
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      const refreshToken = localStorage.getItem('refreshToken')
+      const userId = localStorage.getItem('userId')
+
+      if (!refreshToken || !userId) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('userId')
+        localStorage.removeItem('user')
+        window.location.href = '/'
+        return Promise.reject(error)
+      }
+
+      try {
+        const response = await axios.post('/api/v1/auth/refresh', {
+          userId,
+          refreshToken,
+        })
+
+        const { accessToken, refreshToken: newRefreshToken } = response.data.data
+        localStorage.setItem('token', accessToken)
+        if (newRefreshToken) {
+          localStorage.setItem('refreshToken', newRefreshToken)
+        }
+
+        api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`
+
+        processQueue(null, accessToken)
+        return api(originalRequest)
+      } catch (refreshError) {
+        processQueue(refreshError, null)
+        localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('userId')
+        localStorage.removeItem('user')
+        window.location.href = '/'
+        return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
+      }
     }
+
     return Promise.reject(error)
   }
 )
@@ -34,29 +103,51 @@ export const authApi = {
   login: (email: string, password: string) =>
     api.post('/auth/login', { email, password }),
   register: (data: any) => api.post('/auth/register', data),
+  registerBusiness: (data: any) => api.post('/auth/register-business', data),
+  refreshToken: (userId: string, refreshToken: string) =>
+    api.post('/auth/refresh', { userId, refreshToken }),
 }
 
 // Users
 export const usersApi = {
-  getAll: (params?: any) => api.get('/admin/users', { params }),
+  getMe: () => api.get('/users/me'),
+  updateMe: (data: any) => api.put('/users/me', data),
   getById: (id: string) => api.get(`/users/${id}`),
-  update: (id: string, data: any) => api.put(`/users/${id}`, data),
-  ban: (id: string) => api.patch(`/users/${id}/ban`),
+}
+
+// Admin
+export const adminApi = {
+  getUsers: (params?: any) => api.get('/admin/users', { params }),
+  getReviews: (params?: any) => api.get('/admin/reviews', { params }),
+  getDashboard: () => api.get('/admin/dashboard'),
+  getBusinesses: (status?: string) => api.get('/admin/businesses', { params: { status } }),
+  approveBusiness: (id: string) => api.patch(`/admin/businesses/${id}/approve`),
+  suspendBusiness: (id: string) => api.patch(`/admin/businesses/${id}/suspend`),
 }
 
 // Places
 export const placesApi = {
   getAll: (params?: any) => api.get('/places', { params }),
+  getFeatured: () => api.get('/places/featured'),
   getById: (id: string) => api.get(`/places/${id}`),
   create: (data: any) => api.post('/places', data),
   update: (id: string, data: any) => api.put(`/places/${id}`, data),
   delete: (id: string) => api.delete(`/places/${id}`),
   toggleStatus: (id: string) => api.patch(`/places/${id}/status`),
+  getPhotos: (id: string) => api.get(`/places/${id}/photos`),
+  uploadPhoto: (id: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post(`/places/${id}/photos`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }
 
 // Categories
 export const categoriesApi = {
   getAll: () => api.get('/categories'),
+  getBySlug: (slug: string) => api.get(`/categories/${slug}`),
   create: (data: any) => api.post('/categories', data),
   update: (id: string, data: any) => api.put(`/categories/${id}`, data),
   delete: (id: string) => api.delete(`/categories/${id}`),
@@ -66,14 +157,16 @@ export const categoriesApi = {
 export const reviewsApi = {
   getByPlace: (placeId: string, params?: any) =>
     api.get(`/places/${placeId}/reviews`, { params }),
-  getAll: (params?: any) => api.get('/admin/reviews', { params }),
   approve: (id: string) => api.patch(`/reviews/${id}/approve`),
   delete: (id: string) => api.delete(`/reviews/${id}`),
+  respond: (id: string, comment: string) =>
+    api.post(`/reviews/${id}/respond`, { comment }),
 }
 
 // Events
 export const eventsApi = {
   getAll: (params?: any) => api.get('/events', { params }),
+  getToday: () => api.get('/events/today'),
   getById: (id: string) => api.get(`/events/${id}`),
   create: (data: any) => api.post('/events', data),
   update: (id: string, data: any) => api.put(`/events/${id}`, data),
@@ -83,16 +176,11 @@ export const eventsApi = {
 // Promotions
 export const promotionsApi = {
   getAll: (params?: any) => api.get('/promotions', { params }),
+  getById: (id: string) => api.get(`/promotions/${id}`),
   create: (placeId: string, data: any) =>
-    api.post(`/places/${placeId}/promotions`, data),
+    api.post(`/promotions/places/${placeId}`, data),
   update: (id: string, data: any) => api.put(`/promotions/${id}`, data),
   delete: (id: string) => api.delete(`/promotions/${id}`),
-}
-
-// Dashboard
-export const dashboardApi = {
-  getStats: () => api.get('/admin/dashboard'),
-  getEmpresaStats: () => api.get('/empresa/dashboard'),
 }
 
 // Empresa
@@ -101,4 +189,5 @@ export const empresaApi = {
   updatePlace: (data: any) => api.put('/empresa/place', data),
   getReviews: (params?: any) => api.get('/empresa/reviews', { params }),
   getStats: () => api.get('/empresa/analytics'),
+  getDashboard: () => api.get('/empresa/dashboard'),
 }

@@ -13,6 +13,8 @@ import { SearchModule } from './modules/search/search.module';
 import { EventsModule } from './modules/events/events.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { WeatherModule } from './modules/weather/weather.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { EmpresaModule } from './modules/empresa/empresa.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -34,6 +36,8 @@ import configuration from './config/configuration';
     EventsModule,
     PromotionsModule,
     WeatherModule,
+    AdminModule,
+    EmpresaModule,
   ],
 })
 export class AppModule {}

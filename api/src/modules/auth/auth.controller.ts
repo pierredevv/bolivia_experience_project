@@ -1,7 +1,7 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, RefreshTokenDto } from './dto';
+import { RegisterDto, LoginDto, RefreshTokenDto, RegisterBusinessDto } from './dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -32,5 +32,13 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refreshToken(@Body() dto: RefreshTokenDto) {
     return this.authService.refreshToken(dto.userId);
+  }
+
+  @Post('register-business')
+  @ApiOperation({ summary: 'Register a new business account (pending approval)' })
+  @ApiResponse({ status: 201, description: 'Business registration submitted' })
+  @ApiResponse({ status: 409, description: 'Email already registered' })
+  async registerBusiness(@Body() dto: RegisterBusinessDto) {
+    return this.authService.registerBusiness(dto);
   }
 }

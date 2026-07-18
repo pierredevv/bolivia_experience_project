@@ -3,11 +3,11 @@ import {
   IsOptional,
   IsNumber,
   IsBoolean,
-  IsUUID,
   MaxLength,
   Min,
   Max,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
 
@@ -56,13 +56,28 @@ export class CreatePlaceDto {
   longitude: number;
 
   @ApiProperty()
-  @IsUUID()
+  @IsString()
   categoryId: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
+  @IsString()
   ownerId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  instagram?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  facebook?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  tiktok?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -75,7 +90,7 @@ export class UpdatePlaceDto extends PartialType(CreatePlaceDto) {}
 export class QueryPlacesDto extends PaginationDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUUID()
+  @IsString()
   categoryId?: string;
 
   @ApiPropertyOptional()
@@ -87,4 +102,28 @@ export class QueryPlacesDto extends PaginationDto {
   @IsOptional()
   @IsBoolean()
   isFeatured?: boolean;
+
+  @ApiPropertyOptional({ description: 'Filter by active status. Admin can see all.' })
+  @IsOptional()
+  @Transform(({ obj }) => {
+    const value = obj.isActive;
+    if (value === undefined || value === null) return undefined;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    return Boolean(value);
+  })
+  @IsBoolean()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({ description: 'If true, return all places regardless of active status.' })
+  @IsOptional()
+  @Transform(({ obj }) => {
+    const value = obj.allStatuses;
+    if (value === undefined || value === null) return undefined;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    return Boolean(value);
+  })
+  @IsBoolean()
+  allStatuses?: boolean;
 }

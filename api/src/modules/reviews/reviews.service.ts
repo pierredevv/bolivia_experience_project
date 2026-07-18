@@ -44,14 +44,17 @@ export class ReviewsService {
       throw new ConflictException('You already reviewed this place');
     }
 
+    const dbUrl = process.env.DATABASE_URL || '';
+    const isSQLite = dbUrl.includes('file:');
+
     return this.prisma.review.create({
       data: {
         userId,
         placeId,
         rating: dto.rating,
         comment: dto.comment,
-        photos: dto.photos,
-        visitDate: dto.visitDate ? new Date(dto.visitDate) : null,
+        photos: isSQLite ? JSON.stringify(dto.photos || []) : JSON.stringify(dto.photos || []),
+        visitDate: dto.visitDate || null,
       },
       include: {
         user: { select: { id: true, name: true, photoUrl: true } },
@@ -66,9 +69,14 @@ export class ReviewsService {
       throw new ForbiddenException('You can only edit your own reviews');
     }
 
+    const updateData: any = {};
+    if (dto.rating !== undefined) updateData.rating = dto.rating;
+    if (dto.comment !== undefined) updateData.comment = dto.comment;
+    if (dto.photos !== undefined) updateData.photos = JSON.stringify(dto.photos);
+
     return this.prisma.review.update({
       where: { id: reviewId },
-      data: dto,
+      data: updateData,
     });
   }
 

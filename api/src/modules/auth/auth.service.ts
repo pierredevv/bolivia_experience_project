@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
-import { RegisterDto, LoginDto } from './dto';
+import { RegisterDto, LoginDto, RegisterBusinessDto } from './dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -91,6 +91,58 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.role);
 
     return tokens;
+  }
+
+  async registerBusiness(dto: RegisterBusinessDto) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Email already registered');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: dto.email,
+          name: dto.name,
+          password: hashedPassword,
+          role: 'empresa',
+          isActive: false,
+          businessName: dto.businessName,
+          businessPhone: dto.businessPhone || null,
+          approvalStatus: 'pending',
+        },
+      });
+
+      await tx.place.create({
+        data: {
+          name: dto.businessName,
+          address: dto.address,
+          categoryId: dto.categoryId,
+          latitude: dto.latitude || 0,
+          longitude: dto.longitude || 0,
+          ownerId: user.id,
+          isActive: false,
+        },
+      });
+
+      return user;
+    });
+
+    return {
+      message: 'Registro exitoso. Tu cuenta está pendiente de aprobación.',
+      user: {
+        id: result.id,
+        email: result.email,
+        name: result.name,
+        businessName: result.businessName,
+        approvalStatus: result.approvalStatus,
+      },
+    };
   }
 
   private async generateTokens(userId: string, role: string) {
