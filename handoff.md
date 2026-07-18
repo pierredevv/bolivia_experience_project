@@ -1,9 +1,68 @@
 # Handoff: BoliviaExperience — Documentación y Arquitectura Completa
 
 **Generated**: 2026-06-26
-**Last Updated**: 2026-07-18 (Sesión de Landing Page y UX)
-**Branch**: main
-**Status**: Entregables 1-7 Completados + API Estabilizada + Web Frontend Conectado al API + SQLite Support + Web CRUD Completo + UX Mejorado + Tests (71 web + 86 API) + Bug Fixes (17) + Separacion de Portales (Admin/Business) + Landing Page Completa (12 secciones, framer-motion, i18n ES/EN) + Paneles Admin/Empresa Unificados + Auth con Validacion de Aprobacion + "Ya eres socio?" Links, Pendiente Entregable 8
+**Last Updated**: 2026-07-18 (Sesión de Security Hardening + Funcionalidad Faltante + E2E Tests)
+**Branch**: develop
+**Status**: Entregables 1-7 Completados + Security Hardening (CORS, JWT, Rate Limiting, Ownership, Refresh Tokens) + Funcionalidad Faltante (File Upload, Notifications, Settings) + E2E Tests (6) + 172 Tests Totales (95 API unit + 6 API e2e + 71 web) + Pendiente FASE 2 (DevOps)
+
+---
+
+## Resumen de Sesión (2026-07-18 — Security + Functionality + Testing)
+
+### Trabajo Realizado
+
+1. **Security Hardening** — CORS restriction, JWT secret validation, rate limiting (@nestjs/throttler), promotions ownership validation, refresh tokens with DB storage and rotation
+2. **File Upload** — Multer + Google Cloud Storage support for place photos (multipart/form-data, 5MB limit, image-only filter)
+3. **Notifications Module** — Full CRUD (list, unread count, mark read, mark all read, delete) with auth guards
+4. **Settings Persistence** — Admin settings endpoints (GET/PUT) with in-memory storage for MVP
+5. **Flutter Firebase Cleanup** — Removed firebase_core, firebase_auth, firebase_storage dependencies
+6. **E2E Tests** — 6 auth integration tests (register, login, protected endpoints)
+7. **SQLite Schema Fix** — Added missing businessName, businessPhone, approvalStatus fields
+8. **Refresh Token Uniqueness Fix** — Added jti + type to refresh token payload to avoid duplicate tokens
+
+### Security Changes
+
+| Change | File | Description |
+|--------|------|-------------|
+| CORS restriction | `api/src/main.ts` | `origin: '*'` → env-based CORS_ORIGIN |
+| JWT secret validation | `api/src/main.ts` | Server refuses to start with default secret in production |
+| Rate limiting | `api/src/app.module.ts` | @nestjs/throttler: 100 req/min in production |
+| Ownership validation | `api/src/modules/promotions/promotions.service.ts` | Empresa can only manage own promotions |
+| Refresh tokens | `api/prisma/schema.prisma` | RefreshToken model with userId, token, expiresAt, revoked |
+| Refresh token rotation | `api/src/modules/auth/auth.service.ts` | DB-stored tokens, old token revoked on refresh |
+
+### New Files Created
+
+| File | Description |
+|------|-------------|
+| `api/src/modules/notifications/notifications.module.ts` | Notifications module |
+| `api/src/modules/notifications/notifications.controller.ts` | Notifications CRUD endpoints |
+| `api/src/modules/notifications/notifications.service.ts` | Notifications business logic |
+| `api/src/common/services/file-upload.service.ts` | File upload service (local + GCS) |
+| `api/test/auth.e2e-spec.ts` | Auth integration tests (6 tests) |
+| `api/jest-e2e.json` | E2E test configuration |
+| `api/uploads/.gitkeep` | Upload directory placeholder |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `api/src/main.ts` | CORS, JWT validation, Swagger notifications tag |
+| `api/src/app.module.ts` | ThrottlerModule, NotificationsModule |
+| `api/.env` | Added GCS_BUCKET placeholder |
+| `api/prisma/schema.prisma` | RefreshToken model, User.refreshTokens relation |
+| `api/prisma/schema.sqlite.prisma` | Added businessName, businessPhone, approvalStatus, RefreshToken |
+| `api/src/modules/auth/auth.service.ts` | Refresh token validation, DB storage, rotation |
+| `api/src/modules/auth/auth.controller.ts` | Pass refreshToken to service |
+| `api/src/modules/auth/auth.service.spec.ts` | Updated for new refresh token logic |
+| `api/src/modules/promotions/promotions.service.ts` | Ownership validation |
+| `api/src/modules/promotions/promotions.controller.ts` | Pass userRole to service |
+| `api/src/modules/promotions/promotions.service.spec.ts` | Updated for ownership validation |
+| `api/src/modules/places/places.controller.ts` | File upload with multer |
+| `api/src/modules/places/places.module.ts` | Added FileUploadService |
+| `api/src/modules/admin/admin.controller.ts` | Settings endpoints |
+| `api/src/modules/admin/admin.service.ts` | Settings methods |
+| `app/pubspec.yaml` | Removed Firebase dependencies |
 
 ---
 
@@ -60,7 +119,7 @@ Se identificaron y corrigieron 3 bugs raiz adicionales reportados por el usuario
 - **Fix correcto (del usuario):** Reemplazado `@IsUUID()` por `@IsString()` en 3 campos: `categoryId` (CreatePlaceDto), `ownerId` (CreatePlaceDto), `categoryId` (QueryPlacesDto).
 - **Lección aprendida:** Cuando Prisma usa `@default(cuid())`, NUNCA usar `@IsUUID()` en los DTOs. Siempre usar `@IsString()` para campos de ID.
 
-### Verificación Final
+### Verificación Final (2026-07-18 — Security + Functionality + Testing)
 
 | Verificación | Estado |
 |-------------|--------|
@@ -68,8 +127,19 @@ Se identificaron y corrigieron 3 bugs raiz adicionales reportados por el usuario
 | Web TypeScript Build | ✅ 0 errores |
 | Web Production Build | ✅ 26.5s, 279KB main bundle |
 | Tests Web (Vitest) | ✅ 71/71 passing |
-| Tests API (Jest) | ✅ 86/86 passing |
+| Tests API Unit (Jest) | ✅ 95/95 passing |
+| Tests API E2E | ✅ 6/6 passing |
+| Tests Total | ✅ 172 passing |
 | Seed SQLite | ✅ 5 users, 10 categories, 12 places, 6 events, 5 promotions, 10 reviews |
+| Security | ✅ CORS, JWT, Rate Limiting, Ownership, Refresh Tokens |
+| File Upload | ✅ Multer + GCS support |
+| Notifications | ✅ CRUD + unread count |
+| Settings | ✅ Admin endpoints |
+| Docker | ✅ Dockerfiles (API + Web) + Docker Compose |
+| Nginx | ✅ Reverse proxy with rate limiting |
+| CI/CD | ✅ GitHub Actions (lint, test, build, security audit) |
+| GCP | ✅ Cloud Run deployment config |
+| Health | ✅ GET /health endpoint |
 
 ---
 
@@ -179,11 +249,25 @@ Desarrollar **BoliviaExperience**, una plataforma turística multiplataforma que
 
 ## Not Yet Done
 
-### Entregable 8: Infraestructura DevOps
-- [ ] 8.1-8.10 Docker, CI/CD, GCP, monitoreo
+### FASE 1 — Completado ✅
+- [x] Security Hardening (CORS, JWT, Rate Limiting, Ownership, Refresh Tokens)
+- [x] File Upload (Multer + GCS support)
+- [x] Notifications Module (CRUD + unread count)
+- [x] Settings Persistence (Admin endpoints)
+- [x] Flutter Firebase Cleanup
+- [x] E2E Tests (6 auth integration tests)
 
-### Entregable 9: Testing
-- [ ] 9.1-9.8 Unit, Integration, E2E, seguridad, rendimiento
+### FASE 2 — Completado ✅ (Entregable 8: DevOps)
+- [x] 8.1 Dockerfiles (API + Web)
+- [x] 8.2 Docker Compose completo
+- [x] 8.3 Nginx reverse proxy
+- [x] 8.4 GitHub Actions CI/CD
+- [x] 8.5 GCP Cloud Run configuration
+- [x] 8.6 Health endpoint + Monitoring setup
+
+### Entregable 9: Testing Adicional
+- [ ] 9.1 Security tests (RBAC, rate limiting verification)
+- [ ] 9.2 Performance baseline
 
 ### Entregable 10: Documentación Técnica
 - [ ] 10.1-10.9 README, manuales, guías, CHANGELOG
@@ -951,6 +1035,6 @@ CORS_ORIGIN=http://localhost:5173
 
 ---
 
-**Última actualización**: 2026-07-17
-**Próximo entregable**: 8 — Infraestructura DevOps
-**Entregables completados**: 7 de 12 + API estabilizada + Web conectado al API + SQLite support + Web CRUD + UX + Tests (71 tests)
+**Última actualización**: 2026-07-18 (FASE 1 + FASE 2 completadas)
+**Próximo entregable**: Entregable 9 — Testing Adicional (security tests, performance baseline)
+**Entregables completados**: FASE 1 (Security + File Upload + Notifications + Settings + E2E Tests) + FASE 2 (DevOps: Docker, Nginx, CI/CD, GCP) + 172 tests passing

@@ -203,4 +203,21 @@ export class AdminService {
       return { message: 'Business suspended' };
     });
   }
+
+  // In-memory settings for MVP - can be migrated to DB later
+  private settings: Record<string, any> = {
+    siteName: 'BoliviaExperience',
+    contactEmail: 'info@boliviaexperience.com',
+    maintenanceMode: false,
+    defaultLanguage: 'es',
+  };
+
+  async getSettings() {
+    return this.settings;
+  }
+
+  async updateSettings(data: Record<string, any>) {
+    this.settings = { ...this.settings, ...data };
+    return { message: 'Settings updated', settings: this.settings };
+  }
 }

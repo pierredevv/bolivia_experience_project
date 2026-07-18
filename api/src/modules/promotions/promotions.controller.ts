@@ -71,10 +71,11 @@ export class PromotionsController {
   @ApiResponse({ status: 201, description: 'Promotion created' })
   async create(
     @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
     @Param('placeId') placeId: string,
     @Body() body: any,
   ) {
-    return this.promotionsService.create(userId, placeId, body);
+    return this.promotionsService.create(userId, userRole, placeId, body);
   }
 
   @Put(':id')
@@ -84,10 +85,11 @@ export class PromotionsController {
   @ApiOperation({ summary: 'Update promotion' })
   async update(
     @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
     @Param('id') promotionId: string,
     @Body() body: any,
   ) {
-    return this.promotionsService.update(userId, promotionId, body);
+    return this.promotionsService.update(userId, userRole, promotionId, body);
   }
 
   @Delete(':id')
@@ -97,8 +99,9 @@ export class PromotionsController {
   @ApiOperation({ summary: 'Delete promotion' })
   async remove(
     @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
     @Param('id') promotionId: string,
   ) {
-    return this.promotionsService.remove(userId, promotionId);
+    return this.promotionsService.remove(userId, userRole, promotionId);
   }
 }

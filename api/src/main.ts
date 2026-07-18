@@ -12,11 +12,21 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
+  // Validate JWT_SECRET is set and not default
+  const jwtSecret = configService.get('JWT_SECRET');
+  if (!jwtSecret || jwtSecret === 'bolivia-experience-dev-secret-key-2024') {
+    if (configService.get('NODE_ENV') === 'production') {
+      throw new Error('JWT_SECRET must be set to a strong random value in production');
+    }
+    console.warn('WARNING: Using default JWT_SECRET. Change this in production!');
+  }
+
   app.use(helmet());
   app.use(compression());
 
+  const corsOrigin = configService.get('CORS_ORIGIN', 'http://localhost:5173');
   app.enableCors({
-    origin: '*',
+    origin: corsOrigin.split(',').map((origin: string) => origin.trim()),
     credentials: true,
   });
 
@@ -52,6 +62,8 @@ async function bootstrap() {
     .addTag('events', 'Eventos turísticos')
     .addTag('promotions', 'Promociones de negocios')
     .addTag('weather', 'Información climática')
+    .addTag('notifications', 'Notificaciones del usuario')
+    .addTag('health', 'Health check')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

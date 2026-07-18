@@ -29,6 +29,7 @@ model User {
   replies       ReviewReply[]
   searchHistory SearchHistory[]
   notifications Notification[]
+  refreshTokens RefreshToken[]
 
   @@map("users")
 }
@@ -236,4 +237,19 @@ model Notification {
 
   @@index([userId])
   @@map("notifications")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
 }
