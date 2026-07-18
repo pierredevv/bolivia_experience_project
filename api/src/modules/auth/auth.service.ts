@@ -51,8 +51,17 @@ export class AuthService {
       where: { email: dto.email },
     });
 
-    if (!user || !user.isActive) {
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Check approval status before active status — pending businesses get a specific message
+    if (user.approvalStatus === 'pending') {
+      throw new UnauthorizedException('Tu cuenta está pendiente de aprobación. Te notificaremos por correo cuando sea aprobada por nuestro equipo.');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Tu cuenta ha sido desactivada. Contacta al soporte.');
     }
 
     if (!user.password) {
@@ -74,6 +83,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
         photoUrl: user.photoUrl,
+        approvalStatus: user.approvalStatus,
       },
       ...tokens,
     };

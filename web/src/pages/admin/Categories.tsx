@@ -140,7 +140,7 @@ export default function AdminCategories() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {categories.map((cat: any) => (
-            <div key={cat.id} className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-4">
+            <div key={cat.id} className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">

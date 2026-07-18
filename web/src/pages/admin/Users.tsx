@@ -55,7 +55,7 @@ export default function AdminUsers() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-4 mb-6">
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 dark:text-neutral-500" />
@@ -92,7 +92,7 @@ export default function AdminUsers() {
         />
       ) : (
         <>
-          <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>

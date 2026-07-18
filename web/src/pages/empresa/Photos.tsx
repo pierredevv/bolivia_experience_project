@@ -85,7 +85,7 @@ export default function EmpresaPhotos() {
       </div>
 
       {uploadError && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl text-red-700 dark:text-red-400 text-sm">
           {uploadError}
         </div>
       )}
@@ -95,7 +95,7 @@ export default function EmpresaPhotos() {
       </p>
 
       {uploading && (
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-blue-700 dark:text-blue-400 text-sm flex items-center gap-2">
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl text-blue-700 dark:text-blue-400 text-sm flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           Subiendo foto...
         </div>
@@ -104,7 +104,7 @@ export default function EmpresaPhotos() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {photos.map((photo: any, index: number) => (
           <div key={photo.id} className="relative group">
-            <div className="aspect-square bg-neutral-200 dark:bg-neutral-700 rounded-xl overflow-hidden">
+            <div className="aspect-square bg-neutral-200 dark:bg-neutral-700 rounded-2xl overflow-hidden">
               {photo.url ? (
                 <img src={photo.url} alt={photo.altText || `Foto ${index + 1}`} className="w-full h-full object-cover" />
               ) : (

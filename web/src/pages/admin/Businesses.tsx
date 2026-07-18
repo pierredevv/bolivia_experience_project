@@ -49,14 +49,14 @@ export default function AdminBusinesses() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700 flex flex-wrap gap-4">
+      <div className="bg-white dark:bg-neutral-800 p-4 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-700 flex flex-wrap gap-4">
         <div className="flex-1 min-w-[200px]">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
             <input
               type="text"
               placeholder="Buscar por nombre o email..."
-              className="w-full pl-10 pr-4 py-2 bg-neutral-100 dark:bg-neutral-900 border-none rounded-lg text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 transition-shadow"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
             />
           </div>
         </div>
@@ -65,7 +65,7 @@ export default function AdminBusinesses() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-neutral-100 dark:bg-neutral-900 border-none rounded-lg py-2 pl-3 pr-8 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 cursor-pointer"
+            className="px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none cursor-pointer"
           >
             <option value="all">Todos los estados</option>
             <option value="pending">Pendientes</option>
@@ -76,10 +76,10 @@ export default function AdminBusinesses() {
       </div>
 
       {/* Content */}
-      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-700 overflow-hidden">
         {isLoading ? (
           <div className="p-8 flex justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary-700" />
           </div>
         ) : businesses?.length === 0 ? (
           <div className="p-12 text-center">

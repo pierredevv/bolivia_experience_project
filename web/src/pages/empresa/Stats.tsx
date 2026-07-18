@@ -38,7 +38,7 @@ export default function EmpresaStats() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
               <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
@@ -49,7 +49,7 @@ export default function EmpresaStats() {
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
               <Eye className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -60,7 +60,7 @@ export default function EmpresaStats() {
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
               <Heart className="h-5 w-5 text-red-600 dark:text-red-400" />
@@ -71,7 +71,7 @@ export default function EmpresaStats() {
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
               <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -87,7 +87,7 @@ export default function EmpresaStats() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Review Status Chart */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Estado de Reseñas</h3>
           {reviewStatusData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
@@ -117,7 +117,7 @@ export default function EmpresaStats() {
         </div>
 
         {/* Rating Gauge */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Calificación Promedio</h3>
           <div className="flex flex-col items-center justify-center h-[250px]">
             <div className="relative">
@@ -160,7 +160,7 @@ export default function EmpresaStats() {
 
       {/* Additional Info */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Resumen</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -182,7 +182,7 @@ export default function EmpresaStats() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Consejos</h3>
           <div className="space-y-3">
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">

@@ -37,7 +37,7 @@ export default function EmpresaDashboard() {
 
       {/* Place Card */}
       {place && (
-        <div className="bg-gradient-to-r from-secondary-600 to-secondary-700 rounded-xl p-6 mb-8 text-white">
+        <div className="bg-gradient-to-r from-secondary-600 to-secondary-700 rounded-2xl p-6 mb-8 text-white">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm opacity-80">Tu negocio</p>
@@ -61,7 +61,7 @@ export default function EmpresaDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">Reseñas</p>
@@ -72,7 +72,7 @@ export default function EmpresaDashboard() {
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">Favoritos</p>
@@ -83,7 +83,7 @@ export default function EmpresaDashboard() {
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">Rating Promedio</p>
@@ -94,7 +94,7 @@ export default function EmpresaDashboard() {
             </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Reseñas</p>
@@ -109,7 +109,7 @@ export default function EmpresaDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Reviews */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm">
           <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
             <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">Reseñas Recientes</h3>
             <button
@@ -148,7 +148,7 @@ export default function EmpresaDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm">
           <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
             <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">Acciones Rápidas</h3>
           </div>

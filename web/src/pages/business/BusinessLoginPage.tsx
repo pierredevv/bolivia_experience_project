@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react'
+import { MapPin, Eye, EyeOff, AlertCircle, ArrowLeft, Clock, Ban } from 'lucide-react'
 import { useLogin } from '../../hooks/useAuth'
 
 export default function BusinessLoginPage() {
@@ -13,6 +13,15 @@ export default function BusinessLoginPage() {
     e.preventDefault()
     loginMutation.mutate({ email, password })
   }
+
+  const getErrorMessage = () => {
+    const msg = (loginMutation.error as any)?.response?.data?.error?.message || ''
+    if (msg.includes('pendiente de aprobación')) return 'pending'
+    if (msg.includes('desactivada')) return 'deactivated'
+    return 'credentials'
+  }
+
+  const errorType = loginMutation.isError ? getErrorMessage() : null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-secondary-50 dark:from-neutral-900 dark:to-neutral-800 flex items-center justify-center p-4 transition-colors">
@@ -32,8 +41,28 @@ export default function BusinessLoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
-            {loginMutation.isError && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
+            {errorType === 'pending' && (
+              <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-300 text-sm">
+                <Clock className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Tu cuenta está pendiente de aprobación</p>
+                  <p className="mt-1 text-amber-700 dark:text-amber-400">Te notificaremos por correo electrónico cuando nuestro equipo valide tu registro. Esto generalmente toma 24-48 horas.</p>
+                </div>
+              </div>
+            )}
+
+            {errorType === 'deactivated' && (
+              <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
+                <Ban className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Tu cuenta ha sido desactivada</p>
+                  <p className="mt-1 text-red-600 dark:text-red-400">Contacta a nuestro equipo de soporte para más información.</p>
+                </div>
+              </div>
+            )}
+
+            {errorType === 'credentials' && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <span>
                   {(loginMutation.error as any)?.response?.data?.error?.message ||

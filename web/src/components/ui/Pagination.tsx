@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { cn } from '../../lib/utils'
 
 interface PaginationProps {
   page: number
@@ -6,10 +7,15 @@ interface PaginationProps {
   onPageChange: (page: number) => void
   total?: number
   limit?: number
+  accent?: 'primary' | 'secondary'
 }
 
-export default function Pagination({ page, totalPages, onPageChange, total, limit }: PaginationProps) {
+export default function Pagination({ page, totalPages, onPageChange, total, limit, accent = 'primary' }: PaginationProps) {
   if (totalPages <= 1) return null
+
+  const activeColor = accent === 'secondary'
+    ? 'bg-secondary-700 text-white'
+    : 'bg-primary-700 text-white'
 
   const getVisiblePages = () => {
     const delta = 2
@@ -51,11 +57,12 @@ export default function Pagination({ page, totalPages, onPageChange, total, limi
             <button
               key={p}
               onClick={() => onPageChange(p)}
-              className={`px-3 py-1.5 rounded-lg text-sm ${
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-sm',
                 p === page
-                  ? 'bg-primary-700 text-white'
+                  ? activeColor
                   : 'border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
-              }`}
+              )}
             >
               {p}
             </button>

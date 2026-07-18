@@ -84,7 +84,7 @@ export default function EmpresaPlace() {
 
       <div className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Información Básica</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -131,7 +131,7 @@ export default function EmpresaPlace() {
         </div>
 
         {/* Contact */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Contacto y Ubicación</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -186,7 +186,7 @@ export default function EmpresaPlace() {
         </div>
 
         {/* Hours */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
             <span className="flex items-center gap-2"><Clock className="h-5 w-5" /> Horarios</span>
           </h2>

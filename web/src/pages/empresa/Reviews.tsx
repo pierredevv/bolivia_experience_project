@@ -55,7 +55,7 @@ export default function EmpresaReviews() {
             </div>
           ) : (
             reviews.map((review: any) => (
-              <div key={review.id} className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+              <div key={review.id} className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4 flex-1">
                     <div className="h-10 w-10 bg-secondary-100 dark:bg-secondary-900/30 rounded-full flex items-center justify-center flex-shrink-0">
@@ -147,7 +147,7 @@ export default function EmpresaReviews() {
 
           {/* Pagination */}
           {meta && meta.totalPages > 1 && (
-            <div className="flex items-center justify-between bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-4">
+            <div className="flex items-center justify-between bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-4">
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
                 Página {meta.page} de {meta.totalPages}
               </p>

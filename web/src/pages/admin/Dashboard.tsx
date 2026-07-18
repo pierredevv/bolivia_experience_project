@@ -80,7 +80,7 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat) => (
-          <div key={stat.name} className="bg-white dark:bg-neutral-800 rounded-xl p-6 shadow-sm">
+          <div key={stat.name} className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">{stat.name}</p>
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Rating Distribution Chart */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Distribución de Calificaciones</h2>
           {recentReviews.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Role Distribution Chart */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Distribución de Usuarios por Rol</h2>
           {pieData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
@@ -149,7 +149,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Reviews */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm">
           <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Reseñas Recientes</h2>
             <span className="flex items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400">
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Recent Users */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm">
           <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Usuarios Recientes</h2>
             <span className="flex items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400">

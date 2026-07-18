@@ -134,7 +134,7 @@ export default function EmpresaPromotions() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {promotions.map((promo: any) => (
-            <div key={promo.id} className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm overflow-hidden">
+            <div key={promo.id} className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm overflow-hidden">
               <div className="p-4 bg-gradient-to-r from-secondary-500 to-secondary-600">
                 <div className="flex items-center justify-between">
                   <span className="text-3xl font-bold text-white">

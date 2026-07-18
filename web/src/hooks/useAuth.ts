@@ -10,6 +10,7 @@ interface LoginResponse {
     name: string
     role: 'admin' | 'empresa' | 'usuario'
     photoUrl?: string
+    approvalStatus?: string
   }
   accessToken: string
   refreshToken: string

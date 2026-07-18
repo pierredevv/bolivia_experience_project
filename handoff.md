@@ -1,9 +1,24 @@
 # Handoff: BoliviaExperience — Documentación y Arquitectura Completa
 
 **Generated**: 2026-06-26
-**Last Updated**: 2026-07-17 (Sesión actual)
+**Last Updated**: 2026-07-18 (Sesión de Landing Page y UX)
 **Branch**: main
-**Status**: Entregables 1-7 Completados + API Estabilizada + Web Frontend Conectado al API + SQLite Support + Web CRUD Completo + UX Mejorado + Tests (71 web + 86 API) + Bug Fixes (17) + Separacion de Portales (Admin/Business) + Landing Page + Registro Empresas, Pendiente Entregable 8
+**Status**: Entregables 1-7 Completados + API Estabilizada + Web Frontend Conectado al API + SQLite Support + Web CRUD Completo + UX Mejorado + Tests (71 web + 86 API) + Bug Fixes (17) + Separacion de Portales (Admin/Business) + Landing Page Completa (12 secciones, framer-motion, i18n ES/EN) + Paneles Admin/Empresa Unificados + Auth con Validacion de Aprobacion + "Ya eres socio?" Links, Pendiente Entregable 8
+
+---
+
+## Resumen de Sesión (2026-07-18)
+
+### Trabajo Realizado
+
+1. **Landing Page completa** — Reescritura total desde cero con React + Vite + TypeScript + Tailwind CSS + framer-motion
+2. **Brief creativo y estratégico** — 30 preguntas respondidas (tono, paleta, flujo de interacción, SEO, accesibilidad)
+3. **Auditoría y corrección de landing** — 7 problemas P0 (links rotos), 19 P1 (i18n, a11y), 16 P2 (polish)
+4. **Optimización de flujo de interacción** — Store badges unificados, formulario inline eliminado, FinalCTA con badges reales
+5. **Unificación visual de paneles** — Admin/Empresa alineados al estilo del landing (rounded-2xl, accent props, AdminLoginPage red→blue)
+6. **Validación de aprobación en auth** — Backend verifica approvalStatus antes de isActive, mensajes específicos en frontend
+7. **"Ya eres socio?" en landing** — Links de login para negocios existentes en Navbar y sección ForBusiness
+8. **Páginas legales** — /legal/privacy y /legal/terms creadas
 
 ---
 
@@ -179,6 +194,15 @@ Desarrollar **BoliviaExperience**, una plataforma turística multiplataforma que
 ### Entregable 12: Despliegue y Go-Live
 - [ ] 12.1-12.6 Checklist, plan de despliegue, rollback
 
+### Landing Page — Mejoras Pendientes
+- [ ] Conectar store badges con URLs reales de Play Store/App Store (cuando app esté publicada)
+- [ ] Reemplazar testimonios placeholder con testimonios reales post-beta
+- [ ] Reemplazar mapa SVG con mapa real (Mapbox/Leaflet) o imagen de cobertura
+- [ ] Self-hosteear imágenes de Unsplash para mayor confiabilidad
+- [ ] Agregar Open Graph image (1200x630px)
+- [ ] Integrar Google Analytics 4 y Google Tag Manager
+- [ ] Integrar Hotjar/Microsoft Clarity para heatmaps
+
 ---
 
 ## Failed Approaches (Don't Repeat These)
@@ -233,6 +257,18 @@ El endpoint `GET /events` retornaba un array plano sin paginación, pero el fron
 
 ### Categories: Iconos mostraban texto en vez de emoji
 El seed usaba strings como "restaurant", "hotel" para iconos, pero el frontend solo renderizaba el texto. **Solución**: Crear mapeo `iconMap` que convierte strings a emoji (restaurant→🍽️, hotel→🏨, etc.).
+
+### Store badges con textos diferentes
+Los badges de Google Play decían "Disponible en" y los de App Store "Descargar en". El usuario identificó que esto era inconsistente — ambos son para descargar. **Solución**: Unificar a "Disponible en" para ambos (patrón estándar de la industria).
+
+### Formulario inline en ForBusiness
+El botón "Registra tu negocio gratis" abría un formulario inline que hacía `console.log` al submit. Ya existía `/business/register` con el formulario real conectado al backend. **Solución**: Eliminar formulario inline, navegar directamente a `/business/register`.
+
+### AdminLoginPage con color rojo
+El login de admin usaba `bg-red-600` para el brand icon y submit button. Rojo es color de error/danger, no de branding. **Solución**: Cambiar a primary-700 (azul del sistema).
+
+### Componentes UI hardcoded a primary
+Input, EmptyState, Pagination usaban `focus:ring-primary-500` y `bg-primary-700` siempre, incluso en contexto de empresa (naranja). **Solución**: Agregar prop `accent` con default 'primary'.
 
 ---
 
@@ -420,6 +456,34 @@ web/src/components/layout/AdminLayout.tsx    # Dark mode + user dropdown menu
 web/src/components/layout/EmpresaLayout.tsx  # Dark mode + user dropdown menu
 ```
 
+### NUEVO: Landing Page Completa ✅
+
+- [x] **Brief creativo** — 30 preguntas respondidas (tono, paleta, flujo, SEO, accesibilidad)
+- [x] **12 secciones** — Hero, Social Proof, How It Works, Features, Categories, For Business, Testimonials, Map, FAQ, Final CTA, Footer, Navbar
+- [x] **framer-motion** — Scroll reveal (whileInView), stagger animations, AnimatePresence (FAQ accordion), mobile drawer
+- [x] **i18n ES/EN** — 150+ traducciones, toggle de idioma, persistencia en localStorage
+- [x] **SEO** — meta tags, OG, Twitter Cards, hreflang, JSON-LD structured data
+- [x] **Accesibilidad** — Skip-to-content, aria-hidden en decorativos, aria-expanded en accordion, focus-visible rings, prefers-reduced-motion
+- [x] **Mobile-first** — Responsive en 375px, 768px, 1024px, 1280px
+- [x] **Store badges unificados** — "Disponible en" consistente en Hero y FinalCTA
+- [x] **"Ya eres socio?" links** — Navbar (desktop) y sección ForBusiness
+- [x] **Páginas legales** — /legal/privacy y /legal/terms
+
+### NUEVO: Unificación Visual de Paneles ✅
+
+- [x] **AdminLoginPage** — Red → primary-700 (azul del sistema)
+- [x] **Cards** — rounded-xl → rounded-2xl en todos los pages admin y empresa
+- [x] **Componentes UI con accent** — Input, Select, Textarea, EmptyState, Pagination con prop `accent` para cambiar focus ring y colores entre primary (azul/admin) y secondary (naranja/empresa)
+- [x] **Businesses.tsx** — Input styles y loading color alineados con resto de admin
+- [x] **primary-700** — Ajustado a #1565C0 (mismo que landing)
+
+### NUEVO: Auth con Validación de Aprobación ✅
+
+- [x] **Backend auth.service.ts** — Verifica `approvalStatus` antes de `isActive` en login, incluye `approvalStatus` en respuesta
+- [x] **Frontend BusinessLoginPage** — Errores específicos: banner amarillo "pendiente de aprobación", banner rojo "desactivada", banner rojo "credenciales inválidas"
+- [x] **AuthContext.tsx** — `approvalStatus?: string` agregado al tipo User
+- [x] **useAuth.ts** — LoginResponse actualizado con `approvalStatus`
+
 ## Key Decisions
 
 | Decisión | Justificación | ADR |
@@ -446,6 +510,12 @@ web/src/components/layout/EmpresaLayout.tsx  # Dark mode + user dropdown menu
 | SQLite para desarrollo local | Sin necesidad de Docker para desarrollo, setup inmediato, seed rápido | - |
 | Dual-DB schema | Mantener PostgreSQL para producción, SQLite para desarrollo, setup-db.js para conmutación | - |
 | Haversine en JS para SQLite | SQLite no tiene funciones trigonométricas nativas, implementación en JavaScript es portable | - |
+| **SESION 2026-07-18: LANDING + UX** |
+| Store badges unificados | Textos diferentes ("Disponible en" / "Descargar en") eran inconsistentes. Unificar a "Disponible en" | - |
+| Eliminar formulario inline ForBusiness | Ya existía /business/register con form real. Form inline hacía console.log | - |
+| AdminLoginPage red → primary-700 | Rojo es color de error, no de branding. Usar azul del sistema | - |
+| Componentes UI con accent prop | Input/EmptyState/Pagination hardcodeaban primary-500/700. Agregar prop para admin(azul)/empresa(naranja) | - |
+| approvalStatus en login | Backend verificaba solo isActive. Agregar chequeo específico con mensaje claro | - |
 
 ---
 

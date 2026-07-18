@@ -139,7 +139,7 @@ export default function AdminPromotions() {
         />
       ) : (
         <>
-          <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>

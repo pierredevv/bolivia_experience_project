@@ -15,7 +15,7 @@ export default function AdminSettings() {
 
       <div className="space-y-6">
         {/* General */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <div className="flex items-center gap-3 mb-4">
             <Globe className="h-5 w-5 text-primary-700 dark:text-primary-400" />
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">General</h2>
@@ -62,7 +62,7 @@ export default function AdminSettings() {
         </div>
 
         {/* Notifications */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <div className="flex items-center gap-3 mb-4">
             <Bell className="h-5 w-5 text-primary-700 dark:text-primary-400" />
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Notificaciones</h2>
@@ -93,7 +93,7 @@ export default function AdminSettings() {
         </div>
 
         {/* Security */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
           <div className="flex items-center gap-3 mb-4">
             <Shield className="h-5 w-5 text-primary-700 dark:text-primary-400" />
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Seguridad</h2>

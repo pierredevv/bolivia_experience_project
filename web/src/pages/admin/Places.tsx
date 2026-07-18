@@ -165,7 +165,7 @@ export default function AdminPlaces() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-4 mb-6">
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 dark:text-neutral-500" />
@@ -214,7 +214,7 @@ export default function AdminPlaces() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {places.map((place: any) => (
-              <div key={place.id} className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm overflow-hidden">
+              <div key={place.id} className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm overflow-hidden">
                 <div className="h-48 bg-neutral-200 dark:bg-neutral-700 relative">
                   {place.photos?.[0] ? (
                     <img src={place.photos[0].url} alt={place.name} className="w-full h-full object-cover" />

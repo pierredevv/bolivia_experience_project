@@ -6,6 +6,7 @@ interface User {
   name: string
   role: 'admin' | 'empresa' | 'usuario'
   photoUrl?: string
+  approvalStatus?: string
 }
 
 interface AuthContextType {

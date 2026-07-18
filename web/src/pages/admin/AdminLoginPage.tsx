@@ -18,16 +18,16 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-neutral-800 rounded-2xl shadow-2xl p-8 border border-neutral-700">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center h-16 w-16 bg-red-600 rounded-2xl mb-4">
+            <div className="inline-flex items-center justify-center h-16 w-16 bg-primary-700 rounded-2xl mb-4">
               <MapPin className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-white">BoliviaExperience</h1>
-            <p className="text-red-400 mt-1 font-medium">Panel Administrativo Global</p>
+            <p className="text-primary-300 mt-1 font-medium">Panel Administrativo Global</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             {loginMutation.isError && (
-              <div className="flex items-center gap-2 p-3 bg-red-900/30 border border-red-800 rounded-xl text-red-400 text-sm">
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm">
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <span>
                   {(loginMutation.error as any)?.response?.data?.error?.message ||
@@ -44,7 +44,7 @@ export default function AdminLoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-neutral-600 bg-neutral-700 text-neutral-100 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3 rounded-2xl border border-neutral-600 bg-neutral-700 text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                 placeholder="admin@boliviaexperience.com"
                 required
               />
@@ -59,7 +59,7 @@ export default function AdminLoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-600 bg-neutral-700 text-neutral-100 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all pr-12"
+                  className="w-full px-4 py-3 rounded-2xl border border-neutral-600 bg-neutral-700 text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all pr-12"
                   placeholder="••••••••"
                   required
                 />
@@ -76,7 +76,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loginMutation.isPending}
-              className="w-full py-3 mt-6 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 mt-6 bg-primary-700 text-white rounded-xl font-semibold hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loginMutation.isPending ? (
                 <span className="flex items-center justify-center gap-2">
