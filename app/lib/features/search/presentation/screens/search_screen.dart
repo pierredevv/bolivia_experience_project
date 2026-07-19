@@ -281,7 +281,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    // TODO: Clear search history
+                    ref.read(searchProvider.notifier).clearHistory();
                   },
                   child: const Text('Limpiar'),
                 ),
@@ -403,7 +403,7 @@ class _SearchResultCard extends StatelessWidget {
                         Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
                         Text(
-                          '${Number(ratingAvg).toStringAsFixed(1)} ($ratingCount)',
+                          '${ratingAvg.toStringAsFixed(1)} ($ratingCount)',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],

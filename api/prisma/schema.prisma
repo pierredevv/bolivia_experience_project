@@ -12,6 +12,8 @@ model User {
   email          String   @unique
   name           String
   password       String?
+  provider       String   @default("email")
+  providerId     String?
   photoUrl       String?  @map("photo_url")
   country        String?
   language       String   @default("es")
@@ -20,6 +22,7 @@ model User {
   businessName   String?  @map("business_name")
   businessPhone  String?  @map("business_phone")
   approvalStatus String   @default("none") @map("approval_status")
+  isEmailVerified Boolean @default(false) @map("is_email_verified")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 

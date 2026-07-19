@@ -16,6 +16,7 @@ import { CreateReviewDto, UpdateReviewDto, RespondReviewDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { Role } from '../../common/enums/role.enum';
@@ -25,6 +26,7 @@ import { Role } from '../../common/enums/role.enum';
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
+  @Public()
   @Get('places/:id/reviews')
   @ApiOperation({ summary: 'Get reviews for a place' })
   @ApiResponse({ status: 200, description: 'Reviews list' })

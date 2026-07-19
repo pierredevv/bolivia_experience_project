@@ -42,6 +42,12 @@ export class RefreshTokenDto {
   refreshToken: string;
 }
 
+export class LogoutDto {
+  @ApiProperty()
+  @IsString()
+  refreshToken: string;
+}
+
 export class RegisterBusinessDto {
   @ApiProperty({ example: 'empresa@example.com' })
   @IsEmail()
@@ -82,4 +88,16 @@ export class RegisterBusinessDto {
   @ApiPropertyOptional({ example: -63.1821 })
   @IsOptional()
   longitude?: number;
+}
+
+export class GoogleLoginDto {
+  @ApiProperty({ description: 'Google ID token from sign_in_with_google' })
+  @IsString()
+  idToken: string;
+}
+
+export class FacebookLoginDto {
+  @ApiProperty({ description: 'Facebook access token from flutter_facebook_auth' })
+  @IsString()
+  accessToken: string;
 }

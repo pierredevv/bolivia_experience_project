@@ -1,7 +1,10 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../../prisma/prisma.service';
+import { EmailService } from '../../common/services/email.service';
 import { RegisterDto, LoginDto, RegisterBusinessDto } from './dto';
 import * as bcrypt from 'bcrypt';
 
@@ -11,6 +14,8 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private emailService: EmailService,
+    private httpService: HttpService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -33,6 +38,15 @@ export class AuthService {
       },
     });
 
+    // Generate email verification token
+    const verificationToken = this.jwtService.sign(
+      { sub: user.id, email: user.email, type: 'email_verification' },
+      { expiresIn: '24h' },
+    );
+
+    // Send verification email (don't await — fire and forget)
+    this.emailService.sendVerificationEmail(user.email, user.name, verificationToken).catch(() => {});
+
     const tokens = await this.generateTokens(user.id, user.role);
 
     return {
@@ -41,9 +55,176 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        isEmailVerified: false,
       },
       ...tokens,
     };
+  }
+
+  async verifyEmail(token: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+
+      if (payload.type !== 'email_verification') {
+        throw new BadRequestException('Invalid token type');
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (user.isEmailVerified) {
+        return { message: 'Email already verified', email: user.email };
+      }
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { isEmailVerified: true },
+      });
+
+      return { message: 'Email verified successfully', email: user.email };
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid or expired verification token');
+    }
+  }
+
+  async loginWithGoogle(idToken: string) {
+    try {
+      // Verify token with Google Token Info API
+      const response = await firstValueFrom(
+        this.httpService.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`),
+      );
+
+      const { email, name, picture, sub: googleId } = response.data;
+
+      if (!email) {
+        throw new UnauthorizedException('Invalid Google token: no email');
+      }
+
+      // Check if user exists by email or by provider+providerId
+      let user = await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { email },
+            { provider: 'google', providerId: googleId },
+          ],
+        },
+      });
+
+      if (!user) {
+        // Create new user
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            name: name || email.split('@')[0],
+            photoUrl: picture,
+            provider: 'google',
+            providerId: googleId,
+            isEmailVerified: true, // Google emails are verified
+          },
+        });
+      } else if (user.provider !== 'google') {
+        // User exists with email/password — link Google account
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            provider: 'google',
+            providerId: googleId,
+            photoUrl: picture || user.photoUrl,
+            isEmailVerified: true,
+          },
+        });
+      }
+
+      const tokens = await this.generateTokens(user.id, user.role);
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          photoUrl: user.photoUrl,
+          isEmailVerified: user.isEmailVerified,
+        },
+        ...tokens,
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      throw new UnauthorizedException('Invalid Google token');
+    }
+  }
+
+  async loginWithFacebook(accessToken: string) {
+    try {
+      // Verify token with Facebook Graph API
+      const response = await firstValueFrom(
+        this.httpService.get(`https://graph.facebook.com/me?fields=id,name,email&access_token=${accessToken}`),
+      );
+
+      const { email, name, id: facebookId } = response.data;
+
+      if (!email) {
+        throw new UnauthorizedException('Invalid Facebook token: no email');
+      }
+
+      // Check if user exists by email or by provider+providerId
+      let user = await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { email },
+            { provider: 'facebook', providerId: facebookId },
+          ],
+        },
+      });
+
+      if (!user) {
+        // Create new user
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            name: name || email.split('@')[0],
+            provider: 'facebook',
+            providerId: facebookId,
+            isEmailVerified: true, // Facebook emails are verified
+          },
+        });
+      } else if (user.provider !== 'facebook') {
+        // User exists with email/password — link Facebook account
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            provider: 'facebook',
+            providerId: facebookId,
+            isEmailVerified: true,
+          },
+        });
+      }
+
+      const tokens = await this.generateTokens(user.id, user.role);
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          photoUrl: user.photoUrl,
+          isEmailVerified: user.isEmailVerified,
+        },
+        ...tokens,
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      throw new UnauthorizedException('Invalid Facebook token');
+    }
   }
 
   async login(dto: LoginDto) {
@@ -84,6 +265,7 @@ export class AuthService {
         role: user.role,
         photoUrl: user.photoUrl,
         approvalStatus: user.approvalStatus,
+        isEmailVerified: user.isEmailVerified,
       },
       ...tokens,
     };
@@ -121,6 +303,16 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.role);
 
     return tokens;
+  }
+
+  async logout(refreshToken: string) {
+    try {
+      await this.prisma.refreshToken.updateMany({
+        where: { token: refreshToken },
+        data: { revoked: true },
+      });
+    } catch (_) {}
+    return { success: true };
   }
 
   async registerBusiness(dto: RegisterBusinessDto) {

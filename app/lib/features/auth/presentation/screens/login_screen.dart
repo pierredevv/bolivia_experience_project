@@ -39,6 +39,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next.status == AuthStatus.authenticated) {
+        if (!next.isEmailVerified) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Verifica tu email para acceder a todas las funcionalidades'),
+              backgroundColor: Colors.orange.shade700,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
         context.go('/');
       } else if (next.status == AuthStatus.error && next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -166,9 +175,88 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   },
                   child: const Text('¿Olvidaste tu contraseña?'),
                 ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'O continúa con',
+                        style: TextStyle(color: AppColors.neutral500),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // TODO: Agregar Facebook button cuando se implemente
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     _SocialButton(
+                //       icon: Icons.g_mobiledata,
+                //       label: 'Google',
+                //       isLoading: authState.status == AuthStatus.loading,
+                //       onTap: () => ref.read(authProvider.notifier).loginWithGoogle(),
+                //     ),
+                //     const SizedBox(width: 16),
+                //     _SocialButton(
+                //       icon: Icons.facebook,
+                //       label: 'Facebook',
+                //       isLoading: authState.status == AuthStatus.loading,
+                //       onTap: () => ref.read(authProvider.notifier).loginWithFacebook(),
+                //     ),
+                //   ],
+                // ),
+                SizedBox(
+                  width: double.infinity,
+                  child: _SocialButton(
+                    icon: Icons.g_mobiledata,
+                    label: 'Continuar con Google',
+                    isLoading: authState.status == AuthStatus.loading,
+                    onTap: () => ref.read(authProvider.notifier).loginWithGoogle(),
+                  ),
+                ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SocialButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isLoading;
+
+  const _SocialButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: isLoading ? null : onTap,
+      icon: isLoading
+          ? const SizedBox(
+              height: 18,
+              width: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Icon(icon, size: 20),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        side: BorderSide(color: AppColors.neutral300),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
     );

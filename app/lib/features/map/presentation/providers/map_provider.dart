@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_provider.dart';
 import '../../data/map_service.dart';
@@ -68,7 +69,7 @@ final mapProvider = StateNotifierProvider<MapNotifier, MapState>((ref) {
 
 class MapNotifier extends StateNotifier<MapState> {
   final MapService _mapService;
-  StreamSubscription<LatLng>? _positionSubscription;
+  StreamSubscription<Position>? _positionSubscription;
 
   MapNotifier(this._mapService) : super(const MapState()) {
     _init();
@@ -81,12 +82,22 @@ class MapNotifier extends StateNotifier<MapState> {
   }
 
   Future<void> _init() async {
-    final position = await _mapService.getCurrentLocation();
-    if (position != null && mounted) {
-      final latLng = LatLng(position.latitude, position.longitude);
-      state = state.copyWith(currentLocation: latLng);
-      await loadPlaces(latLng);
-      _startLocationTracking();
+    try {
+      final position = await _mapService.getCurrentLocation();
+      if (position != null && mounted) {
+        final latLng = LatLng(position.latitude, position.longitude);
+        state = state.copyWith(currentLocation: latLng);
+        await loadPlaces(latLng);
+        _startLocationTracking();
+      }
+    } catch (e) {
+      // Location service unavailable - map still works without user position
+      if (mounted) {
+        state = state.copyWith(
+          status: MapStatus.loaded,
+          errorMessage: 'No se pudo obtener la ubicación',
+        );
+      }
     }
   }
 

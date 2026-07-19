@@ -191,3 +191,12 @@ export const empresaApi = {
   getStats: () => api.get('/empresa/analytics'),
   getDashboard: () => api.get('/empresa/dashboard'),
 }
+
+// Notifications
+export const notificationsApi = {
+  getAll: (params?: any) => api.get('/notifications', { params }),
+  getUnreadCount: () => api.get('/notifications/unread/count'),
+  markAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
+  markAllAsRead: () => api.patch('/notifications/read-all'),
+  delete: (id: string) => api.delete(`/notifications/${id}`),
+}

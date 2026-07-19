@@ -14,6 +14,7 @@ import { PromotionsService } from './promotions.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { IsOptional, IsBoolean, IsString } from 'class-validator';
@@ -43,6 +44,7 @@ class QueryPromotionsDto extends PaginationDto {
 export class PromotionsController {
   constructor(private readonly promotionsService: PromotionsService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'List promotions' })
   @ApiResponse({ status: 200, description: 'Promotions list' })
@@ -56,6 +58,7 @@ export class PromotionsController {
     return this.promotionsService.findActive(page, limit);
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get promotion by ID' })
   @ApiResponse({ status: 200, description: 'Promotion details' })

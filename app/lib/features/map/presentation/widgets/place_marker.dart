@@ -72,8 +72,10 @@ class PlaceMarker {
 
     final image = await pictureRecorder.endRecording().toImage(size, size);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    final buffer = byteData!.buffer.asUint8List();
 
+    if (byteData == null) return BitmapDescriptor.defaultMarker;
+
+    final buffer = byteData.buffer.asUint8List();
     return BitmapDescriptor.bytes(buffer);
   }
 

@@ -15,8 +15,7 @@ class AuthException implements Exception {
 class AuthService {
   final Dio _dio;
 
-  AuthService({Dio? dio})
-      : _dio = dio ?? Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
+  AuthService(this._dio);
 
   Future<Map<String, dynamic>> login({
     required String email,
@@ -42,6 +41,53 @@ class AuthService {
       final response = await _dio.post(
         ApiConstants.register,
         data: {'name': name, 'email': email, 'password': password},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> refreshTokens(String refreshToken) async {
+    try {
+      final response = await Dio().post(
+        '${ApiConstants.baseUrl}${ApiConstants.refreshToken}',
+        data: {'refreshToken': refreshToken},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<void> logout(String? refreshToken) async {
+    try {
+      if (refreshToken != null) {
+        await _dio.post(
+          '${ApiConstants.logout}',
+          data: {'refreshToken': refreshToken},
+        );
+      }
+    } catch (_) {}
+  }
+
+  Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
+    try {
+      final response = await _dio.post(
+        '/auth/google',
+        data: {'idToken': idToken},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> loginWithFacebook(String accessToken) async {
+    try {
+      final response = await _dio.post(
+        '/auth/facebook',
+        data: {'accessToken': accessToken},
       );
       return response.data;
     } on DioException catch (e) {

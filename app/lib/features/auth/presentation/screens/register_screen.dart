@@ -48,8 +48,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           previous?.status == AuthStatus.loading) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Registro exitoso. Iniciá sesión.'),
+            content: Text('Registro exitoso. Revisa tu email para verificar tu cuenta.'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 4),
           ),
         );
         context.go('/login');

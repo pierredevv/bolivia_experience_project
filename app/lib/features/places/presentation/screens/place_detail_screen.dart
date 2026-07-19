@@ -473,7 +473,9 @@ class _PlaceDetailScreenState extends ConsumerState<PlaceDetailScreen> {
   // Operating Hours
   // ============================================================================
   Widget _buildOperatingHours(BuildContext context, dynamic place) {
-    // Placeholder - would need hours data from API
+    final hours = place.hours;
+    final hasHours = hours != null && hours is List && hours.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -492,48 +494,53 @@ class _PlaceDetailScreenState extends ConsumerState<PlaceDetailScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.success100,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.check_circle, color: AppColors.success700, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Abierto ahora',
-                  style: TextStyle(
-                    color: AppColors.success700,
-                    fontWeight: FontWeight.w600,
+          if (hasHours) ...[
+            ..._buildWeeklyHoursFromData(context, hours),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.neutral100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.neutral500, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Horarios no disponibles. Contactá al negocio para confirmar.',
+                      style: TextStyle(color: AppColors.neutral600),
+                    ),
                   ),
-                ),
-                const Spacer(),
-                Text(
-                  'Cierra a las 23:00',
-                  style: TextStyle(color: AppColors.success700),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          // Weekly hours
-          ..._buildWeeklyHours(context),
+          ],
         ],
       ),
     );
   }
 
-  List<Widget> _buildWeeklyHours(BuildContext context) {
+  List<Widget> _buildWeeklyHoursFromData(BuildContext context, List<dynamic> hours) {
     final days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
     final now = DateTime.now();
     final currentDayIndex = now.weekday - 1;
+
+    final hoursByDay = <int, dynamic>{};
+    for (final h in hours) {
+      final dow = h['dayOfWeek'];
+      if (dow != null) hoursByDay[dow] = h;
+    }
 
     return days.asMap().entries.map((entry) {
       final index = entry.key;
       final day = entry.value;
       final isToday = index == currentDayIndex;
+      final dayHours = hoursByDay[index];
+      final isClosed = dayHours != null && (dayHours['isClosed'] == true);
+      final openTime = dayHours?['openTime'] ?? '--:--';
+      final closeTime = dayHours?['closeTime'] ?? '--:--';
 
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -557,9 +564,13 @@ class _PlaceDetailScreenState extends ConsumerState<PlaceDetailScreen> {
             ),
             const Spacer(),
             Text(
-              index < 5 ? '11:00 - 23:00' : '11:00 - 00:00',
+              isClosed ? 'Cerrado' : '$openTime - $closeTime',
               style: TextStyle(
-                color: isToday ? AppColors.primary700 : AppColors.neutral600,
+                color: isClosed
+                    ? AppColors.error500
+                    : isToday
+                        ? AppColors.primary700
+                        : AppColors.neutral600,
                 fontWeight: isToday ? FontWeight.w500 : null,
               ),
             ),
@@ -832,7 +843,7 @@ class _PlaceDetailScreenState extends ConsumerState<PlaceDetailScreen> {
           const SizedBox(height: 12),
 
           // Rating Summary Card
-          _buildRatingSummary(context, rating, ratingCount),
+          _buildRatingSummary(context, rating, ratingCount, reviews),
 
           const SizedBox(height: 16),
 
@@ -869,7 +880,9 @@ class _PlaceDetailScreenState extends ConsumerState<PlaceDetailScreen> {
     );
   }
 
-  Widget _buildRatingSummary(BuildContext context, double rating, int ratingCount) {
+  Widget _buildRatingSummary(BuildContext context, double rating, int ratingCount, List<dynamic> reviews) {
+    final distribution = _computeRatingDistribution(reviews);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -878,7 +891,6 @@ class _PlaceDetailScreenState extends ConsumerState<PlaceDetailScreen> {
       ),
       child: Row(
         children: [
-          // Big rating number
           Column(
             children: [
               Text(
@@ -907,21 +919,31 @@ class _PlaceDetailScreenState extends ConsumerState<PlaceDetailScreen> {
             ],
           ),
           const SizedBox(width: 24),
-          // Rating bars
           Expanded(
             child: Column(
               children: [
-                _RatingBar(label: '5', percentage: 0.7, color: AppColors.success500),
-                _RatingBar(label: '4', percentage: 0.2, color: AppColors.success300),
-                _RatingBar(label: '3', percentage: 0.05, color: AppColors.warning500),
-                _RatingBar(label: '2', percentage: 0.03, color: AppColors.secondary500),
-                _RatingBar(label: '1', percentage: 0.02, color: AppColors.error500),
+                _RatingBar(label: '5', percentage: distribution[4], color: AppColors.success500),
+                _RatingBar(label: '4', percentage: distribution[3], color: AppColors.success300),
+                _RatingBar(label: '3', percentage: distribution[2], color: AppColors.warning500),
+                _RatingBar(label: '2', percentage: distribution[1], color: AppColors.secondary500),
+                _RatingBar(label: '1', percentage: distribution[0], color: AppColors.error500),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  List<double> _computeRatingDistribution(List<dynamic> reviews) {
+    if (reviews.isEmpty) return [0, 0, 0, 0, 0];
+    final counts = [0, 0, 0, 0, 0];
+    for (final review in reviews) {
+      final r = (review['rating'] ?? 0).toInt();
+      if (r >= 1 && r <= 5) counts[r - 1]++;
+    }
+    final total = reviews.length;
+    return counts.map((c) => total > 0 ? c / total : 0.0).toList();
   }
 
   Widget _buildReviewCard(BuildContext context, dynamic review) {

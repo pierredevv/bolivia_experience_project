@@ -19,6 +19,7 @@ import { CreatePlaceDto, UpdatePlaceDto, QueryPlacesDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { FileUploadService } from '../../common/services/file-upload.service';
 import * as multer from 'multer';
@@ -31,6 +32,7 @@ export class PlacesController {
     private readonly fileUploadService: FileUploadService,
   ) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'List places with pagination and filters' })
   @ApiResponse({ status: 200, description: 'Paginated list of places' })
@@ -38,6 +40,7 @@ export class PlacesController {
     return this.placesService.findAll(query);
   }
 
+  @Public()
   @Get('featured')
   @ApiOperation({ summary: 'Get featured places' })
   @ApiResponse({ status: 200, description: 'Featured places list' })
@@ -45,6 +48,7 @@ export class PlacesController {
     return this.placesService.findFeatured();
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get place by ID' })
   @ApiResponse({ status: 200, description: 'Place details' })
@@ -93,6 +97,7 @@ export class PlacesController {
     return this.placesService.remove(id);
   }
 
+  @Public()
   @Get(':id/photos')
   @ApiOperation({ summary: 'Get photos of a place' })
   @ApiResponse({ status: 200, description: 'Photos list' })

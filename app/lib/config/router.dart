@@ -15,6 +15,10 @@ import '../features/profile/presentation/screens/profile_screen.dart';
 import '../features/places/presentation/screens/place_detail_screen.dart';
 import '../features/places/presentation/screens/places_list_screen.dart';
 import '../features/events/presentation/screens/event_detail_screen.dart';
+import '../features/events/presentation/screens/events_screen.dart';
+import '../features/notifications/presentation/screens/notifications_screen.dart';
+import '../features/promotions/presentation/screens/promotions_screen.dart';
+import '../features/promotions/presentation/screens/promotion_detail_screen.dart';
 import '../features/reviews/presentation/screens/create_review_screen.dart';
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/profile/presentation/screens/settings_screen.dart';
@@ -76,6 +80,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/places/:id',
         builder: (context, state) => PlaceDetailScreen(
           placeId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/events',
+        builder: (context, state) => const EventsScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/promotions',
+        builder: (context, state) => const PromotionsScreen(),
+      ),
+      GoRoute(
+        path: '/promotions/:id',
+        builder: (context, state) => PromotionDetailScreen(
+          promotionId: state.pathParameters['id']!,
         ),
       ),
       GoRoute(

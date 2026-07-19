@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
+import '../../../notifications/presentation/providers/notification_provider.dart';
 import '../providers/home_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -10,6 +11,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeProvider);
+    final notificationState = ref.watch(notificationProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -28,8 +30,12 @@ class HomeScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
+            icon: Badge(
+              isLabelVisible: notificationState.unreadCount > 0,
+              label: Text('${notificationState.unreadCount}'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            onPressed: () => context.go('/notifications'),
           ),
         ],
       ),
@@ -149,7 +155,7 @@ class HomeScreen extends ConsumerWidget {
             if (state.todayEvents.isNotEmpty) ...[
               _SectionHeader(
                 title: 'Eventos de Hoy',
-                onSeeAll: () {},
+                onSeeAll: () => context.go('/events'),
               ),
               SizedBox(
                 height: 160,
@@ -172,7 +178,7 @@ class HomeScreen extends ConsumerWidget {
             if (state.promotions.isNotEmpty) ...[
               _SectionHeader(
                 title: 'Promociones',
-                onSeeAll: () {},
+                onSeeAll: () => context.go('/promotions'),
               ),
               SizedBox(
                 height: 140,

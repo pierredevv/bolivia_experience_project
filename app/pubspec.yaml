@@ -34,6 +34,10 @@ dependencies:
   geolocator: ^10.1.0
   geocoding: ^2.1.1
 
+  # Social Login
+  google_sign_in: ^6.2.1
+  # flutter_facebook_auth: ^7.0.0 # TODO: Habilitar cuando se implemente Facebook
+
   # UI
   cached_network_image: ^3.3.1
   flutter_svg: ^2.0.9

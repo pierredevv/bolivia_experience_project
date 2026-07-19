@@ -2,13 +2,14 @@ class ApiConstants {
   // Para emulador Android: http://10.0.2.2:3000/api/v1
   // Para iOS simulator: http://localhost:3000/api/v1
   // Para dispositivo fisico: http://<TU_IP>:3000/api/v1
-  static const baseUrl = 'http://192.168.1.9:3000/api/v1';
+  static const baseUrl = 'http://192.168.1.8:3000/api/v1';
 
   // Auth
   static const register = '/auth/register';
   static const login = '/auth/login';
   static const googleAuth = '/auth/google';
   static const refreshToken = '/auth/refresh';
+  static const logout = '/auth/logout';
 
   // Users
   static const userProfile = '/users/me';
@@ -44,6 +45,10 @@ class ApiConstants {
 
   // Promotions
   static const promotions = '/promotions';
+
+  // Notifications
+  static const notifications = '/notifications';
+  static const notificationsUnreadCount = '/notifications/unread/count';
 
   // Weather
   static const weatherCurrent = '/weather/current';

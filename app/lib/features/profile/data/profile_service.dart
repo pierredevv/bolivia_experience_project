@@ -9,6 +9,9 @@ class UserProfile {
   final String? country;
   final String? language;
   final String? createdAt;
+  final int reviewCount;
+  final int favoriteCount;
+  final double? avgRating;
 
   UserProfile({
     required this.id,
@@ -18,9 +21,13 @@ class UserProfile {
     this.country,
     this.language,
     this.createdAt,
+    this.reviewCount = 0,
+    this.favoriteCount = 0,
+    this.avgRating,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    final count = json['_count'] ?? {};
     return UserProfile(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
@@ -28,7 +35,10 @@ class UserProfile {
       photo: json['photoUrl'],
       country: json['country'],
       language: json['language'],
-      createdAt: json['created_at'],
+      createdAt: json['created_at'] ?? json['createdAt'],
+      reviewCount: count['reviews'] ?? 0,
+      favoriteCount: count['favorites'] ?? 0,
+      avgRating: json['avgRating'] != null ? double.tryParse(json['avgRating'].toString()) : null,
     );
   }
 }

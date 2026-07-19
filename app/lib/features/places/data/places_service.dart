@@ -12,6 +12,7 @@ class Place {
   final int? ratingCount;
   final Map<String, dynamic>? category;
   final List<dynamic>? photos;
+  final List<dynamic>? hours;
   final String? phone;
   final String? website;
   final bool? isFeatured;
@@ -28,6 +29,7 @@ class Place {
     this.ratingCount,
     this.category,
     this.photos,
+    this.hours,
     this.phone,
     this.website,
     this.isFeatured,
@@ -46,6 +48,7 @@ class Place {
       ratingCount: json['ratingCount'] ?? 0,
       category: json['category'] is Map ? json['category'] : null,
       photos: json['photos'] is List ? json['photos'] : null,
+      hours: json['hours'] is List ? json['hours'] : null,
       phone: json['phone'],
       website: json['website'],
       isFeatured: json['isFeatured'],

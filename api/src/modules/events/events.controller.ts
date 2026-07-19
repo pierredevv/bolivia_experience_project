@@ -14,6 +14,7 @@ import { EventsService } from './events.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { IsOptional, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
@@ -37,6 +38,7 @@ class QueryEventsDto extends PaginationDto {
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'List events with pagination' })
   @ApiResponse({ status: 200, description: 'Events list' })
@@ -44,6 +46,7 @@ export class EventsController {
     return this.eventsService.findAll(query);
   }
 
+  @Public()
   @Get('today')
   @ApiOperation({ summary: 'Get today events' })
   @ApiResponse({ status: 200, description: 'Today events' })
@@ -51,6 +54,7 @@ export class EventsController {
     return this.eventsService.findToday();
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get event by ID' })
   @ApiResponse({ status: 200, description: 'Event details' })
