@@ -16,16 +16,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center p-6 selection:bg-emerald-500/20 antialiased">
-
       {/* 70% Minimalism: Expansive Return Navigation Link */}
-      <Link
-        to="/"
-        className="absolute top-8 left-8 inline-flex items-center gap-3 text-slate-400 hover:text-slate-900 transition-colors group font-bold text-base"
-      >
-        <ArrowLeft className="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" />
-        <span>Volver al inicio</span>
-      </Link>
-
       <div className="w-full max-w-lg">
         {/* 5% Organic Corner Radii & 15% MD3 Flat Micro-border Layout */}
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-900/5 p-10 lg:p-12 transition-all duration-300">
@@ -129,6 +120,7 @@ export default function AdminLoginPage() {
             to="/"
             className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors group font-bold text-base"
           >
+            <ArrowLeft className="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" />
             <span>Volver a la página principal</span>
           </Link>
         </div>
