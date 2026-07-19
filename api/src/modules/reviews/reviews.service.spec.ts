@@ -198,7 +198,7 @@ describe('ReviewsService', () => {
 
       mockPrisma.reviewReply.create.mockResolvedValue(mockReply);
 
-      const result = await service.respond('user-1', 'review-1', 'Thank you for your feedback!');
+      const result = await service.respond('user-1', 'review-1', 'Thank you for your feedback!', 'usuario');
 
       expect(result).toEqual(mockReply);
       expect(mockPrisma.reviewReply.create).toHaveBeenCalledWith({
