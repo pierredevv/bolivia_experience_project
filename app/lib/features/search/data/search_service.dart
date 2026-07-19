@@ -26,6 +26,47 @@ class SearchService {
     return [];
   }
 
+  Future<Map<String, dynamic>> advancedSearch({
+    String? query,
+    String? categoryId,
+    double? minRating,
+    double? maxRating,
+    double? lat,
+    double? lng,
+    double? radius,
+    bool? featured,
+    String? sortBy,
+    String? sortOrder,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final params = <String, dynamic>{
+      'page': page,
+      'limit': limit,
+    };
+
+    if (query != null && query.isNotEmpty) params['q'] = query;
+    if (categoryId != null) params['categoryId'] = categoryId;
+    if (minRating != null) params['minRating'] = minRating;
+    if (maxRating != null) params['maxRating'] = maxRating;
+    if (lat != null) params['lat'] = lat;
+    if (lng != null) params['lng'] = lng;
+    if (radius != null) params['radius'] = radius;
+    if (featured != null) params['featured'] = featured;
+    if (sortBy != null) params['sortBy'] = sortBy;
+    if (sortOrder != null) params['sortOrder'] = sortOrder;
+
+    final response = await _dio.get(
+      '${ApiConstants.search}/advanced',
+      queryParameters: params,
+    );
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      return data;
+    }
+    return {'data': [], 'meta': {'total': 0, 'page': 1, 'limit': limit, 'totalPages': 0}};
+  }
+
   Future<List<dynamic>> getSuggestions({required String query}) async {
     final response = await _dio.get(
       ApiConstants.searchSuggestions,

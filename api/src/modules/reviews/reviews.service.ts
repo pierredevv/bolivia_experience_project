@@ -89,7 +89,20 @@ export class ReviewsService {
     });
   }
 
-  async respond(userId: string, reviewId: string, comment: string) {
+  async respond(userId: string, reviewId: string, comment: string, userRole: string) {
+    const review = await this.prisma.review.findUnique({
+      where: { id: reviewId },
+      include: { place: { select: { ownerId: true } } },
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    if (userRole !== 'admin' && review.place.ownerId !== userId) {
+      throw new ForbiddenException('No eres el dueño de este lugar');
+    }
+
     return this.prisma.reviewReply.create({
       data: { reviewId, userId, comment },
     });

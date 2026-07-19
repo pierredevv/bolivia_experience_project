@@ -60,6 +60,7 @@ model Place {
   tiktok        String?  @db.VarChar(255)
   latitude      Decimal  @db.Decimal(10, 8)
   longitude     Decimal  @db.Decimal(11, 8)
+  location      Unsupported("geography(Point, 4326)")?
   ratingAvg     Decimal  @default(0) @map("rating_avg") @db.Decimal(3, 2)
   ratingCount   Int      @default(0) @map("rating_count")
   categoryId    String   @map("category_id") @db.Uuid

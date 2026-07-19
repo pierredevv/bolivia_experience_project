@@ -1,23 +1,59 @@
-import { useState } from 'react'
-import { Search, Plus, MoreVertical, Edit, Trash2, Eye, Ban } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, Ban, Loader2 } from 'lucide-react'
+import { usersApi } from '../../services/api'
 
-const users = [
-  { id: '1', name: 'María García', email: 'maria@example.com', role: 'usuario', status: 'active', reviews: 12, date: '2026-01-15' },
-  { id: '2', name: 'John Smith', email: 'john@example.com', role: 'usuario', status: 'active', reviews: 8, date: '2026-02-20' },
-  { id: '3', name: 'Carlos Mendoza', email: 'carlos@restaurante.com', role: 'empresa', status: 'active', reviews: 0, date: '2026-03-10' },
-  { id: '4', name: 'Ana Martínez', email: 'ana@example.com', role: 'usuario', status: 'inactive', reviews: 3, date: '2026-04-05' },
-  { id: '5', name: 'Pedro López', email: 'pedro@hotel.com', role: 'empresa', status: 'active', reviews: 0, date: '2026-05-12' },
-]
+interface User {
+  id: string
+  name: string
+  email: string
+  role: string
+  isActive: boolean
+  createdAt: string
+  _count: {
+    reviews: number
+    places: number
+    favorites: number
+  }
+}
 
 export default function AdminUsers() {
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+
+  useEffect(() => {
+    fetchUsers()
+  }, [page, search])
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      const response = await usersApi.getAll({ page, limit: 10, search })
+      setUsers(response.data.data)
+      setTotalPages(response.data.meta.totalPages)
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Error al cargar usuarios')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleBanUser = async (userId: string) => {
+    try {
+      await usersApi.ban(userId)
+      fetchUsers()
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al actualizar usuario')
+    }
+  }
 
   const filteredUsers = users.filter((user) => {
-    const matchesSearch = user.name.toLowerCase().includes(search.toLowerCase()) ||
-                         user.email.toLowerCase().includes(search.toLowerCase())
     const matchesRole = roleFilter === 'all' || user.role === roleFilter
-    return matchesSearch && matchesRole
+    return matchesRole
   })
 
   return (
@@ -55,107 +91,121 @@ export default function AdminUsers() {
         </div>
       </div>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 mb-6">
+          {error}
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-neutral-50 border-b">
-                <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
-                  Usuario
-                </th>
-                <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
-                  Rol
-                </th>
-                <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
-                  Estado
-                </th>
-                <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
-                  Reseñas
-                </th>
-                <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
-                  Registro
-                </th>
-                <th className="text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="border-b last:border-0 hover:bg-neutral-50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary-700">{user.name[0]}</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-neutral-900">{user.name}</p>
-                        <p className="text-xs text-neutral-500">{user.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
-                      user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                      user.role === 'empresa' ? 'bg-blue-100 text-blue-700' :
-                      'bg-green-100 text-green-700'
-                    }`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
-                      user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      {user.status === 'active' ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-neutral-900">
-                    {user.reviews}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-neutral-500">
-                    {user.date}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-neutral-700">
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-neutral-700">
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button className="p-1.5 rounded-lg hover:bg-red-50 text-neutral-500 hover:text-red-600">
-                        <Ban className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between px-6 py-4 border-t">
-          <p className="text-sm text-neutral-500">
-            Mostrando {filteredUsers.length} de {users.length} usuarios
-          </p>
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 rounded-lg border border-neutral-300 text-sm hover:bg-neutral-50">
-              Anterior
-            </button>
-            <button className="px-3 py-1.5 rounded-lg bg-primary-700 text-white text-sm">
-              1
-            </button>
-            <button className="px-3 py-1.5 rounded-lg border border-neutral-300 text-sm hover:bg-neutral-50">
-              2
-            </button>
-            <button className="px-3 py-1.5 rounded-lg border border-neutral-300 text-sm hover:bg-neutral-50">
-              Siguiente
-            </button>
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-neutral-50 border-b">
+                    <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
+                      Usuario
+                    </th>
+                    <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
+                      Rol
+                    </th>
+                    <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
+                      Estado
+                    </th>
+                    <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
+                      Reseñas
+                    </th>
+                    <th className="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
+                      Registro
+                    </th>
+                    <th className="text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-6 py-3">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="border-b last:border-0 hover:bg-neutral-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary-700">{user.name[0]}</span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-neutral-900">{user.name}</p>
+                            <p className="text-xs text-neutral-500">{user.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
+                          user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                          user.role === 'empresa' ? 'bg-blue-100 text-blue-700' :
+                          'bg-green-100 text-green-700'
+                        }`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
+                          user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {user.isActive ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-neutral-900">
+                        {user._count.reviews}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-neutral-500">
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleBanUser(user.id)}
+                            className={`p-1.5 rounded-lg hover:bg-red-50 text-neutral-500 hover:text-red-600`}
+                            title={user.isActive ? 'Desactivar' : 'Activar'}
+                          >
+                            <Ban className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between px-6 py-4 border-t">
+              <p className="text-sm text-neutral-500">
+                Página {page} de {totalPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 rounded-lg border border-neutral-300 text-sm hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  Anterior
+                </button>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1.5 rounded-lg border border-neutral-300 text-sm hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

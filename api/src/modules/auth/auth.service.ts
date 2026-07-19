@@ -79,26 +79,41 @@ export class AuthService {
     };
   }
 
-  async refreshToken(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+  async refreshToken(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: this.configService.get('JWT_REFRESH_SECRET'),
+      });
 
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('User not found');
+      if (payload.type !== 'refresh') {
+        throw new UnauthorizedException('Invalid token type');
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+      });
+
+      if (!user || !user.isActive) {
+        throw new UnauthorizedException('User not found or inactive');
+      }
+
+      return this.generateTokens(user.id, user.role);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid refresh token');
     }
-
-    const tokens = await this.generateTokens(user.id, user.role);
-
-    return tokens;
   }
 
   private async generateTokens(userId: string, role: string) {
-    const payload = { sub: userId, role };
+    const accessPayload = { sub: userId, role, type: 'access' };
+    const refreshPayload = { sub: userId, role, type: 'refresh' };
 
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload),
-      this.jwtService.signAsync(payload, {
+      this.jwtService.signAsync(accessPayload),
+      this.jwtService.signAsync(refreshPayload, {
+        secret: this.configService.get('JWT_REFRESH_SECRET'),
         expiresIn: this.configService.get('REFRESH_TOKEN_EXPIRATION', '7d'),
       }),
     ]);

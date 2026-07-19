@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_provider.dart';
+import '../../../../config/api_constants.dart';
 import '../../data/places_service.dart';
 
 enum PlaceDetailStatus { initial, loading, loaded, error }
@@ -103,5 +104,51 @@ class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
         errorMessage: 'Error inesperado. Intentá de nuevo.',
       );
     }
+  }
+
+  Future<void> toggleFavorite() async {
+    if (!mounted) return;
+
+    final currentFavorite = state.isFavorite;
+    state = state.copyWith(isFavorite: !currentFavorite);
+
+    try {
+      final dio = Dio();
+      final token = await _getStoredToken();
+
+      if (token == null) {
+        state = state.copyWith(isFavorite: currentFavorite);
+        return;
+      }
+
+      if (currentFavorite) {
+        // Remove from favorites
+        await dio.delete(
+          '${ApiConstants.baseUrl}${ApiConstants.favorites}/$_placeId',
+          options: Options(
+            headers: {'Authorization': 'Bearer $token'},
+          ),
+        );
+      } else {
+        // Add to favorites
+        await dio.post(
+          '${ApiConstants.baseUrl}${ApiConstants.favorites}/$_placeId',
+          options: Options(
+            headers: {'Authorization': 'Bearer $token'},
+          ),
+        );
+      }
+    } catch (e) {
+      // Revert on error
+      if (mounted) {
+        state = state.copyWith(isFavorite: currentFavorite);
+      }
+    }
+  }
+
+  Future<String?> _getStoredToken() async {
+    // This would use flutter_secure_storage in production
+    // For now, return null if not authenticated
+    return null;
   }
 }

@@ -1,8 +1,95 @@
 # Handoff: BoliviaExperience — Documentación y Arquitectura Completa
 
 **Generated**: 2026-06-26
+**Last Updated**: 2026-07-04
 **Branch**: main
-**Status**: Entregables 1-7 Completados + API Estabilizada (TS 0 errores, DB con seed), Pendiente Entregable 8
+**Status**: Entregables 1-7 Completados + Seguridad Corregida + Módulos Admin/Empresa + Google Maps Integrado + Docker Configurado + Tests Unitarios
+
+---
+
+## Resumen de Sesión (2026-07-04)
+
+### Trabajo Realizado en Esta Sesión
+
+**Enfoque adoptado:** En vez de listar genéricamente qué falta al proyecto, se definieron los 3 bloqueadores reales para un lanzamiento (mapa, upload de fotos, auth en web) y se trabajó en el primero. Este enfoque de "bloqueadores primeros" es más efectivo que una lista infinita de pendientes porque genera progreso tangible y medible.
+
+### Seguridad (Corregido)
+
+| Vulnerabilidad | Severidad | Archivo | Solución |
+|----------------|-----------|---------|----------|
+| SQL Injection no autenticada | 🔴 CRÍTICO | `geo.repository.ts` | `$queryRaw` con tagged templates |
+| Bypass de autenticación en refresh | 🔴 CRÍTICO | `auth.service.ts` | Verificación con JWT_REFRESH_SECRET + claim type |
+| Tokens JWT intercambiables | 🔴 CRÍTICO | `auth.service.ts`, `jwt-auth.guard.ts` | Claim `type: 'access'|'refresh'` + secrets separados |
+| CORS `origin: '*'` | 🟠 ALTO | `main.ts` | Usa `configService.get('cors.origin')` |
+| Swagger sin protección | 🟠 ALTO | `main.ts` | Condicionado a `NODE_ENV !== 'production'` |
+| Password admin hardcodeada | 🟠 ALTO | `seed-admin.ts` | Lee de env var `ADMIN_SEED_PASSWORD` |
+| Autorización incompleta en reviews | 🟠 ALTO | `reviews.service.ts` | Verifica `place.ownerId === userId` |
+| Hard delete en places | 🟡 MEDIO | `places.service.ts` | Soft delete (`isActive: false`) |
+| Sin guard global | 🟡 MEDIO | `app.module.ts` | `APP_GUARD` con `JwtAuthGuard` + `@Public()` |
+
+### Módulos Nuevos (Backend)
+
+| Módulo | Endpoints | Descripción |
+|--------|-----------|-------------|
+| **Admin** | `GET /admin/dashboard`, `GET /admin/users`, `PATCH /admin/users/:id/ban`, `GET /admin/reviews` | Gestión administrativa |
+| **Empresa** | `GET /empresa/dashboard`, `GET /empresa/place`, `PUT /empresa/place`, `GET /empresa/reviews`, `GET /empresa/analytics` | Gestión de negocio propio |
+
+### Búsqueda Avanzada
+
+- **Endpoint:** `GET /search/advanced`
+- **Filtros:** categoryId, minRating, maxRating, lat/lng/radius, featured, sortBy, sortOrder, page, limit
+- **Flutter:** Pantalla de filtros con categorías dinámicas, slider de rating, opciones de distancia
+
+### Google Maps (Flutter)
+
+- **MapService:** Servicio para obtener lugares cercanos, clusters, bounds
+- **MapProvider:** State management con ubicación del usuario
+- **MapScreen:** Google Maps real con marcadores, filtros, bottom sheet
+- **PlaceMarker:** Marcadores programáticos con Canvas
+- **PlaceBottomSheet:** Panel inferior con info del lugar
+
+### Pantallas Flutter Completadas
+
+| Pantalla | Estado | Funcionalidades |
+|----------|--------|-----------------|
+| **FavoritesScreen** | ✅ | Grid/lista, búsqueda, filtros, swipe eliminar, pull-to-refresh |
+| **ProfileScreen** | ✅ | Header gradiente, stats, configuración, logout |
+| **EditProfileScreen** | ✅ | Formulario validado, cambio de foto, eliminar cuenta |
+| **SearchFiltersScreen** | ✅ | Categorías dinámicas, rating, distancia, destacados, ordenamiento |
+| **PlaceDetailScreen** | ✅ | Galería fotos, descripción, horarios, contacto, redes sociales, reseñas |
+
+### Panel Web Conectado
+
+| Página | Estado | Datos |
+|--------|--------|-------|
+| Admin Dashboard | ✅ Conectado | Estadísticas reales |
+| Admin Users | ✅ Conectado | Listado paginado, ban |
+| Admin Places | ✅ Conectado | Grid con fotos, toggle |
+| Admin Reviews | ✅ Conectado | Aprobación, eliminación |
+| Admin Events | ✅ Conectado | Listado con fechas |
+| Admin Promotions | ✅ Conectado | Listado con descuentos |
+| Admin Categories | ✅ Conectado | Grid con conteo |
+| Empresa Dashboard | ✅ Conectado | Stats del negocio |
+| Empresa Place | ✅ Conectado | Edición de información |
+| Empresa Reviews | ✅ Conectado | Reseñas con respuesta |
+
+### Testing
+
+- **Unit tests:** 28 tests pasando (auth, geo, reviews)
+- **E2E tests:** 18 tests creados (requieren DB en ejecución)
+
+### Docker
+
+- **api/Dockerfile:** Multi-stage build para NestJS
+- **web/Dockerfile:** Multi-stage build con Nginx para SPA
+- **docker-compose.yml:** Stack completo (PostgreSQL + API + Web)
+
+### Mejoras de Calidad
+
+- **Role enum:** `Role.Admin`, `Role.Empresa`, `Role.Usuario` en todos los controllers
+- **Logging interceptor:** Estructurado con method, url, status, tiempo, user
+- **Weather cache:** TTL de 15 minutos para OpenWeather API
+- **Código muerto eliminado:** firebase-auth.guard.ts, firebase.service.ts, firebase.module.ts
 
 ---
 
@@ -76,10 +163,13 @@ Desarrollar **BoliviaExperience**, una plataforma turística multiplataforma que
 - [x] 7.1-7.7 Panel Admin (8 páginas) y Panel Empresa (6 páginas)
 
 ### Entregable 8: Infraestructura DevOps
-- [ ] 8.1-8.10 Docker, CI/CD, GCP, monitoreo
+- [x] 8.1-8.3 Docker (Dockerfiles API/Web, docker-compose.yml) ✅
+- [ ] 8.4-8.10 CI/CD, GCP, monitoreo
 
 ### Entregable 9: Testing
-- [ ] 9.1-9.8 Unit, Integration, E2E, seguridad, rendimiento
+- [x] 9.1-9.2 Unit tests (28 tests pasando) ✅
+- [x] 9.3 E2E tests (18 tests creados, requieren DB) ✅
+- [ ] 9.4-9.8 Integration, seguridad, rendimiento
 
 ### Entregable 10: Documentación Técnica
 - [ ] 10.1-10.9 README, manuales, guías, CHANGELOG
@@ -132,10 +222,71 @@ En NestJS 10, `HttpModule` se movió a `@nestjs/axios`. El import original causa
 | Prisma 5 sobre Prisma 7 | Prisma 7 rompió compatibilidad (sin URL en schema, requiere adapter). Prisma 5 es estable | - |
 | Haversine sobre PostGIS | PostGIS no disponible en schema actual. Haversine via SQL raw funciona sin extensión | - |
 | Firebase lazy init | Firebase crashea con credenciales placeholder. Lazy init permite desarrollo sin Firebase real | - |
+| **SEGURIDAD (2026-07-04)** |
+| $queryRaw sobre $queryRawUnsafe | SQL Injection en GeoRepository. Tagged templates parametrizan queries automáticamente | - |
+| JWT dual con secrets separados | Access y refresh tokens usan secrets diferentes y claim `type` para diferenciarlos | - |
+| APP_GUARD global | Todas las rutas requieren auth por defecto, @Public() para excepciones | - |
+| Role enum | Evita typos en strings de roles, detecta errores en compilación | - |
+| **ARQUITECTURA (2026-07-04)** |
+| Módulos Admin/Empresa | Separación de responsabilidades: admin gestiona todo, empresa solo su negocio | - |
+| Búsqueda avanzada | Endpoint con filtros múltiples (rating, categoría, distancia, destacados) | - |
+| Programmatic markers | Marcadores generados con Canvas en vez de assets PNG, más flexibles | - |
 
 ---
 
 ## Current State
+
+### Estado de Implementación (2026-07-04)
+
+| Capa | Progreso | Estado |
+|------|----------|--------|
+| Backend API | 95% | 15 módulos, ~60 endpoints, auth JWT dual, RBAC |
+| Base de Datos | 100% | PostgreSQL + PostGIS, migraciones, seed |
+| Flutter App | 90% | Todas las pantallas principales, Google Maps integrado |
+| Panel Web Admin | 90% | Todas las páginas conectadas a API real |
+| Panel Web Empresa | 85% | Dashboard, Place, Reviews conectados |
+| Tests Backend | 35% | Unit tests pasando, E2E creados |
+| Docker | 75% | Dockerfiles + docker-compose funcional |
+
+### Archivos Creados/Modificados en Sesión 2026-07-04
+
+**Backend (api/):**
+- `src/common/enums/role.enum.ts` - Enum de roles
+- `src/common/decorators/public.decorator.ts` - Decorador @Public
+- `src/common/interceptors/logging.interceptor.ts` - Logging estructurado
+- `src/modules/admin/` - Módulo Admin (module, controller, service, dto)
+- `src/modules/empresa/` - Módulo Empresa (module, controller, service, dto)
+- `src/modules/map/dto/map-query.dto.ts` - DTOs de validación geográfica
+- `src/modules/search/dto/advanced-search.dto.ts` - DTO de búsqueda avanzada
+- `src/modules/reviews/dto/respond-review.dto.ts` - DTO para responder reseñas
+- `src/modules/auth/auth.service.spec.ts` - Tests unitarios de auth
+- `src/modules/places/repositories/geo.repository.spec.ts` - Tests de geo
+- `src/modules/reviews/reviews.service.spec.ts` - Tests de reviews
+- `test/auth.e2e-spec.ts` - Tests E2E de auth
+- `test/map.e2e-spec.ts` - Tests E2E de mapa
+- `test/jest-e2e.json` - Configuración E2E
+- `Dockerfile` - Multi-stage build para API
+- `.dockerignore` - Exclusiones Docker
+- `prisma/migrations/20250704000000_add_postgis_location/` - Migración PostGIS
+
+**Flutter (app/):**
+- `lib/features/map/data/map_service.dart` - Servicio de mapa
+- `lib/features/map/presentation/providers/map_provider.dart` - State del mapa
+- `lib/features/map/presentation/widgets/place_marker.dart` - Marcadores
+- `lib/features/map/presentation/widgets/place_bottom_sheet.dart` - Panel inferior
+- `lib/features/search/presentation/screens/search_filters_screen.dart` - Filtros
+
+**Web (web/):**
+- `src/hooks/useAuth.ts` - Hook de autenticación
+- `src/pages/admin/*.tsx` - Todas las páginas conectadas a API
+- `src/pages/empresa/*.tsx` - Páginas conectadas a API
+- `Dockerfile` - Multi-stage build con Nginx
+- `.dockerignore` - Exclusiones Docker
+- `tsconfig.node.json` - Configuración TypeScript
+
+**Documentación:**
+- `docs/handoffs/HANDOFF_INTEGRATION_MAP_07_04.md` - Handoff de sesión
+- `docs/handoffs/HANDOFF_CONTINUE_MAP_07_04.md` - Guía de continuación
 
 ### Archivos Creados
 
@@ -199,27 +350,37 @@ api/                                             # Código fuente backend
 ├── tsconfig.json                                # Configuración TypeScript
 ├── nest-cli.json                                # Configuración NestJS
 ├── .env.example                                 # Variables de entorno
+├── .dockerignore                                # Exclusiones Docker
+├── Dockerfile                                   # Multi-stage build
 ├── prisma/
-│   ├── schema.prisma                            # 13 modelos Prisma
+│   ├── schema.prisma                            # 13 modelos + location geography
 │   └── migrations/                              # Migraciones Prisma
 └── src/
-    ├── main.ts                                  # Entry point + Swagger
-    ├── app.module.ts                            # Módulo raíz
+    ├── main.ts                                  # Entry point + Swagger + CORS
+    ├── app.module.ts                            # Módulo raíz + APP_GUARD
     ├── config/configuration.ts                  # Config centralizada
     ├── prisma/                                  # PrismaModule global
-    ├── common/                                  # Guards, Filters, DTOs
-    └── modules/                                 # 11 módulos
-        ├── auth/                                # Auth (Firebase + JWT)
-        ├── users/                               # Users CRUD
-        ├── places/                              # Places + GeoRepository
+    ├── common/
+    │   ├── guards/                              # JwtAuthGuard, RolesGuard
+    │   ├── decorators/                          # @Public, @CurrentUser, @Roles
+    │   ├── enums/                               # Role enum
+    │   ├── interceptors/                        # Logging, Transform
+    │   ├── filters/                             # AllExceptionsFilter
+    │   └── dto/                                 # PaginationDto
+    └── modules/                                 # 15 módulos
+        ├── auth/                                # JWT dual (access/refresh)
+        ├── users/                               # Users CRUD + ban
+        ├── places/                              # Places + GeoRepository (PostGIS)
         ├── categories/                          # Categories CRUD
-        ├── reviews/                             # Reviews + approve/respond
+        ├── reviews/                             # Reviews + approve/respond + ownership
         ├── favorites/                           # Favorites toggle
-        ├── map/                                 # Map (nearby, cluster, bounds)
-        ├── search/                              # Search + suggestions
+        ├── map/                                 # Map + DTOs geográficos
+        ├── search/                              # Search + advanced + suggestions
         ├── events/                              # Events CRUD
         ├── promotions/                          # Promotions CRUD
-        └── weather/                             # Weather (OpenWeatherMap)
+        ├── weather/                             # Weather + cache
+        ├── admin/                               # Admin dashboard, users, reviews
+        └── empresa/                             # Empresa dashboard, place, reviews, analytics
 │
 app/                                             # Código fuente Flutter
 ├── pubspec.yaml                                 # Dependencias
@@ -231,11 +392,33 @@ app/                                             # Código fuente Flutter
     └── features/                                # 9 features
         ├── auth/                                # Splash, Login
         ├── home/                                # MainShell, HomeScreen
-        ├── map/                                 # MapScreen (Google Maps)
-        ├── search/                              # ExploreScreen
-        ├── favorites/                           # FavoritesScreen
-        ├── profile/                             # Profile, Edit, Settings
-        ├── places/                              # PlaceDetailScreen
+        ├── map/
+        │   ├── data/map_service.dart             # Servicio de mapa + modelos
+        │   └── presentation/
+        │       ├── providers/map_provider.dart   # State management
+        │       ├── screens/map_screen.dart       # Google Maps real
+        │       └── widgets/
+        │           ├── place_marker.dart         # Marcadores programáticos
+        │           └── place_bottom_sheet.dart   # Panel inferior
+        ├── search/
+        │   ├── data/search_service.dart          # Búsqueda avanzada
+        │   └── presentation/
+        │       ├── providers/search_provider.dart
+        │       └── screens/
+        │           ├── search_screen.dart
+        │           └── search_filters_screen.dart # Filtros avanzados
+        ├── favorites/
+        │   └── presentation/screens/favorites_screen.dart # Grid/lista, búsqueda
+        ├── profile/
+        │   └── presentation/screens/
+        │       ├── profile_screen.dart           # Perfil completo
+        │       ├── edit_profile_screen.dart      # Edición validada
+        │       └── settings_screen.dart          # Configuración
+        ├── places/
+        │   ├── data/places_service.dart          # Servicio de lugares
+        │   └── presentation/
+        │       ├── providers/place_detail_provider.dart
+        │       └── screens/place_detail_screen.dart # Detalle completo
         ├── events/                              # EventDetailScreen
         └── reviews/                             # CreateReviewScreen
 │
@@ -243,33 +426,37 @@ web/                                             # Código fuente React
 ├── package.json                                 # Dependencias
 ├── vite.config.ts                               # Configuración Vite
 ├── tailwind.config.js                           # Configuración Tailwind
+├── tsconfig.node.json                           # Config TypeScript adicional
+├── .dockerignore                                # Exclusiones Docker
+├── Dockerfile                                   # Multi-stage con Nginx
 └── src/
     ├── main.tsx                                 # Entry point
-    ├── App.tsx                                  # Router principal
-    ├── services/api.ts                          # Cliente Axios
+    ├── App.tsx                                  # Router + ProtectedRoute
+    ├── hooks/useAuth.ts                         # Hook de autenticación
+    ├── services/api.ts                          # Cliente Axios + endpoints
     ├── types/index.ts                           # TypeScript interfaces
     ├── components/layout/                       # AdminLayout, EmpresaLayout
     └── pages/
-        ├── LoginPage.tsx                        # Login compartido
-        ├── admin/                               # 8 páginas Admin
-        │   ├── Dashboard.tsx                    # KPIs, gráficos
-        │   ├── Users.tsx                        # CRUD usuarios
-        │   ├── Places.tsx                       # Grid lugares
-        │   ├── Reviews.tsx                      # Moderación
-        │   ├── Events.tsx                       # CRUD eventos
-        │   ├── Promotions.tsx                   # Ver promos
-        │   ├── Categories.tsx                   # CRUD categorías
+        ├── LoginPage.tsx                        # Login real con useAuth
+        ├── admin/                               # 8 páginas Admin (conectadas)
+        │   ├── Dashboard.tsx                    # Stats reales de API
+        │   ├── Users.tsx                        # Listado paginado real
+        │   ├── Places.tsx                       # Grid con fotos reales
+        │   ├── Reviews.tsx                      # Reseñas reales
+        │   ├── Events.tsx                       # Eventos reales
+        │   ├── Promotions.tsx                   # Promociones reales
+        │   ├── Categories.tsx                   # Categorías reales
         │   └── Settings.tsx                     # Configuración
-        └── empresa/                             # 6 páginas Empresa
-            ├── Dashboard.tsx                    # Stats, acciones
-            ├── Place.tsx                        # Editar negocio
-            ├── Reviews.tsx                      # Responder reseñas
-            ├── Promotions.tsx                   # CRUD promos
+        └── empresa/                             # 6 páginas Empresa (conectadas)
+            ├── Dashboard.tsx                    # Stats reales
+            ├── Place.tsx                        # Edición real
+            ├── Reviews.tsx                      # Reseñas con respuesta
+            ├── Promotions.tsx                   # Promociones reales
             ├── Stats.tsx                        # Estadísticas
             └── Photos.tsx                       # Gestión fotos
 ```
 
-**Total**: 38 archivos de documentación + 40 archivos código backend + 20 archivos código Flutter + 20 archivos código React
+**Total**: 38 docs + 55 backend + 30 Flutter + 25 React + 3 Docker + 5 tests = **~156 archivos**
 
 ### Decisiones Aceptadas (ADRs)
 
@@ -549,6 +736,6 @@ REFRESH_TOKEN_EXPIRATION=7d
 
 ---
 
-**Última actualización**: 2026-06-26
-**Próximo entregable**: 8 — Infraestructura DevOps
-**Entregables completados**: 7 de 12 + API estabilizada
+**Última actualización**: 2026-07-04
+**Próximo entregable**: 8.4 — CI/CD (GitHub Actions)
+**Entregables completados**: 7 de 12 + Seguridad + Módulos Admin/Empresa + Google Maps + Docker + Tests

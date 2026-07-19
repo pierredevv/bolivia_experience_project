@@ -103,7 +103,10 @@ export class PlacesService {
 
   async remove(id: string) {
     await this.findPlaceOrThrow(id);
-    return this.prisma.place.delete({ where: { id } });
+    return this.prisma.place.update({
+      where: { id },
+      data: { isActive: false },
+    });
   }
 
   async addPhoto(placeId: string, url: string, altText?: string) {

@@ -4,6 +4,9 @@ import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Role } from '../../common/enums/role.enum';
 
 @ApiTags('users')
 @Controller('users')
@@ -37,5 +40,15 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async getUserById(@Param('id') id: string) {
     return this.usersService.getUserById(id);
+  }
+
+  @Patch(':id/ban')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Toggle user active status (ban/unban)' })
+  @ApiResponse({ status: 200, description: 'User status toggled' })
+  async banUser(@Param('id') id: string) {
+    return this.usersService.banUser(id);
   }
 }

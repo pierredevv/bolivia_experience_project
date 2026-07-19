@@ -1,4 +1,4 @@
-import { Plus, Edit, Trash2, Tag, Calendar } from 'lucide-react'
+import { Plus, Trash2, Tag, Calendar } from 'lucide-react'
 
 const promotions = [
   { id: '1', title: '2x1 en almuerzos', discount: 50, startDate: '2026-07-01', endDate: '2026-07-31', status: 'active' },

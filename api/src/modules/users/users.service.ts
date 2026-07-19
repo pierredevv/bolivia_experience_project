@@ -67,4 +67,18 @@ export class UsersService {
 
     return user;
   }
+
+  async banUser(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isActive: !user.isActive },
+      select: { id: true, email: true, name: true, isActive: true },
+    });
+  }
 }

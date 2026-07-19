@@ -13,6 +13,8 @@ import { EventsService } from './events.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Public } from '../../common/decorators/public.decorator';
+import { Role } from '../../common/enums/role.enum';
 
 @ApiTags('events')
 @Controller('events')
@@ -20,6 +22,7 @@ export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   @Get()
+  @Public()
   @ApiOperation({ summary: 'List upcoming events' })
   @ApiResponse({ status: 200, description: 'Events list' })
   async findAll() {
@@ -27,6 +30,7 @@ export class EventsController {
   }
 
   @Get('today')
+  @Public()
   @ApiOperation({ summary: 'Get today events' })
   @ApiResponse({ status: 200, description: 'Today events' })
   async findToday() {
@@ -34,6 +38,7 @@ export class EventsController {
   }
 
   @Get(':id')
+  @Public()
   @ApiOperation({ summary: 'Get event by ID' })
   @ApiResponse({ status: 200, description: 'Event details' })
   @ApiResponse({ status: 404, description: 'Event not found' })
@@ -43,7 +48,7 @@ export class EventsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.Admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create event (Admin only)' })
   @ApiResponse({ status: 201, description: 'Event created' })
@@ -53,7 +58,7 @@ export class EventsController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.Admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update event (Admin only)' })
   async update(@Param('id') id: string, @Body() body: any) {
@@ -62,7 +67,7 @@ export class EventsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.Admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete event (Admin only)' })
   async remove(@Param('id') id: string) {

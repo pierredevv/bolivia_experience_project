@@ -14,6 +14,8 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
+import { Role } from '../../common/enums/role.enum';
 
 @ApiTags('promotions')
 @Controller('promotions')
@@ -21,6 +23,7 @@ export class PromotionsController {
   constructor(private readonly promotionsService: PromotionsService) {}
 
   @Get()
+  @Public()
   @ApiOperation({ summary: 'List active promotions' })
   @ApiResponse({ status: 200, description: 'Active promotions' })
   async findActive() {
@@ -28,6 +31,7 @@ export class PromotionsController {
   }
 
   @Get(':id')
+  @Public()
   @ApiOperation({ summary: 'Get promotion by ID' })
   @ApiResponse({ status: 200, description: 'Promotion details' })
   async findById(@Param('id') id: string) {
@@ -36,7 +40,7 @@ export class PromotionsController {
 
   @Post('places/:placeId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('empresa', 'admin')
+  @Roles(Role.Empresa, Role.Admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create promotion for place' })
   @ApiResponse({ status: 201, description: 'Promotion created' })
@@ -50,7 +54,7 @@ export class PromotionsController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('empresa', 'admin')
+  @Roles(Role.Empresa, Role.Admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update promotion' })
   async update(
@@ -63,7 +67,7 @@ export class PromotionsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('empresa', 'admin')
+  @Roles(Role.Empresa, Role.Admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete promotion' })
   async remove(

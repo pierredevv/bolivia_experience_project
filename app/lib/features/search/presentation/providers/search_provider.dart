@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_provider.dart';
 import '../../data/search_service.dart';
+import '../screens/search_filters_screen.dart';
 
 enum SearchStatus { initial, loading, loaded, error }
 
@@ -13,6 +14,10 @@ class SearchState {
   final List<dynamic> searchHistory;
   final String? errorMessage;
   final String query;
+  final SearchFilters filters;
+  final int page;
+  final int totalPages;
+  final int total;
 
   const SearchState({
     this.status = SearchStatus.initial,
@@ -21,6 +26,10 @@ class SearchState {
     this.searchHistory = const [],
     this.errorMessage,
     this.query = '',
+    this.filters = const SearchFilters(),
+    this.page = 1,
+    this.totalPages = 1,
+    this.total = 0,
   });
 
   SearchState copyWith({
@@ -30,6 +39,10 @@ class SearchState {
     List<dynamic>? searchHistory,
     String? errorMessage,
     String? query,
+    SearchFilters? filters,
+    int? page,
+    int? totalPages,
+    int? total,
   }) {
     return SearchState(
       status: status ?? this.status,
@@ -38,6 +51,10 @@ class SearchState {
       searchHistory: searchHistory ?? this.searchHistory,
       errorMessage: errorMessage,
       query: query ?? this.query,
+      filters: filters ?? this.filters,
+      page: page ?? this.page,
+      totalPages: totalPages ?? this.totalPages,
+      total: total ?? this.total,
     );
   }
 }
@@ -69,7 +86,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       if (query.length >= 2) {
-        search(query);
+        search();
         getSuggestions(query);
       } else {
         state = state.copyWith(results: [], suggestions: []);
@@ -77,9 +94,24 @@ class SearchNotifier extends StateNotifier<SearchState> {
     });
   }
 
-  Future<void> search(String query) async {
+  void updateFilters(SearchFilters filters) {
+    state = state.copyWith(filters: filters, page: 1);
+    if (state.query.isNotEmpty || filters.hasFilters) {
+      search();
+    }
+  }
+
+  void updatePage(int page) {
+    state = state.copyWith(page: page);
+    search();
+  }
+
+  Future<void> search() async {
     if (!mounted) return;
-    if (query.isEmpty) {
+    final query = state.query;
+    final filters = state.filters;
+
+    if (query.isEmpty && !filters.hasFilters) {
       state = state.copyWith(results: [], status: SearchStatus.initial);
       return;
     }
@@ -87,11 +119,27 @@ class SearchNotifier extends StateNotifier<SearchState> {
     state = state.copyWith(status: SearchStatus.loading);
 
     try {
-      final results = await _searchService.search(query: query);
+      final result = await _searchService.advancedSearch(
+        query: query.isNotEmpty ? query : null,
+        categoryId: filters.categoryId,
+        minRating: filters.minRating,
+        maxRating: filters.maxRating,
+        featured: filters.featured,
+        sortBy: filters.sortBy,
+        page: state.page,
+        limit: 20,
+      );
+
       if (!mounted) return;
+
+      final data = result['data'] ?? [];
+      final meta = result['meta'] ?? {};
+
       state = state.copyWith(
         status: SearchStatus.loaded,
-        results: results,
+        results: data,
+        totalPages: meta['totalPages'] ?? 1,
+        total: meta['total'] ?? 0,
       );
     } on DioException catch (e) {
       if (!mounted) return;

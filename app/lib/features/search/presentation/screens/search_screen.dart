@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
 import '../providers/search_provider.dart';
+import 'search_filters_screen.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -58,6 +59,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           },
         ),
         actions: [
+          // Filters button
+          IconButton(
+            icon: Icon(
+              Icons.filter_list,
+              color: searchState.filters.hasFilters
+                  ? AppColors.primary700
+                  : null,
+            ),
+            onPressed: _openFilters,
+          ),
           TextButton(
             onPressed: () {
               _searchController.clear();
@@ -72,8 +83,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
+  Future<void> _openFilters() async {
+    final searchState = ref.read(searchProvider);
+    final filters = await Navigator.push<SearchFilters>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SearchFiltersScreen(
+          initialFilters: searchState.filters,
+        ),
+      ),
+    );
+
+    if (filters != null) {
+      ref.read(searchProvider.notifier).updateFilters(filters);
+    }
+  }
+
   Widget _buildBody(BuildContext context, SearchState state) {
-    if (state.query.isEmpty) {
+    if (state.query.isEmpty && !state.filters.hasFilters) {
       return _buildHistoryAndSuggestions(context, state);
     }
 
@@ -98,7 +125,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () {
-                  ref.read(searchProvider.notifier).search(state.query);
+                  ref.read(searchProvider.notifier).search();
                 },
                 icon: const Icon(Icons.refresh),
                 label: const Text('Reintentar'),
@@ -140,16 +167,76 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: state.results.length,
-      itemBuilder: (context, index) {
-        final result = state.results[index];
-        return _SearchResultCard(
-          result: result,
-          onTap: () => context.go('/places/${result['id']}'),
-        );
-      },
+    return Column(
+      children: [
+        // Active filters chips
+        if (state.filters.hasFilters)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Text(
+                  '${state.total} resultados',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () {
+                    ref.read(searchProvider.notifier).updateFilters(
+                      const SearchFilters(),
+                    );
+                  },
+                  icon: const Icon(Icons.close, size: 16),
+                  label: const Text('Limpiar filtros'),
+                ),
+              ],
+            ),
+          ),
+
+        // Results list
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: state.results.length,
+            itemBuilder: (context, index) {
+              final result = state.results[index];
+              return _SearchResultCard(
+                result: result,
+                onTap: () => context.go('/places/${result['id']}'),
+              );
+            },
+          ),
+        ),
+
+        // Pagination
+        if (state.totalPages > 1)
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (state.page > 1)
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: () {
+                      ref.read(searchProvider.notifier).updatePage(state.page - 1);
+                    },
+                  ),
+                Text(
+                  'Página ${state.page} de ${state.totalPages}',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                if (state.page < state.totalPages)
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: () {
+                      ref.read(searchProvider.notifier).updatePage(state.page + 1);
+                    },
+                  ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -168,9 +255,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ...state.suggestions.map((suggestion) {
               return ListTile(
                 leading: const Icon(Icons.search, size: 20),
-                title: Text(suggestion['text'] ?? suggestion.toString()),
+                title: Text(suggestion['name'] ?? suggestion.toString()),
+                subtitle: suggestion['address'] != null
+                    ? Text(
+                        suggestion['address'],
+                        style: Theme.of(context).textTheme.bodySmall,
+                      )
+                    : null,
                 onTap: () {
-                  final text = suggestion['text'] ?? suggestion.toString();
+                  final text = suggestion['name'] ?? suggestion.toString();
                   _searchController.text = text;
                   ref.read(searchProvider.notifier).updateQuery(text);
                 },
@@ -222,6 +315,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         color: AppColors.neutral500,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Usá los filtros para refinar tu búsqueda',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.neutral400,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -242,9 +342,9 @@ class _SearchResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final photos = result['photos'] as List<dynamic>? ?? [];
     final photoUrl = photos.isNotEmpty ? photos[0]['url'] : null;
-    final rating = result['rating'] as Map<String, dynamic>? ?? {};
-    final averageRating = rating['average'] ?? 0;
     final category = result['category'] as Map<String, dynamic>? ?? {};
+    final ratingAvg = result['ratingAvg'] ?? 0;
+    final ratingCount = result['ratingCount'] ?? 0;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -303,7 +403,7 @@ class _SearchResultCard extends StatelessWidget {
                         Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
                         Text(
-                          '$averageRating',
+                          '${Number(ratingAvg).toStringAsFixed(1)} ($ratingCount)',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],

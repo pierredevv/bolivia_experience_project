@@ -1,6 +1,81 @@
-import { Save, MapPin, Phone, Globe, Instagram, Clock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Save, MapPin, Phone, Globe, Instagram, Loader2 } from 'lucide-react'
+import { empresaApi } from '../../services/api'
+
+interface Place {
+  id: string
+  name: string
+  description: string | null
+  address: string
+  phone: string | null
+  website: string | null
+  instagram: string | null
+  facebook: string | null
+  tiktok: string | null
+}
 
 export default function EmpresaPlace() {
+  const [place, setPlace] = useState<Place | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  useEffect(() => {
+    fetchPlace()
+  }, [])
+
+  const fetchPlace = async () => {
+    try {
+      setLoading(true)
+      const response = await empresaApi.getPlace()
+      setPlace(response.data)
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Error al cargar lugar')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!place) return
+    try {
+      setSaving(true)
+      await empresaApi.updatePlace({
+        name: place.name,
+        description: place.description,
+        address: place.address,
+        phone: place.phone,
+        website: place.website,
+        instagram: place.instagram,
+        facebook: place.facebook,
+        tiktok: place.tiktok,
+      })
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al guardar')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-secondary-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
+        {error}
+      </div>
+    )
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -8,11 +83,25 @@ export default function EmpresaPlace() {
           <h1 className="text-2xl font-bold text-neutral-900">Mi Lugar</h1>
           <p className="text-neutral-500 mt-1">Edita la información de tu negocio</p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-secondary-700 text-white rounded-lg hover:bg-secondary-800 transition-colors">
-          <Save className="h-5 w-5" />
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-secondary-700 text-white rounded-lg hover:bg-secondary-800 transition-colors disabled:opacity-50"
+        >
+          {saving ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Save className="h-5 w-5" />
+          )}
           Guardar Cambios
         </button>
       </div>
+
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 mb-6">
+          Cambios guardados exitosamente
+        </div>
+      )}
 
       <div className="space-y-6">
         {/* Basic Info */}
@@ -25,7 +114,8 @@ export default function EmpresaPlace() {
               </label>
               <input
                 type="text"
-                defaultValue="La Casa del Camba"
+                value={place?.name || ''}
+                onChange={(e) => setPlace(prev => prev ? { ...prev, name: e.target.value } : null)}
                 className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-secondary-500 focus:border-transparent outline-none"
               />
             </div>
@@ -35,19 +125,10 @@ export default function EmpresaPlace() {
               </label>
               <textarea
                 rows={4}
-                defaultValue="Restaurante tradicional con gastronomía cruceña auténtica. Chicharrón, majao, y platos típicos."
+                value={place?.description || ''}
+                onChange={(e) => setPlace(prev => prev ? { ...prev, description: e.target.value } : null)}
                 className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-secondary-500 focus:border-transparent outline-none resize-none"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
-                Categoría
-              </label>
-              <select className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-secondary-500 focus:border-transparent outline-none">
-                <option value="restaurantes">Restaurantes</option>
-                <option value="hoteles">Hoteles</option>
-                <option value="cafeterias">Cafeterías</option>
-              </select>
             </div>
           </div>
         </div>
@@ -62,7 +143,8 @@ export default function EmpresaPlace() {
               </label>
               <input
                 type="text"
-                defaultValue="Av. San Martín 1250, Santa Cruz de la Sierra"
+                value={place?.address || ''}
+                onChange={(e) => setPlace(prev => prev ? { ...prev, address: e.target.value } : null)}
                 className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-secondary-500 focus:border-transparent outline-none"
               />
             </div>
@@ -72,7 +154,8 @@ export default function EmpresaPlace() {
               </label>
               <input
                 type="tel"
-                defaultValue="+591 3 3456789"
+                value={place?.phone || ''}
+                onChange={(e) => setPlace(prev => prev ? { ...prev, phone: e.target.value } : null)}
                 className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-secondary-500 focus:border-transparent outline-none"
               />
             </div>
@@ -82,7 +165,8 @@ export default function EmpresaPlace() {
               </label>
               <input
                 type="url"
-                defaultValue="https://lacasadelcamba.com"
+                value={place?.website || ''}
+                onChange={(e) => setPlace(prev => prev ? { ...prev, website: e.target.value } : null)}
                 className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-secondary-500 focus:border-transparent outline-none"
               />
             </div>
@@ -92,39 +176,11 @@ export default function EmpresaPlace() {
               </label>
               <input
                 type="text"
-                defaultValue="@lacasadelcamba"
+                value={place?.instagram || ''}
+                onChange={(e) => setPlace(prev => prev ? { ...prev, instagram: e.target.value } : null)}
                 className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-secondary-500 focus:border-transparent outline-none"
               />
             </div>
-          </div>
-        </div>
-
-        {/* Hours */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-neutral-900 mb-4">
-            <span className="flex items-center gap-2"><Clock className="h-5 w-5" /> Horarios</span>
-          </h2>
-          <div className="space-y-3">
-            {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map((day, i) => (
-              <div key={day} className="flex items-center gap-4">
-                <span className="w-24 text-sm font-medium text-neutral-700">{day}</span>
-                <input
-                  type="time"
-                  defaultValue={i < 5 ? '11:00' : '11:00'}
-                  className="px-3 py-2 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-secondary-500 focus:border-transparent outline-none"
-                />
-                <span className="text-neutral-500">-</span>
-                <input
-                  type="time"
-                  defaultValue={i < 4 ? '23:00' : '00:00'}
-                  className="px-3 py-2 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-secondary-500 focus:border-transparent outline-none"
-                />
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" className="rounded border-neutral-300" />
-                  <span className="text-sm text-neutral-500">Cerrado</span>
-                </label>
-              </div>
-            ))}
           </div>
         </div>
       </div>

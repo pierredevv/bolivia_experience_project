@@ -12,12 +12,13 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
-import { CreateReviewDto, UpdateReviewDto } from './dto';
+import { CreateReviewDto, UpdateReviewDto, RespondReviewDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { Role } from '../../common/enums/role.enum';
 
 @ApiTags('reviews')
 @Controller()
@@ -73,7 +74,7 @@ export class ReviewsController {
 
   @Patch('reviews/:id/approve')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.Admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Approve a review (Admin only)' })
   async approve(@Param('id') reviewId: string) {
@@ -82,14 +83,15 @@ export class ReviewsController {
 
   @Post('reviews/:id/respond')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('empresa', 'admin')
+  @Roles(Role.Empresa, Role.Admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Respond to a review (Business owner)' })
   async respond(
     @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: string,
     @Param('id') reviewId: string,
-    @Body() body: { comment: string },
+    @Body() dto: RespondReviewDto,
   ) {
-    return this.reviewsService.respond(userId, reviewId, body.comment);
+    return this.reviewsService.respond(userId, reviewId, dto.comment, role);
   }
 }

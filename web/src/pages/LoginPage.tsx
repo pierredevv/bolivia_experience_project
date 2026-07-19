@@ -1,29 +1,31 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, Eye, EyeOff } from 'lucide-react'
+import { MapPin, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { useAuth } from '../hooks/useAuth'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const { login, loading, error } = useAuth()
   const navigate = useNavigate()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     
-    // Simulate login
-    setTimeout(() => {
-      localStorage.setItem('token', 'demo-token')
+    try {
+      const user = await login(email, password)
       
-      if (email.includes('admin')) {
+      if (user.role === 'admin') {
         navigate('/admin')
-      } else {
+      } else if (user.role === 'empresa') {
         navigate('/empresa')
+      } else {
+        navigate('/login')
       }
-      setLoading(false)
-    }, 1000)
+    } catch (err) {
+      // Error is handled by useAuth
+    }
   }
 
   return (
@@ -37,6 +39,13 @@ export default function LoginPage() {
             <h1 className="text-2xl font-bold text-neutral-900">BoliviaExperience</h1>
             <p className="text-neutral-500 mt-1">Panel Administrativo</p>
           </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm">
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -76,16 +85,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="rounded border-neutral-300" />
-                <span className="text-sm text-neutral-600">Recordarme</span>
-              </label>
-              <button type="button" className="text-sm text-primary-700 hover:text-primary-800">
-                ¿Olvidaste tu contraseña?
-              </button>
-            </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -107,7 +106,7 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-neutral-200">
             <p className="text-xs text-neutral-500 text-center">
-              Usa <strong>admin@test.com</strong> para panel admin o <strong>empresa@test.com</strong> para panel empresa
+              Usa <strong>admin@boliviaexperience.com</strong> para panel admin o <strong>empresa@test.com</strong> para panel empresa
             </p>
           </div>
         </div>

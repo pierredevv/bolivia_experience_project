@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { GuardsModule } from './common/guards/guards.module';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { PlacesModule } from './modules/places/places.module';
@@ -13,6 +15,8 @@ import { SearchModule } from './modules/search/search.module';
 import { EventsModule } from './modules/events/events.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { WeatherModule } from './modules/weather/weather.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { EmpresaModule } from './modules/empresa/empresa.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -34,6 +38,14 @@ import configuration from './config/configuration';
     EventsModule,
     PromotionsModule,
     WeatherModule,
+    AdminModule,
+    EmpresaModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 })
 export class AppModule {}

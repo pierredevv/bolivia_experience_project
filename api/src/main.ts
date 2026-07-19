@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import * as compression from 'compression';
 import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
@@ -16,7 +17,7 @@ async function bootstrap() {
   app.use(compression());
 
   app.enableCors({
-    origin: '*',
+    origin: configService.get('cors.origin'),
     credentials: true,
   });
 
@@ -33,7 +34,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
 
   const swaggerConfig = new DocumentBuilder()
@@ -55,7 +56,10 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
+
+  if (configService.get('NODE_ENV') !== 'production') {
+    SwaggerModule.setup('docs', app, document);
+  }
 
   const port = configService.get('PORT', 3000);
   await app.listen(port, '0.0.0.0');

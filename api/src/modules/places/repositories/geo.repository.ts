@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 
 export interface NearbyPlace {
@@ -33,11 +34,11 @@ export class GeoRepository {
     limit: number = 20,
     categoryId?: string,
   ): Promise<NearbyPlace[]> {
-    const categoryFilter = categoryId
-      ? `AND p.category_id = '${categoryId}'`
-      : '';
+    const categoryCondition = categoryId
+      ? Prisma.sql`AND p.category_id = ${categoryId}::uuid`
+      : Prisma.empty;
 
-    const query = `
+    const rows = await this.prisma.$queryRaw<NearbyPlace[]>`
       SELECT 
         p.id,
         p.name,
@@ -54,29 +55,24 @@ export class GeoRepository {
           ORDER BY display_order 
           LIMIT 1
         ) as primary_photo,
-        (
-          6371000 * acos(
-            cos(radians(${latitude})) * cos(radians(p.latitude::float)) *
-            cos(radians(p.longitude::float) - radians(${longitude})) +
-            sin(radians(${latitude})) * sin(radians(p.latitude::float))
-          )
+        ST_Distance(
+          p.location::geography,
+          ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
         ) as distance_meters
       FROM places p
       JOIN categories c ON p.category_id = c.id
       WHERE p.is_active = true
-      ${categoryFilter}
-      HAVING (
-        6371000 * acos(
-          cos(radians(${latitude})) * cos(radians(p.latitude::float)) *
-          cos(radians(p.longitude::float) - radians(${longitude})) +
-          sin(radians(${latitude})) * sin(radians(p.latitude::float))
+        AND ST_DWithin(
+          p.location::geography,
+          ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography,
+          ${radiusMeters}
         )
-      ) <= ${radiusMeters}
+        ${categoryCondition}
       ORDER BY distance_meters ASC
       LIMIT ${limit}
     `;
 
-    return this.prisma.$queryRawUnsafe<NearbyPlace[]>(query);
+    return rows;
   }
 
   async findClusters(
@@ -89,7 +85,7 @@ export class GeoRepository {
     const latStep = (northEastLat - southWestLat) / 5;
     const lngStep = (northEastLng - southWestLng) / 5;
 
-    const query = `
+    const rows = await this.prisma.$queryRaw<ClusterResult[]>`
       SELECT 
         FLOOR((latitude::float - ${southWestLat}) / ${latStep}) * 5 +
         FLOOR((longitude::float - ${southWestLng}) / ${lngStep}) as cluster_id,
@@ -98,13 +94,12 @@ export class GeoRepository {
         AVG(longitude::float)::DECIMAL(11,8) as avg_lng
       FROM places
       WHERE is_active = true
-      AND latitude::float BETWEEN ${southWestLat} AND ${northEastLat}
-      AND longitude::float BETWEEN ${southWestLng} AND ${northEastLng}
+      AND location &&& ST_MakeEnvelope(${southWestLng}, ${southWestLat}, ${northEastLng}, ${northEastLat}, 4326)
       GROUP BY cluster_id
       ORDER BY cluster_count DESC
     `;
 
-    return this.prisma.$queryRawUnsafe<ClusterResult[]>(query);
+    return rows;
   }
 
   async findByBounds(
@@ -114,11 +109,11 @@ export class GeoRepository {
     southWestLng: number,
     categoryId?: string,
   ): Promise<NearbyPlace[]> {
-    const categoryFilter = categoryId
-      ? `AND p.category_id = '${categoryId}'`
-      : '';
+    const categoryCondition = categoryId
+      ? Prisma.sql`AND p.category_id = ${categoryId}::uuid`
+      : Prisma.empty;
 
-    const query = `
+    const rows = await this.prisma.$queryRaw<NearbyPlace[]>`
       SELECT 
         p.id,
         p.name,
@@ -139,13 +134,12 @@ export class GeoRepository {
       FROM places p
       JOIN categories c ON p.category_id = c.id
       WHERE p.is_active = true
-      AND p.latitude::float BETWEEN ${southWestLat} AND ${northEastLat}
-      AND p.longitude::float BETWEEN ${southWestLng} AND ${northEastLng}
-      ${categoryFilter}
+      AND p.location &&& ST_MakeEnvelope(${southWestLng}, ${southWestLat}, ${northEastLng}, ${northEastLat}, 4326)
+        ${categoryCondition}
       ORDER BY p.rating_avg DESC, p.rating_count DESC
       LIMIT 100
     `;
 
-    return this.prisma.$queryRawUnsafe<NearbyPlace[]>(query);
+    return rows;
   }
 }

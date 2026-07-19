@@ -125,4 +125,22 @@ class PlacesService {
     final data = response.data;
     return data['data'] ?? [];
   }
+
+  Future<void> toggleFavorite(String placeId) async {
+    await _dio.post('${ApiConstants.favorites}/$placeId');
+  }
+
+  Future<void> removeFavorite(String placeId) async {
+    await _dio.delete('${ApiConstants.favorites}/$placeId');
+  }
+
+  Future<bool> checkFavorite(String placeId) async {
+    try {
+      final response = await _dio.get(ApiConstants.checkFavorite(placeId));
+      final data = response.data;
+      return data['isFavorite'] ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
 }

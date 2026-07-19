@@ -69,6 +69,8 @@ export const reviewsApi = {
   getAll: (params?: any) => api.get('/admin/reviews', { params }),
   approve: (id: string) => api.patch(`/reviews/${id}/approve`),
   delete: (id: string) => api.delete(`/reviews/${id}`),
+  respond: (id: string, comment: string) =>
+    api.post(`/reviews/${id}/respond`, { comment }),
 }
 
 // Events

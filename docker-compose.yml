@@ -10,6 +10,38 @@ services:
       POSTGRES_DB: bolivia_experience
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./api
+    container_name: bolivia_experience_api
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bolivia_experience
+      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-this-refresh-secret}
+      JWT_EXPIRATION: 15m
+      REFRESH_TOKEN_EXPIRATION: 7d
+      PORT: 3000
+      NODE_ENV: production
+      CORS_ORIGIN: http://localhost:5173
+    command: sh -c "npx prisma migrate deploy && node dist/main"
+
+  web:
+    build: ./web
+    container_name: bolivia_experience_web
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
 
 volumes:
   pgdata:
