@@ -37,35 +37,36 @@ export default function AdminBusinesses() {
     }
   }
 
+  // ── Shared input/select class ──
+  const inputCls = 'px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-sm font-medium transition-all'
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Gestión de Empresas</h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Administra los registros y aprobaciones de negocios en la plataforma.
-          </p>
-        </div>
+    <div className="space-y-8 pb-12">
+
+      {/* ── Page Header ── */}
+      <div>
+        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Gestión de Empresas</h1>
+        <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1.5">
+          Aprobaciones y administración de negocios en la plataforma
+        </p>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700 flex flex-wrap gap-4">
-        <div className="flex-1 min-w-[200px]">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Buscar por nombre o email..."
-              className="w-full pl-10 pr-4 py-2 bg-neutral-100 dark:bg-neutral-900 border-none rounded-lg text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 transition-shadow"
-            />
-          </div>
+      {/* ── Filters Card ── */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] shadow-sm p-5 flex flex-wrap gap-4">
+        <div className="flex-1 min-w-[200px] relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre o email..."
+            className={`${inputCls} w-full pl-11`}
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5 text-neutral-400" />
+        <div className="flex items-center gap-3">
+          <Filter className="h-5 w-5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-neutral-100 dark:bg-neutral-900 border-none rounded-lg py-2 pl-3 pr-8 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 cursor-pointer"
+            className={inputCls}
           >
             <option value="all">Todos los estados</option>
             <option value="pending">Pendientes</option>
@@ -75,96 +76,85 @@ export default function AdminBusinesses() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+      {/* ── Content Table Card ── */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] shadow-sm overflow-hidden">
         {isLoading ? (
-          <div className="p-8 flex justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+          <div className="p-16 flex flex-col items-center justify-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
+            <p className="text-sm font-bold text-slate-400 dark:text-slate-500">Cargando empresas...</p>
           </div>
         ) : businesses?.length === 0 ? (
-          <div className="p-12 text-center">
-            <Store className="h-12 w-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">No hay empresas</h3>
-            <p className="text-neutral-500 dark:text-neutral-400 mt-1">
+          <div className="p-16 text-center">
+            <Store className="h-14 w-14 text-slate-200 dark:text-slate-700 mx-auto mb-4" />
+            <h3 className="text-xl font-black text-slate-900 dark:text-white">No hay empresas</h3>
+            <p className="text-slate-400 dark:text-slate-500 mt-2 font-semibold text-sm">
               No se encontraron empresas con los filtros actuales.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-neutral-50 dark:bg-neutral-900/50 border-b border-neutral-200 dark:border-neutral-700">
+              <thead className="bg-slate-50/60 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Negocio
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Representante
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Contacto
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Registro
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                    Acciones
-                  </th>
+                  {['Negocio', 'Representante', 'Contacto', 'Estado', 'Registro', 'Acciones'].map((col, i) => (
+                    <th
+                      key={col}
+                      className={`px-6 py-4 text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider ${i === 5 ? 'text-right' : 'text-left'}`}
+                    >
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                 {businesses?.map((business: any) => (
-                  <tr key={business.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={business.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                    <td className="px-6 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-lg flex items-center justify-center font-bold">
+                        <div className="h-10 w-10 bg-slate-900 dark:bg-slate-700 text-white rounded-2xl flex items-center justify-center font-black text-sm flex-shrink-0">
                           {business.businessName?.[0]?.toUpperCase() || 'E'}
                         </div>
                         <div>
-                          <div className="font-medium text-neutral-900 dark:text-neutral-100">
-                            {business.businessName || 'Empresa Sin Nombre'}
-                          </div>
-                          <div className="text-sm text-neutral-500">
+                          <p className="font-bold text-slate-900 dark:text-white text-sm">{business.businessName || 'Empresa Sin Nombre'}</p>
+                          <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-0.5">
                             {business.places?.[0]?.name || 'Sin lugar asignado'}
-                          </div>
+                          </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-neutral-900 dark:text-neutral-100">{business.name}</div>
-                      <div className="text-sm text-neutral-500">{business.email}</div>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{business.name}</p>
+                      <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-0.5">{business.email}</p>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                    <td className="px-6 py-5 whitespace-nowrap text-sm font-semibold text-slate-500 dark:text-slate-400">
                       {business.businessPhone || 'No registrado'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-5 whitespace-nowrap">
                       {business.approvalStatus === 'pending' && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400">
                           Pendiente
                         </span>
                       )}
                       {business.approvalStatus === 'approved' && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                           Aprobado
                         </span>
                       )}
                       {business.approvalStatus === 'rejected' && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400">
                           Suspendido
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                    <td className="px-6 py-5 whitespace-nowrap text-sm font-semibold text-slate-400 dark:text-slate-500">
                       {format(new Date(business.createdAt), "d MMM, yyyy", { locale: es })}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-5 whitespace-nowrap text-right">
                       <div className="flex justify-end gap-2">
                         {business.approvalStatus !== 'approved' && (
                           <button
                             onClick={() => setConfirmApproveId(business.id)}
-                            className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                            className="p-2.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-2xl transition-colors"
                             title="Aprobar"
                           >
                             <CheckCircle className="h-5 w-5" />
@@ -173,7 +163,7 @@ export default function AdminBusinesses() {
                         {business.approvalStatus !== 'rejected' && (
                           <button
                             onClick={() => setConfirmSuspendId(business.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            className="p-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-2xl transition-colors"
                             title="Suspender"
                           >
                             <XCircle className="h-5 w-5" />

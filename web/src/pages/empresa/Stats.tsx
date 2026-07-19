@@ -1,24 +1,25 @@
-import { TrendingUp, Eye, Star, Loader2, Heart } from 'lucide-react'
+import { TrendingUp, Eye, Star, Loader2, Heart, BarChart3 } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useEmpresaStats } from '../../hooks/useEmpresa'
 
-const COLORS = ['#4CAF50', '#FFCDD2', '#FFEB3B']
+const COLORS = ['#10b981', '#f59e0b', '#94a3b8']
 
 export default function EmpresaStats() {
   const { data, isLoading, error } = useEmpresaStats()
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-secondary-700" />
+      <div className="flex items-center justify-center py-32 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm min-h-[60vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="text-center py-20">
-        <p className="text-red-600">Error al cargar estadísticas</p>
+      <div className="text-center py-24 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm p-8">
+        <p className="text-red-600 text-lg font-bold">Error al cargar estadísticas</p>
+        <p className="text-slate-400 text-sm mt-2 font-medium">Intenta recargar la página.</p>
       </div>
     )
   }
@@ -27,77 +28,97 @@ export default function EmpresaStats() {
     { name: 'Aprobadas', value: data?.approvedReviews || 0 },
     { name: 'Pendientes', value: data?.pendingReviews || 0 },
     { name: 'Total', value: data?.totalReviews || 0 },
-  ].filter(d => d.value > 0)
+  ].filter((d) => d.value > 0)
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Estadísticas</h1>
-        <p className="text-neutral-500 dark:text-neutral-400 mt-1">Analiza el rendimiento de tu negocio</p>
+    <div className="space-y-8 pb-12">
+
+      {/* ── Page Header ── */}
+      <div>
+        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Estadísticas</h1>
+        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+          Analiza el rendimiento de tu negocio
+        </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
-              <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Rating Promedio</p>
-              <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">{data?.ratingAvg?.toFixed(1) || '0.0'}</p>
-            </div>
+      {/* ── KPI Cards — Bento Grid ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+        {/* Rating Promedio */}
+        <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex items-center justify-between group">
+          <div>
+            <p className="text-sm font-black uppercase text-slate-400 tracking-wider">Rating</p>
+            <p className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+              {data?.ratingAvg?.toFixed(1) || '0.0'}
+            </p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Promedio general</p>
+          </div>
+          <div className="bg-amber-50 text-amber-500 p-3 rounded-2xl group-hover:bg-amber-500 group-hover:text-white transition-all">
+            <Star className="h-6 w-6" />
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <Eye className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Reseñas</p>
-              <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">{data?.totalReviews || 0}</p>
-            </div>
+
+        {/* Total Reseñas */}
+        <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex items-center justify-between group">
+          <div>
+            <p className="text-sm font-black uppercase text-slate-400 tracking-wider">Reseñas</p>
+            <p className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+              {data?.totalReviews || 0}
+            </p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Total acumuladas</p>
+          </div>
+          <div className="bg-slate-50 text-slate-600 p-3 rounded-2xl group-hover:bg-slate-900 group-hover:text-white transition-all">
+            <Eye className="h-6 w-6" />
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-              <Heart className="h-5 w-5 text-red-600 dark:text-red-400" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Favoritos</p>
-              <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">{data?.favoriteCount || 0}</p>
-            </div>
+
+        {/* Favoritos */}
+        <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex items-center justify-between group">
+          <div>
+            <p className="text-sm font-black uppercase text-slate-400 tracking-wider">Favoritos</p>
+            <p className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+              {data?.favoriteCount || 0}
+            </p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Guardados por usuarios</p>
+          </div>
+          <div className="bg-red-50 text-red-400 p-3 rounded-2xl group-hover:bg-red-500 group-hover:text-white transition-all">
+            <Heart className="h-6 w-6" />
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-              <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Reseñas Aprobadas</p>
-              <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">{data?.approvedReviews || 0}</p>
-            </div>
+
+        {/* Reseñas Aprobadas */}
+        <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex items-center justify-between group">
+          <div>
+            <p className="text-sm font-black uppercase text-slate-400 tracking-wider">Aprobadas</p>
+            <p className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+              {data?.approvedReviews || 0}
+            </p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Reseñas aprobadas</p>
+          </div>
+          <div className="bg-emerald-50 text-emerald-600 p-3 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all">
+            <TrendingUp className="h-6 w-6" />
           </div>
         </div>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Review Status Chart */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
-          <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Estado de Reseñas</h3>
+      {/* ── Charts Row ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        {/* Review Status Pie */}
+        <div className="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm p-6 lg:p-8">
+          <div className="pb-5 border-b border-slate-100 mb-6">
+            <h3 className="text-xl font-black text-slate-900 tracking-tight">Estado de Reseñas</h3>
+            <p className="text-sm font-semibold text-slate-400 mt-1">Distribución por estado de moderación</p>
+          </div>
           {reviewStatusData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
                   data={reviewStatusData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
+                  innerRadius={65}
+                  outerRadius={105}
                   paddingAngle={5}
                   dataKey="value"
                   label={({ name, value }) => `${name}: ${value}`}
@@ -106,41 +127,55 @@ export default function EmpresaStats() {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '1rem',
+                    border: '1px solid #f1f5f9',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[250px] text-neutral-400 dark:text-neutral-500">
-              Sin datos de reseñas
+            <div className="flex flex-col items-center justify-center h-[260px] text-slate-300">
+              <BarChart3 className="h-12 w-12 mb-3" />
+              <p className="text-sm font-bold">Sin datos de reseñas</p>
             </div>
           )}
         </div>
 
         {/* Rating Gauge */}
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
-          <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Calificación Promedio</h3>
-          <div className="flex flex-col items-center justify-center h-[250px]">
+        <div className="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm p-6 lg:p-8">
+          <div className="pb-5 border-b border-slate-100 mb-6">
+            <h3 className="text-xl font-black text-slate-900 tracking-tight">Calificación Promedio</h3>
+            <p className="text-sm font-semibold text-slate-400 mt-1">Basado en {data?.ratingCount || 0} calificaciones</p>
+          </div>
+          <div className="flex flex-col items-center justify-center h-[215px]">
             <div className="relative">
               <svg width="200" height="120" viewBox="0 0 200 120">
                 <path
                   d="M 20 100 A 80 80 0 0 1 180 100"
                   fill="none"
-                  stroke="#E5E5E5"
+                  stroke="#f1f5f9"
                   strokeWidth="16"
                   strokeLinecap="round"
                 />
                 <path
                   d="M 20 100 A 80 80 0 0 1 180 100"
                   fill="none"
-                  stroke="#4CAF50"
+                  stroke="#10b981"
                   strokeWidth="16"
                   strokeLinecap="round"
                   strokeDasharray={`${((data?.ratingAvg || 0) / 5) * 251.2} 251.2`}
                 />
               </svg>
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
-                <p className="text-4xl font-bold text-neutral-900 dark:text-neutral-100">{data?.ratingAvg?.toFixed(1) || '0.0'}</p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">de 5.0</p>
+                <p className="text-4xl font-black text-slate-900">
+                  {data?.ratingAvg?.toFixed(1) || '0.0'}
+                </p>
+                <p className="text-xs font-bold text-slate-400 mt-0.5">de 5.0</p>
               </div>
             </div>
             <div className="flex items-center gap-1 mt-4">
@@ -148,55 +183,64 @@ export default function EmpresaStats() {
                 <Star
                   key={i}
                   className={`h-6 w-6 ${
-                    i < Math.round(data?.ratingAvg || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-neutral-300 dark:text-neutral-600'
+                    i < Math.round(data?.ratingAvg || 0)
+                      ? 'fill-amber-400 text-amber-400'
+                      : 'text-slate-200'
                   }`}
                 />
               ))}
             </div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">{data?.ratingCount || 0} calificaciones</p>
           </div>
         </div>
       </div>
 
-      {/* Additional Info */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
-          <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Resumen</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">Reseñas pendientes</span>
-              <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">{data?.pendingReviews || 0}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">Reseñas aprobadas</span>
-              <span className="text-sm font-medium text-green-600 dark:text-green-400">{data?.approvedReviews || 0}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">Total de calificaciones</span>
-              <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{data?.ratingCount || 0}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">Favoritos</span>
-              <span className="text-sm font-medium text-red-600 dark:text-red-400">{data?.favoriteCount || 0}</span>
-            </div>
+      {/* ── Summary + Tips ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        {/* Summary */}
+        <div className="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm p-6 lg:p-8">
+          <h3 className="text-xl font-black text-slate-900 tracking-tight mb-6 pb-4 border-b border-slate-100">
+            Resumen Detallado
+          </h3>
+          <div className="space-y-4">
+            {[
+              { label: 'Reseñas pendientes', value: data?.pendingReviews || 0, color: 'text-amber-600 bg-amber-50' },
+              { label: 'Reseñas aprobadas', value: data?.approvedReviews || 0, color: 'text-emerald-600 bg-emerald-50' },
+              { label: 'Total de calificaciones', value: data?.ratingCount || 0, color: 'text-slate-700 bg-slate-100' },
+              { label: 'Favoritos', value: data?.favoriteCount || 0, color: 'text-red-500 bg-red-50' },
+            ].map((row) => (
+              <div key={row.label} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <span className="text-sm font-bold text-slate-600">{row.label}</span>
+                <span className={`text-sm font-black px-3 py-1 rounded-xl ${row.color}`}>
+                  {row.value}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-6">
-          <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Consejos</h3>
-          <div className="space-y-3">
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <p className="text-sm text-blue-800 dark:text-blue-300">
+        {/* Tips */}
+        <div className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-[2.5rem] p-6 lg:p-8 border border-slate-800 relative overflow-hidden">
+          <div className="absolute -right-8 -top-8 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          <h3 className="text-xl font-black text-white tracking-tight mb-6 pb-4 border-b border-slate-700/60 relative z-10">
+            Consejos Pro
+          </h3>
+          <div className="space-y-4 relative z-10">
+            <div className="flex items-start gap-3 p-4 bg-white/5 border border-white/[0.06] rounded-2xl">
+              <span className="text-lg">💬</span>
+              <p className="text-sm font-semibold text-slate-300 leading-relaxed">
                 Responde a todas tus reseñas para mejorar la confianza de los clientes.
               </p>
             </div>
-            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <p className="text-sm text-green-800 dark:text-green-300">
+            <div className="flex items-start gap-3 p-4 bg-white/5 border border-white/[0.06] rounded-2xl">
+              <span className="text-lg">🗺️</span>
+              <p className="text-sm font-semibold text-slate-300 leading-relaxed">
                 Mantén tu información actualizada para atraer más visitas.
               </p>
             </div>
-            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <p className="text-sm text-purple-800 dark:text-purple-300">
+            <div className="flex items-start gap-3 p-4 bg-white/5 border border-white/[0.06] rounded-2xl">
+              <span className="text-lg">🎯</span>
+              <p className="text-sm font-semibold text-slate-300 leading-relaxed">
                 Crea promociones regulares para mantener a los clientes interesados.
               </p>
             </div>

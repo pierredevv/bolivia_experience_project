@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react'
 import { useLogin } from '../../hooks/useAuth'
 
 export default function BusinessLoginPage() {
@@ -15,26 +15,38 @@ export default function BusinessLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-secondary-50 dark:from-neutral-900 dark:to-neutral-800 flex items-center justify-center p-4 transition-colors">
-      <Link to="/" className="absolute top-6 left-6 flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-secondary-700 dark:hover:text-secondary-400">
-        <ArrowLeft className="h-5 w-5" />
-        <span className="text-sm font-medium hidden sm:block">Volver a inicio</span>
-      </Link>
-      
-      <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-8 border border-neutral-100 dark:border-neutral-700">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center h-16 w-16 bg-secondary-700 rounded-2xl mb-4 shadow-lg shadow-secondary-700/20">
-              <MapPin className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">BoliviaExperience</h1>
-            <p className="text-secondary-700 dark:text-secondary-400 mt-1 font-medium">Business Portal</p>
+    <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center p-6 selection:bg-emerald-500/20 antialiased">
+
+      <div className="w-full max-w-lg">
+        {/* 5% Organic Corner Radii & 15% MD3 Flat Micro-border Layout */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-900/5 p-10 lg:p-12 transition-all duration-300">
+
+          {/* Header Branding: Replaced by your official local logo asset */}
+          <div className="text-center mb-10 flex flex-col items-center justify-center">
+            <img
+              src="/LogoBoliviaExperience.png"
+              alt="BoliviaExperience Logo"
+              className="h-36 md:h-44 object-contain transition-transform duration-300 hover:scale-[1.02] -mt-6 -mb-6"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            {/* Fallback code in case image fails */}
+            <h1 className="hidden text-3xl font-black text-slate-900 tracking-tight">
+              Bolivia<span className="text-emerald-600">Experience</span>
+            </h1>
+            <p className="text-slate-400 font-bold uppercase text-xs tracking-widest mt-1">
+              Portal de Negocios
+            </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-6">
+
+            {/* Error Handlers scaled to text-base */}
             {loginMutation.isError && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
-                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-700 text-base font-medium animate-fade-in">
+                <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 <span>
                   {(loginMutation.error as any)?.response?.data?.error?.message ||
                     'Credenciales inválidas. Intenta de nuevo.'}
@@ -42,22 +54,24 @@ export default function BusinessLoginPage() {
               </div>
             )}
 
+            {/* Email Input Field */}
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+              <label className="block text-sm font-black uppercase text-slate-400 mb-2 tracking-wider">
                 Email de la empresa
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-secondary-500 focus:border-transparent outline-none transition-all"
+                className="w-full px-5 py-4 text-base font-medium rounded-2xl border border-slate-200 bg-slate-50/50 text-slate-900 placeholder-slate-300 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all"
                 placeholder="contacto@minegocio.com"
                 required
               />
             </div>
 
+            {/* Password Input Field */}
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+              <label className="block text-sm font-black uppercase text-slate-400 mb-2 tracking-wider">
                 Contraseña
               </label>
               <div className="relative">
@@ -65,56 +79,77 @@ export default function BusinessLoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-secondary-500 focus:border-transparent outline-none transition-all pr-12"
+                  className="w-full px-5 py-4 text-base font-medium rounded-2xl border border-slate-200 bg-slate-50/50 text-slate-900 placeholder-slate-300 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all pr-14"
                   placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 transition-colors px-1.5 py-1"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="rounded border-neutral-300 dark:border-neutral-600 text-secondary-600 focus:ring-secondary-500" />
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">Recordarme</span>
+            {/* Actions Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 rounded-lg border-slate-200 text-emerald-600 focus:ring-emerald-500/10 focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="text-base font-semibold text-slate-500">Recordarme</span>
               </label>
-              <button type="button" className="text-sm font-medium text-secondary-700 dark:text-secondary-400 hover:text-secondary-800 dark:hover:text-secondary-300">
+              <button
+                type="button"
+                className="text-base font-bold text-emerald-700 hover:text-emerald-600 hover:underline text-left"
+              >
                 ¿Olvidaste tu contraseña?
               </button>
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loginMutation.isPending}
-              className="w-full py-3 mt-4 bg-secondary-700 text-white rounded-xl font-semibold hover:bg-secondary-800 transition-colors shadow-lg shadow-secondary-700/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-base hover:bg-emerald-700 transition-all shadow-xl shadow-slate-900/10 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5"
             >
               {loginMutation.isPending ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <span className="flex items-center justify-center gap-3">
+                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Iniciando sesión...
+                  Verificando credenciales...
                 </span>
               ) : (
-                'Iniciar Sesión'
+                'Iniciar Sesión Corporativa'
               )}
             </button>
-            
-            <p className="text-center mt-6 text-sm text-neutral-600 dark:text-neutral-400">
-              ¿No tienes cuenta?{' '}
-              <Link to="/business/register" className="font-medium text-secondary-700 dark:text-secondary-400 hover:underline">
+
+            {/* Redirect Footer Info */}
+            <p className="text-center mt-8 text-base font-semibold text-slate-400">
+              ¿Tu empresa no está registrada?{' '}
+              <Link to="/business/register" className="font-black text-emerald-700 hover:text-emerald-600 hover:underline">
                 Registra tu negocio
               </Link>
             </p>
           </form>
         </div>
+
+        {/* Integrated Return Navigation: Clean, elegant, and centralized below the card */}
+        <div className="text-center mt-8 animate-fade-in">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors group font-bold text-base"
+          >
+            <ArrowLeft className="h-4 w-4 transform group-hover:-translate-x-1 transition-transform" />
+            <span>Volver a la página principal</span>
+          </Link>
+        </div>
+
       </div>
     </div>
   )

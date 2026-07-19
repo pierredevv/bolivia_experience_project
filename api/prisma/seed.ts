@@ -344,15 +344,10 @@ async function main() {
         isClosed: day === 6,
       };
 
-      if (isSQLite) {
-        // SQLite: store times as strings
-        hourData.openTime = day === 6 ? null : '08:00';
-        hourData.closeTime = day === 6 ? null : (day === 5 ? '23:00' : '22:00');
-      } else {
-        // PostgreSQL: store times as Date objects
-        hourData.openTime = day === 6 ? null : new Date(1970, 0, 1, 8, 0, 0);
-        hourData.closeTime = day === 6 ? null : new Date(1970, 0, 1, day === 5 ? 23 : 22, 0, 0);
-      }
+      // Forzamos el uso de strings tanto para SQLite como para PostgreSQL 
+      // ya que tu esquema de Prisma define estos campos como String.
+      hourData.openTime = day === 6 ? null : '08:00';
+      hourData.closeTime = day === 6 ? null : (day === 5 ? '23:00' : '22:00');
 
       await prisma.placeHour.create({ data: hourData });
     }

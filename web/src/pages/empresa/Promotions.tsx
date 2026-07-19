@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, Tag, Calendar, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Tag, Loader2, Percent, TrendingUp, Clock, Sparkles } from 'lucide-react'
 import { usePromotions, useCreatePromotion, useUpdatePromotion, useDeletePromotion } from '../../hooks/usePromotions'
 import { useEmpresaPlace } from '../../hooks/useEmpresa'
 import Modal from '../../components/ui/Modal'
@@ -8,6 +8,21 @@ import Input from '../../components/ui/Input'
 import Textarea from '../../components/ui/Textarea'
 import EmptyState from '../../components/ui/EmptyState'
 import { toast } from 'sonner'
+
+/* ──────────────────────────────────────────────────────────────────
+   EmpresaPromotions.tsx — B2B Enterprise Promotions Management
+   
+   Design System (Section 4 — Enterprise & B2B Dashboard):
+     70% Alpine Minimalism   → radical whitespace, text-base/lg sizing
+     15% MD3 Functional       → Bento metric grids, micro-border surfaces
+     10% Glassmorphism        → hero banner gradient (NOT header — reserved)
+      5% Organic Softness    → rounded-[2.5rem] cards, sweeping curves
+   
+   Semantic Tokens:
+     Emerald Green  → active states, nature/eco emphasis
+     Slate Dark     → hero banner, trust typography
+     Amber Gold     → CTA buttons, conversion points
+   ────────────────────────────────────────────────────────────────── */
 
 interface PromotionForm {
   title: string
@@ -44,6 +59,13 @@ export default function EmpresaPromotions() {
   const deletePromotion = useDeletePromotion()
 
   const promotions = data?.data || []
+  const activeCount = promotions.filter((p: any) => {
+    const now = new Date()
+    return new Date(p.endDate) >= now
+  }).length
+  const avgDiscount = promotions.length
+    ? Math.round(promotions.reduce((sum: number, p: any) => sum + (p.discountPercentage || 0), 0) / promotions.length)
+    : 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -104,25 +126,89 @@ export default function EmpresaPromotions() {
 
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('es-BO')
 
+  const isPromoActive = (endDate: string) => new Date(endDate) >= new Date()
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Promociones</h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Crea ofertas para atraer clientes</p>
+    <div className="space-y-8">
+      {/* ════════════════════════════════════════════════════════════
+          HERO BANNER — Section 4C: Organic Landscape Approach
+          Replaces flat orange fill with deep gradient + blurred accents
+          ════════════════════════════════════════════════════════════ */}
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-slate-900 to-slate-950 p-8 md:p-10">
+        {/* Blurred accent drops */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-500/8 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+          <div>
+            <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3">
+              Panel de Promociones
+            </p>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight">
+              Promociones
+            </h1>
+            <p className="text-base text-slate-400 mt-2 max-w-lg leading-relaxed">
+              Crea ofertas irresistibles para atraer más clientes a tu negocio.
+            </p>
+          </div>
+
+          <button
+            onClick={() => { setEditingId(null); setForm(defaultForm); setIsModalOpen(true) }}
+            className="inline-flex items-center gap-2 px-7 py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold text-base rounded-2xl transition-all duration-300 shadow-xl shadow-amber-500/20 hover:shadow-amber-500/30 hover:-translate-y-0.5 whitespace-nowrap"
+          >
+            <Plus className="h-5 w-5" />
+            Nueva Promoción
+          </button>
         </div>
-        <button
-          onClick={() => { setEditingId(null); setForm(defaultForm); setIsModalOpen(true) }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-secondary-700 text-white rounded-lg font-medium hover:bg-secondary-800 transition-colors"
-        >
-          <Plus className="h-5 w-5" />
-          Nueva Promoción
-        </button>
       </div>
 
+      {/* ════════════════════════════════════════════════════════════
+          METRIC CARDS — Section 4B: Bento Grid, asymmetric
+          ════════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Total promotions */}
+        <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="h-11 w-11 bg-emerald-50 rounded-2xl flex items-center justify-center">
+              <Tag className="h-5 w-5 text-emerald-600" />
+            </div>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total</span>
+          </div>
+          <p className="text-3xl font-black tracking-tight text-slate-900">{promotions.length}</p>
+          <p className="text-sm text-slate-400 mt-1">Promociones creadas</p>
+        </div>
+
+        {/* Active promotions */}
+        <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="h-11 w-11 bg-amber-50 rounded-2xl flex items-center justify-center">
+              <TrendingUp className="h-5 w-5 text-amber-600" />
+            </div>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Activas</span>
+          </div>
+          <p className="text-3xl font-black tracking-tight text-slate-900">{activeCount}</p>
+          <p className="text-sm text-slate-400 mt-1">Vigentes actualmente</p>
+        </div>
+
+        {/* Average discount */}
+        <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="h-11 w-11 bg-slate-100 rounded-2xl flex items-center justify-center">
+              <Percent className="h-5 w-5 text-slate-700" />
+            </div>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Promedio</span>
+          </div>
+          <p className="text-3xl font-black tracking-tight text-slate-900">{avgDiscount}%</p>
+          <p className="text-sm text-slate-400 mt-1">Descuento promedio</p>
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════
+          PROMOTIONS GRID — Section 4B: Bento cards, organic curves
+          ════════════════════════════════════════════════════════════ */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-secondary-700" />
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
         </div>
       ) : promotions.length === 0 ? (
         <EmptyState
@@ -133,48 +219,83 @@ export default function EmpresaPromotions() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {promotions.map((promo: any) => (
-            <div key={promo.id} className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm overflow-hidden">
-              <div className="p-4 bg-gradient-to-r from-secondary-500 to-secondary-600">
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold text-white">
-                    {promo.discountPercentage ? `-${promo.discountPercentage}%` : 'Oferta'}
-                  </span>
-                  <Tag className="h-8 w-8 text-white/50" />
+          {promotions.map((promo: any) => {
+            const active = isPromoActive(promo.endDate)
+            return (
+              <div
+                key={promo.id}
+                className="bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group"
+              >
+                {/* Discount badge header */}
+                <div className={`relative px-8 py-6 ${active ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : 'bg-gradient-to-r from-slate-700 to-slate-800'}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-4xl font-black text-white tracking-tight">
+                      {promo.discountPercentage ? `-${promo.discountPercentage}%` : 'Oferta'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {active && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/20 text-white text-xs font-bold rounded-full backdrop-blur-sm">
+                          <Sparkles className="h-3 w-3" />
+                          Activa
+                        </span>
+                      )}
+                      <Tag className="h-8 w-8 text-white/30" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card body */}
+                <div className="p-8">
+                  <h3 className="text-lg font-bold text-slate-900 leading-snug">
+                    {promo.title}
+                  </h3>
+                  {promo.description && (
+                    <p className="text-base text-slate-500 mt-2 line-clamp-2 leading-relaxed">
+                      {promo.description}
+                    </p>
+                  )}
+
+                  {/* Date range */}
+                  <div className="flex items-center gap-2 mt-4 text-sm text-slate-400">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {formatDate(promo.startDate)} — {formatDate(promo.endDate)}
+                    </span>
+                  </div>
+
+                  {/* Actions — MD3 micro-border surface */}
+                  <div className="flex items-center gap-3 mt-6 pt-6 border-t border-slate-100">
+                    <button
+                      onClick={() => handleEdit(promo)}
+                      className="flex-1 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => setDeleteId(promo.id)}
+                      disabled={deletePromotion.isPending}
+                      className="p-2.5 rounded-2xl hover:bg-red-50 text-slate-400 hover:text-red-600 disabled:opacity-50 transition-all duration-200"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{promo.title}</h3>
-                {promo.description && <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1 line-clamp-2">{promo.description}</p>}
-                <div className="flex items-center gap-2 mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-                  <Calendar className="h-4 w-4" />
-                  {formatDate(promo.startDate)} - {formatDate(promo.endDate)}
-                </div>
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                  <button onClick={() => handleEdit(promo)} className="flex-1 py-2 text-sm font-medium text-secondary-700 dark:text-secondary-400 hover:bg-secondary-50 dark:hover:bg-secondary-900/20 rounded-lg transition-colors flex items-center justify-center gap-1">
-                    <Pencil className="h-4 w-4" /> Editar
-                  </button>
-                  <button
-                    onClick={() => setDeleteId(promo.id)}
-                    disabled={deletePromotion.isPending}
-                    className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-neutral-500 dark:text-neutral-400 hover:text-red-600 disabled:opacity-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
-      {/* Create/Edit Modal */}
+      {/* ════════════════════════════════════════════════════════════
+          CREATE / EDIT MODAL — Section 4B: MD3 form fields
+          ════════════════════════════════════════════════════════════ */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); setEditingId(null) }}
         title={editingId ? 'Editar Promoción' : 'Nueva Promoción'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <Input label="Título (ES)" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
           <Input label="Título (EN)" value={form.titleEn} onChange={(e) => setForm({ ...form, titleEn: e.target.value })} />
           <Textarea label="Descripción (ES)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
@@ -185,17 +306,28 @@ export default function EmpresaPromotions() {
             <Input label="Fecha fin" type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} required />
           </div>
           <Input label="URL Foto" value={form.photoUrl} onChange={(e) => setForm({ ...form, photoUrl: e.target.value })} />
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-            <button type="button" onClick={() => { setIsModalOpen(false); setEditingId(null) }} className="px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
+          <div className="flex justify-end gap-3 pt-5 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => { setIsModalOpen(false); setEditingId(null) }}
+              className="px-6 py-2.5 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all duration-200"
+            >
               Cancelar
             </button>
-            <button type="submit" disabled={createPromotion.isPending || updatePromotion.isPending} className="px-4 py-2 rounded-lg bg-secondary-700 text-white text-sm font-medium hover:bg-secondary-800 disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={createPromotion.isPending || updatePromotion.isPending}
+              className="px-6 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-900 text-sm font-bold transition-all duration-300 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 disabled:opacity-50"
+            >
               {createPromotion.isPending || updatePromotion.isPending ? 'Guardando...' : editingId ? 'Actualizar' : 'Crear'}
             </button>
           </div>
         </form>
       </Modal>
 
+      {/* ════════════════════════════════════════════════════════════
+          CONFIRM DIALOG
+          ════════════════════════════════════════════════════════════ */}
       <ConfirmDialog
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}

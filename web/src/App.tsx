@@ -50,7 +50,6 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
-        
         {/* Business Auth Routes */}
         <Route path="/business/login" element={<BusinessLoginPage />} />
         <Route path="/business/register" element={<BusinessRegisterPage />} />

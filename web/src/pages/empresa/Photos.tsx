@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Upload, Trash2, Image, Loader2 } from 'lucide-react'
+import { Upload, Trash2, Image, Loader2, ImagePlus } from 'lucide-react'
 import { useEmpresaPlace } from '../../hooks/useEmpresa'
 import { placesApi } from '../../services/api'
 import { useQueryClient } from '@tanstack/react-query'
@@ -57,20 +57,30 @@ export default function EmpresaPhotos() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-secondary-700" />
+      <div className="flex items-center justify-center py-32 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm min-h-[60vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
       </div>
     )
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-8 pb-12">
+
+      {/* ── Page Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Fotos</h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Gestiona las fotos de tu negocio</p>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Fotos</h1>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+            Galería de tu establecimiento
+          </p>
         </div>
-        <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-secondary-700 text-white rounded-lg hover:bg-secondary-800 transition-colors cursor-pointer">
+        <label
+          className={`inline-flex items-center gap-2 px-7 py-3.5 font-bold text-sm rounded-2xl transition-all duration-300 shadow-lg hover:-translate-y-0.5 whitespace-nowrap cursor-pointer ${
+            photos.length >= 10 || uploading
+              ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+              : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20 hover:shadow-emerald-600/30'
+          }`}
+        >
           <Upload className="h-5 w-5" />
           Subir Foto
           <input
@@ -84,71 +94,115 @@ export default function EmpresaPhotos() {
         </label>
       </div>
 
+      {/* ── Stats Bar ── */}
+      <div className="flex items-center justify-between bg-white border border-slate-100 rounded-[2rem] shadow-sm px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 bg-emerald-50 rounded-2xl flex items-center justify-center">
+            <ImagePlus className="h-5 w-5 text-emerald-600" />
+          </div>
+          <div>
+            <p className="text-sm font-black text-slate-900">
+              {photos.length} <span className="text-slate-400 font-semibold">de 10 fotos</span>
+            </p>
+            <p className="text-xs font-semibold text-slate-400">La primera foto será la principal</p>
+          </div>
+        </div>
+        {/* Progress bar */}
+        <div className="hidden sm:flex items-center gap-3 w-48">
+          <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-500"
+              style={{ width: `${(photos.length / 10) * 100}%` }}
+            />
+          </div>
+          <span className="text-xs font-black text-slate-500">{photos.length}/10</span>
+        </div>
+      </div>
+
+      {/* ── Upload Error ── */}
       {uploadError && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 text-sm">
+        <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-700 text-sm font-bold flex items-center gap-2">
           {uploadError}
         </div>
       )}
 
-      <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
-        {photos.length} de 10 fotos • La primera foto será la principal
-      </p>
-
+      {/* ── Uploading Banner ── */}
       {uploading && (
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl text-blue-700 dark:text-blue-400 text-sm flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
+        <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl text-blue-700 text-sm font-bold flex items-center gap-3">
+          <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
           Subiendo foto...
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {photos.map((photo: any, index: number) => (
-          <div key={photo.id} className="relative group">
-            <div className="aspect-square bg-neutral-200 dark:bg-neutral-700 rounded-xl overflow-hidden">
-              {photo.url ? (
-                <img src={photo.url} alt={photo.altText || `Foto ${index + 1}`} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Image className="h-12 w-12 text-neutral-400 dark:text-neutral-500" />
-                </div>
+      {/* ── Photo Grid ── */}
+      {photos.length === 0 && !uploading ? (
+        <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem] p-16 text-center">
+          <Image className="h-14 w-14 text-slate-200 mx-auto mb-4" />
+          <p className="text-base font-bold text-slate-400">No hay fotos todavía</p>
+          <p className="text-sm font-semibold text-slate-300 mt-1">
+            Sube fotos de tu negocio para atraer más visitantes
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {photos.map((photo: any, index: number) => (
+            <div key={photo.id} className="relative group">
+              <div className="aspect-square bg-slate-100 rounded-[1.5rem] overflow-hidden border border-slate-100 shadow-sm">
+                {photo.url ? (
+                  <img
+                    src={photo.url}
+                    alt={photo.altText || `Foto ${index + 1}`}
+                    className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Image className="h-12 w-12 text-slate-300" />
+                  </div>
+                )}
+              </div>
+              {/* Principal badge */}
+              {index === 0 && (
+                <span className="absolute top-2.5 left-2.5 px-2.5 py-1 bg-amber-500 text-white text-[10px] font-black rounded-full shadow-sm">
+                  Principal
+                </span>
               )}
+              {/* Delete overlay */}
+              <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-[1.5rem] flex items-center justify-center">
+                <button
+                  onClick={() => handleDelete(photo.id)}
+                  className="p-3 bg-white rounded-2xl hover:bg-red-50 shadow-lg transition-all hover:scale-110"
+                >
+                  <Trash2 className="h-5 w-5 text-red-600" />
+                </button>
+              </div>
             </div>
-            {index === 0 && (
-              <span className="absolute top-2 left-2 px-2 py-1 bg-yellow-500 text-white text-xs font-medium rounded-full">
-                Principal
-              </span>
-            )}
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
-              <button
-                onClick={() => handleDelete(photo.id)}
-                className="p-2 bg-white dark:bg-neutral-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30"
-              >
-                <Trash2 className="h-5 w-5 text-red-600" />
-              </button>
-            </div>
-          </div>
-        ))}
+          ))}
 
-        {/* Upload placeholder */}
-        {photos.length < 10 && (
-          <label className="aspect-square border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-xl flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 hover:border-secondary-500 hover:text-secondary-700 transition-colors cursor-pointer">
-            <Upload className="h-8 w-8 mb-2" />
-            <span className="text-sm font-medium">Subir foto</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleUpload}
-              className="hidden"
-              disabled={uploading}
-            />
-          </label>
-        )}
-      </div>
+          {/* Upload placeholder slot */}
+          {photos.length < 10 && (
+            <label className="aspect-square border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center text-slate-400 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50/50 transition-all duration-200 cursor-pointer">
+              <Upload className="h-8 w-8 mb-2" />
+              <span className="text-sm font-bold">Subir foto</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleUpload}
+                className="hidden"
+                disabled={uploading}
+              />
+            </label>
+          )}
+        </div>
+      )}
 
-      <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-        <p className="text-sm text-blue-800 dark:text-blue-300">
-          <strong>Consejo:</strong> Las fotos de buena calidad aumentan las visitas hasta un 40%.
-          Usa fotos bien iluminadas que muestren lo mejor de tu negocio.
+      {/* ── Tip Card ── */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-950 rounded-[2rem] p-6 lg:p-8 border border-slate-800 relative overflow-hidden">
+        <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+        <p className="text-sm font-black text-emerald-400 uppercase tracking-widest mb-2">💡 Consejo</p>
+        <p className="text-base text-slate-300 font-medium leading-relaxed">
+          Las fotos de buena calidad aumentan las visitas hasta un{' '}
+          <span className="text-white font-black">40%</span>. Usa imágenes bien iluminadas que
+          muestren lo mejor de tu negocio.
         </p>
       </div>
     </div>
