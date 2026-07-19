@@ -187,10 +187,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const SizedBox(height: 12),
 
               Card(
-                color: AppColors.error50,
+                color: AppColors.error100,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: AppColors.error200),
+                  side: BorderSide(color: AppColors.error300),
                 ),
                 child: ListTile(
                   leading: Icon(Icons.delete_outline, color: AppColors.error700),
