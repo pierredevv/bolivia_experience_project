@@ -16,9 +16,9 @@ export default {
           400: '#42A5F5',
           500: '#2196F3',
           600: '#1E88E5',
-          700: '#1976D2',
-          800: '#1565C0',
-          900: '#0D3B8A',
+          700: '#1565C0',
+          800: '#0D47A1',
+          900: '#0A2A66',
         },
         secondary: {
           50: '#FFF3E0',
@@ -65,6 +65,31 @@ export default {
           800: '#2D2D2D',
           900: '#1A1A1A',
           950: '#0A0A0A',
+        },
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
         },
       },
       fontFamily: {

@@ -1,82 +1,56 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
+import { useAuth as useAuthContext } from '../contexts/AuthContext'
 import { authApi } from '../services/api'
 
-interface User {
-  id: string
-  email: string
-  name: string
-  role: 'admin' | 'empresa' | 'usuario'
-  photoUrl?: string
-}
-
-interface AuthState {
-  user: User | null
-  token: string | null
-  loading: boolean
-  error: string | null
-}
-
-export function useAuth() {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    token: localStorage.getItem('token'),
-    loading: true,
-    error: null,
-  })
-
-  useEffect(() => {
-    const token = localStorage.getItem('token')
-    const userData = localStorage.getItem('user')
-
-    if (token && userData) {
-      try {
-        const user = JSON.parse(userData)
-        setState({ user, token, loading: false, error: null })
-      } catch {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        setState({ user: null, token: null, loading: false, error: null })
-      }
-    } else {
-      setState(prev => ({ ...prev, loading: false }))
-    }
-  }, [])
-
-  const login = useCallback(async (email: string, password: string) => {
-    setState(prev => ({ ...prev, loading: true, error: null }))
-    try {
-      const response = await authApi.login(email, password)
-      const { user, accessToken, refreshToken } = response.data
-
-      localStorage.setItem('token', accessToken)
-      localStorage.setItem('refreshToken', refreshToken)
-      localStorage.setItem('user', JSON.stringify(user))
-
-      setState({ user, token: accessToken, loading: false, error: null })
-      return user
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'Error al iniciar sesión'
-      setState(prev => ({ ...prev, loading: false, error: message }))
-      throw error
-    }
-  }, [])
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('user')
-    setState({ user: null, token: null, loading: false, error: null })
-  }, [])
-
-  const isAdmin = state.user?.role === 'admin'
-  const isEmpresa = state.user?.role === 'empresa'
-
-  return {
-    ...state,
-    login,
-    logout,
-    isAdmin,
-    isEmpresa,
-    isAuthenticated: !!state.token,
+interface LoginResponse {
+  user: {
+    id: string
+    email: string
+    name: string
+    role: 'admin' | 'empresa' | 'usuario'
+    photoUrl?: string
+    approvalStatus?: string
   }
+  accessToken: string
+  refreshToken: string
+}
+
+export function useLogin(expectedRole?: 'admin' | 'empresa') {
+  const { login } = useAuthContext()
+  const navigate = useNavigate()
+
+  return useMutation({
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+      const response = await authApi.login(email, password)
+      const data = response.data.data as LoginResponse
+      
+      if (expectedRole && data.user.role !== expectedRole) {
+        throw new Error(
+          expectedRole === 'admin'
+            ? 'Esta cuenta no tiene permisos de administrador'
+            : 'Esta cuenta no tiene acceso al portal de empresas'
+        )
+      }
+      
+      return data
+    },
+    onSuccess: (data) => {
+      login(data.accessToken, data.refreshToken, data.user)
+      if (data.user.role === 'admin') {
+        navigate('/admin-panel')
+      } else {
+        navigate('/business')
+      }
+    },
+  })
+}
+
+export function useRegisterBusiness() {
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await authApi.registerBusiness(data)
+      return response.data
+    }
+  })
 }

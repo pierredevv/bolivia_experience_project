@@ -11,9 +11,9 @@ export class SearchService {
     const where: any = {
       isActive: true,
       OR: [
-        { name: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-        { address: { contains: query, mode: 'insensitive' } },
+        { name: { contains: query } },
+        { description: { contains: query } },
+        { address: { contains: query } },
       ],
     };
 
@@ -140,7 +140,7 @@ export class SearchService {
     const places = await this.prisma.place.findMany({
       where: {
         isActive: true,
-        name: { contains: query, mode: 'insensitive' },
+        name: { contains: query },
       },
       select: { id: true, name: true, address: true },
       take: 5,

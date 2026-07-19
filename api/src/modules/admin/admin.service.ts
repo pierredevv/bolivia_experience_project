@@ -1,32 +1,119 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { QueryUsersDto, QueryAllReviewsDto } from './dto';
+import { AdminUsersDto, AdminReviewsDto } from './dto';
 import { PaginatedResponse } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class AdminService {
   constructor(private prisma: PrismaService) {}
 
-  async getDashboard() {
+  async findAllUsers(dto: AdminUsersDto) {
+    const where: any = {};
+    const page = dto.page ?? 1;
+    const limit = dto.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    if (dto.search) {
+      where.OR = [
+        { name: { contains: dto.search } },
+        { email: { contains: dto.search } },
+      ];
+    }
+
+    if (dto.role) {
+      where.role = dto.role;
+    }
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          photoUrl: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+          _count: {
+            select: { reviews: true },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return new PaginatedResponse(users, total, page, limit);
+  }
+
+  async findAllReviews(dto: AdminReviewsDto) {
+    const where: any = {};
+    const page = dto.page ?? 1;
+    const limit = dto.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    if (dto.status === 'pending') {
+      where.isApproved = false;
+    } else if (dto.status === 'approved') {
+      where.isApproved = true;
+    }
+
+    const [reviews, total] = await Promise.all([
+      this.prisma.review.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, photoUrl: true },
+          },
+          place: {
+            select: { id: true, name: true },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.review.count({ where }),
+    ]);
+
+    return new PaginatedResponse(reviews, total, page, limit);
+  }
+
+  async getDashboardStats() {
     const [
       totalUsers,
       totalPlaces,
       totalReviews,
       totalEvents,
-      activePromotions,
+      pendingReviews,
       recentReviews,
+      recentUsers,
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.place.count({ where: { isActive: true } }),
-      this.prisma.review.count({ where: { isApproved: true } }),
+      this.prisma.review.count(),
       this.prisma.event.count({ where: { isActive: true } }),
-      this.prisma.promotion.count({ where: { isActive: true } }),
+      this.prisma.review.count({ where: { isApproved: false } }),
       this.prisma.review.findMany({
-        orderBy: { createdAt: 'desc' },
         take: 5,
+        orderBy: { createdAt: 'desc' },
         include: {
-          user: { select: { id: true, name: true, photoUrl: true } },
+          user: { select: { id: true, name: true } },
           place: { select: { id: true, name: true } },
+        },
+      }),
+      this.prisma.user.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
         },
       }),
     ]);
@@ -37,95 +124,100 @@ export class AdminService {
         totalPlaces,
         totalReviews,
         totalEvents,
-        activePromotions,
+        pendingReviews,
       },
       recentReviews,
+      recentUsers,
     };
   }
 
-  async getUsers(query: QueryUsersDto) {
-    const where: any = {};
+  async findBusinesses(status?: string) {
+    const where: any = { role: 'empresa' };
 
-    if (query.search) {
-      where.OR = [
-        { name: { contains: query.search, mode: 'insensitive' } },
-        { email: { contains: query.search, mode: 'insensitive' } },
-      ];
+    if (status === 'pending') {
+      where.approvalStatus = 'pending';
+    } else if (status === 'approved') {
+      where.approvalStatus = 'approved';
+    } else if (status === 'rejected') {
+      where.approvalStatus = 'rejected';
     }
 
-    const skip = ((query.page ?? 1) - 1) * (query.limit ?? 20);
-
-    const [users, total] = await Promise.all([
-      this.prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          isActive: true,
-          createdAt: true,
-          _count: {
-            select: { reviews: true, places: true, favorites: true },
-          },
+    return this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        businessName: true,
+        businessPhone: true,
+        approvalStatus: true,
+        isActive: true,
+        createdAt: true,
+        places: {
+          select: { id: true, name: true, address: true, isActive: true },
+          take: 1,
         },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: query.limit,
-      }),
-      this.prisma.user.count({ where }),
-    ]);
-
-    return new PaginatedResponse(users, total, query.page ?? 1, query.limit ?? 20);
-  }
-
-  async banUser(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { isActive: !user.isActive },
-      select: { id: true, email: true, name: true, isActive: true },
+      },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  async getAllReviews(query: QueryAllReviewsDto) {
-    const where: any = {};
-
-    if (query.placeId) {
-      where.placeId = query.placeId;
+  async approveBusiness(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.role !== 'empresa') {
+      throw new NotFoundException('Business user not found');
     }
 
-    if (query.search) {
-      where.OR = [
-        { comment: { contains: query.search, mode: 'insensitive' } },
-        { user: { name: { contains: query.search, mode: 'insensitive' } } },
-        { place: { name: { contains: query.search, mode: 'insensitive' } } },
-      ];
+    return this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: { isActive: true, approvalStatus: 'approved' },
+      });
+
+      await tx.place.updateMany({
+        where: { ownerId: userId },
+        data: { isActive: true },
+      });
+
+      return { message: 'Business approved successfully' };
+    });
+  }
+
+  async suspendBusiness(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.role !== 'empresa') {
+      throw new NotFoundException('Business user not found');
     }
 
-    const skip = ((query.page ?? 1) - 1) * (query.limit ?? 20);
+    return this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: { isActive: false, approvalStatus: 'rejected' },
+      });
 
-    const [reviews, total] = await Promise.all([
-      this.prisma.review.findMany({
-        where,
-        include: {
-          user: { select: { id: true, name: true, photoUrl: true } },
-          place: { select: { id: true, name: true } },
-          replies: {
-            include: { user: { select: { id: true, name: true } } },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: query.limit,
-      }),
-      this.prisma.review.count({ where }),
-    ]);
+      await tx.place.updateMany({
+        where: { ownerId: userId },
+        data: { isActive: false },
+      });
 
-    return new PaginatedResponse(reviews, total, query.page ?? 1, query.limit ?? 20);
+      return { message: 'Business suspended' };
+    });
+  }
+
+  // In-memory settings for MVP - can be migrated to DB later
+  private settings: Record<string, any> = {
+    siteName: 'BoliviaExperience',
+    contactEmail: 'info@boliviaexperience.com',
+    maintenanceMode: false,
+    defaultLanguage: 'es',
+  };
+
+  async getSettings() {
+    return this.settings;
+  }
+
+  async updateSettings(data: Record<string, any>) {
+    this.settings = { ...this.settings, ...data };
+    return { message: 'Settings updated', settings: this.settings };
   }
 }

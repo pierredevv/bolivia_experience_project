@@ -3,8 +3,11 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+// Detect database provider from schema
+const isSQLite = process.env.DATABASE_URL?.includes('file:');
+
 async function main() {
-  console.log('Starting seed...');
+  console.log(`Starting seed... (database: ${isSQLite ? 'SQLite' : 'PostgreSQL'})`);
 
   // Clean existing data (order matters for foreign keys)
   await prisma.notification.deleteMany();
@@ -155,7 +158,7 @@ async function main() {
     prisma.place.create({
       data: {
         name: 'Parque Municipal Lomas de Arena',
-        description: 'Reserva natural con dunas de arena, lagunas ysenderismo. Ideal para un día de aventura.',
+        description: 'Reserva natural con dunas de arena, lagunas y senderismo. Ideal para un día de aventura.',
         descriptionEn: 'Natural reserve with sand dunes, lagoons and hiking. Perfect for an adventure day.',
         address: 'Av. San Juan de Pampagrande, Santa Cruz',
         phone: '+591 3 335 1234',
@@ -333,21 +336,25 @@ async function main() {
   console.log('Created place photos');
 
   // ── Place Hours ────────────────────────────────────────────
-  function timeToDate(h: number, m = 0): Date {
-    const d = new Date(1970, 0, 1, h, m, 0);
-    return d;
-  }
   for (const place of places) {
     for (let day = 0; day < 7; day++) {
-      await prisma.placeHour.create({
-        data: {
-          placeId: place.id,
-          dayOfWeek: day,
-          openTime: day === 6 ? null : timeToDate(8),
-          closeTime: day === 6 ? null : timeToDate(day === 5 ? 23 : 22),
-          isClosed: day === 6,
-        },
-      });
+      const hourData: any = {
+        placeId: place.id,
+        dayOfWeek: day,
+        isClosed: day === 6,
+      };
+
+      if (isSQLite) {
+        // SQLite: store times as strings
+        hourData.openTime = day === 6 ? null : '08:00';
+        hourData.closeTime = day === 6 ? null : (day === 5 ? '23:00' : '22:00');
+      } else {
+        // PostgreSQL: store times as Date objects
+        hourData.openTime = day === 6 ? null : new Date(1970, 0, 1, 8, 0, 0);
+        hourData.closeTime = day === 6 ? null : new Date(1970, 0, 1, day === 5 ? 23 : 22, 0, 0);
+      }
+
+      await prisma.placeHour.create({ data: hourData });
     }
   }
   console.log('Created place hours');
@@ -521,6 +528,7 @@ async function main() {
         placeId: places[0].id,
         rating: 5,
         comment: 'Los anticuchos son los mejores de Santa Cruz. Atención excelente.',
+        photos: '[]',
         isApproved: true,
       },
     }),
@@ -530,6 +538,7 @@ async function main() {
         placeId: places[0].id,
         rating: 4,
         comment: 'Muy buena comida pero a veces tarda mucho en servir.',
+        photos: '[]',
         isApproved: true,
       },
     }),
@@ -539,6 +548,7 @@ async function main() {
         placeId: places[1].id,
         rating: 4,
         comment: 'La fusión de sabores es interesante. Recomiendo el lomo al trapo.',
+        photos: '[]',
         isApproved: true,
       },
     }),
@@ -548,6 +558,7 @@ async function main() {
         placeId: places[2].id,
         rating: 5,
         comment: 'Hotel increíble, la piscina y el spa son de primera.',
+        photos: '[]',
         isApproved: true,
       },
     }),
@@ -557,6 +568,7 @@ async function main() {
         placeId: places[3].id,
         rating: 5,
         comment: 'Lugar perfecto para desconectar. Las dunas son impresionantes.',
+        photos: '[]',
         isApproved: true,
       },
     }),
@@ -566,6 +578,7 @@ async function main() {
         placeId: places[4].id,
         rating: 4,
         comment: 'Muy interesante las exhibiciones. Los niños lo disfrutaron mucho.',
+        photos: '[]',
         isApproved: true,
       },
     }),
@@ -575,6 +588,7 @@ async function main() {
         placeId: places[5].id,
         rating: 5,
         comment: 'El mejor café de la ciudad. El latte es espectacular.',
+        photos: '[]',
         isApproved: true,
       },
     }),
@@ -584,6 +598,7 @@ async function main() {
         placeId: places[6].id,
         rating: 4,
         comment: 'Buen ambiente y cocteles creativos. La música en vivo es genial.',
+        photos: '[]',
         isApproved: true,
       },
     }),
@@ -593,6 +608,7 @@ async function main() {
         placeId: places[7].id,
         rating: 5,
         comment: 'El mejor asado que he probado. Los cortes son top.',
+        photos: '[]',
         isApproved: true,
       },
     }),
@@ -602,6 +618,7 @@ async function main() {
         placeId: places[11].id,
         rating: 5,
         comment: 'Vista panorámica hermosa. Obligatorio al atardecer.',
+        photos: '[]',
         isApproved: true,
       },
     }),
@@ -653,7 +670,7 @@ async function main() {
         title: 'Nuevo evento cerca tuyo',
         body: 'El Festival de la Chinita comenzará pronto. ¡No te lo pierdas!',
         type: 'event',
-        data: { eventId: events[0].id },
+        data: JSON.stringify({ eventId: events[0].id }),
         isRead: false,
       },
     }),
@@ -663,7 +680,7 @@ async function main() {
         title: 'Promoción especial',
         body: '2x1 en almuerzos en El Palmar. Solo por tiempo limitado.',
         type: 'promotion',
-        data: { promotionId: promotions[0].id },
+        data: JSON.stringify({ promotionId: promotions[0].id }),
         isRead: false,
       },
     }),
@@ -673,6 +690,7 @@ async function main() {
         title: 'Tu reseña fue aprobada',
         body: 'Tu reseña sobre Hotel Buganvilia ya es visible para otros usuarios.',
         type: 'review',
+        data: JSON.stringify({}),
         isRead: true,
       },
     }),
@@ -682,6 +700,7 @@ async function main() {
         title: 'Bienvenida a BoliviaExperience',
         body: 'Explora los mejores lugares de Santa Cruz. ¡Comienza ahora!',
         type: 'system',
+        data: JSON.stringify({}),
         isRead: false,
       },
     }),

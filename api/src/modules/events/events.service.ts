@@ -1,24 +1,34 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PaginatedResponse } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class EventsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(upcoming = true) {
+  async findAll(query: { page?: number; limit?: number; upcoming?: boolean }) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
     const where: any = { isActive: true };
 
-    if (upcoming) {
+    if (query.upcoming !== false) {
       where.OR = [
         { dateEnd: null },
         { dateEnd: { gte: new Date() } },
       ];
     }
 
-    return this.prisma.event.findMany({
-      where,
-      orderBy: { dateStart: 'asc' },
-    });
+    const [events, total] = await Promise.all([
+      this.prisma.event.findMany({
+        where,
+        orderBy: { dateStart: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.event.count({ where }),
+    ]);
+
+    return new PaginatedResponse(events, total, page, limit);
   }
 
   async findToday() {

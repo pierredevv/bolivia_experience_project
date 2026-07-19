@@ -1,58 +1,58 @@
 import { Controller, Get, Put, Query, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { EmpresaService } from './empresa.service';
-import { UpdateEmpresaPlaceDto, QueryEmpresaReviewsDto } from './dto';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { UpdatePlaceDto, EmpresaReviewsDto } from './dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Role } from '../../common/enums/role.enum';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('empresa')
 @Controller('empresa')
-@UseGuards(RolesGuard)
-@Roles(Role.Empresa)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('empresa')
 @ApiBearerAuth()
 export class EmpresaController {
   constructor(private readonly empresaService: EmpresaService) {}
 
-  @Get('dashboard')
-  @ApiOperation({ summary: 'Get empresa dashboard stats' })
-  @ApiResponse({ status: 200, description: 'Dashboard data' })
-  async getDashboard(@CurrentUser('id') userId: string) {
-    return this.empresaService.getDashboard(userId);
-  }
-
   @Get('place')
-  @ApiOperation({ summary: 'Get own place details' })
-  @ApiResponse({ status: 200, description: 'Place details' })
+  @ApiOperation({ summary: 'Get the place owned by current empresa user' })
+  @ApiResponse({ status: 200, description: 'Owner place data' })
   async getPlace(@CurrentUser('id') userId: string) {
-    return this.empresaService.getPlace(userId);
+    return this.empresaService.getOwnerPlace(userId);
   }
 
   @Put('place')
-  @ApiOperation({ summary: 'Update own place' })
+  @ApiOperation({ summary: 'Update the place owned by current empresa user' })
   @ApiResponse({ status: 200, description: 'Place updated' })
   async updatePlace(
     @CurrentUser('id') userId: string,
-    @Body() dto: UpdateEmpresaPlaceDto,
+    @Body() dto: UpdatePlaceDto,
   ) {
-    return this.empresaService.updatePlace(userId, dto);
+    return this.empresaService.updateOwnerPlace(userId, dto);
   }
 
   @Get('reviews')
-  @ApiOperation({ summary: 'Get reviews for own place' })
-  @ApiResponse({ status: 200, description: 'Reviews list' })
+  @ApiOperation({ summary: 'Get reviews for the owned place' })
+  @ApiResponse({ status: 200, description: 'Paginated reviews' })
   async getReviews(
     @CurrentUser('id') userId: string,
-    @Query() query: QueryEmpresaReviewsDto,
+    @Query() dto: EmpresaReviewsDto,
   ) {
-    return this.empresaService.getReviews(userId, query);
+    return this.empresaService.getOwnerReviews(userId, dto);
   }
 
   @Get('analytics')
-  @ApiOperation({ summary: 'Get analytics for own place' })
+  @ApiOperation({ summary: 'Get analytics for the owned place' })
   @ApiResponse({ status: 200, description: 'Analytics data' })
   async getAnalytics(@CurrentUser('id') userId: string) {
-    return this.empresaService.getAnalytics(userId);
+    return this.empresaService.getOwnerStats(userId);
+  }
+
+  @Get('dashboard')
+  @ApiOperation({ summary: 'Get dashboard stats for empresa' })
+  @ApiResponse({ status: 200, description: 'Dashboard data' })
+  async getDashboard(@CurrentUser('id') userId: string) {
+    return this.empresaService.getOwnerDashboard(userId);
   }
 }

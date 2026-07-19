@@ -8,7 +8,19 @@ export class PlacesService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(query: QueryPlacesDto) {
-    const where: any = { isActive: true };
+    const where: any = {};
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    // Admin can see all places (active + inactive), public only sees active
+    if (query.allStatuses) {
+      // Don't filter by isActive
+    } else if (query.isActive !== undefined) {
+      where.isActive = query.isActive;
+    } else {
+      where.isActive = true;
+    }
 
     if (query.categoryId) {
       where.categoryId = query.categoryId;
@@ -16,8 +28,9 @@ export class PlacesService {
 
     if (query.search) {
       where.OR = [
-        { name: { contains: query.search, mode: 'insensitive' } },
-        { description: { contains: query.search, mode: 'insensitive' } },
+        { name: { contains: query.search } },
+        { description: { contains: query.search } },
+        { address: { contains: query.search } },
       ];
     }
 
@@ -29,13 +42,13 @@ export class PlacesService {
           photos: { take: 1, orderBy: { displayOrder: 'asc' } },
         },
         orderBy: { ratingAvg: 'desc' },
-        skip: query.skip,
-        take: query.limit,
+        skip,
+        take: limit,
       }),
       this.prisma.place.count({ where }),
     ]);
 
-    return new PaginatedResponse(places, total, query.page ?? 1, query.limit ?? 20);
+    return new PaginatedResponse(places, total, page, limit);
   }
 
   async findFeatured() {

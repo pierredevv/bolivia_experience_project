@@ -6,15 +6,31 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiPropertyOptional } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { Public } from '../../common/decorators/public.decorator';
-import { Role } from '../../common/enums/role.enum';
+import { PaginationDto } from '../../common/dto/pagination.dto';
+import { IsOptional, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
+
+class QueryEventsDto extends PaginationDto {
+  @ApiPropertyOptional({ description: 'Show only upcoming events' })
+  @IsOptional()
+  @Transform(({ obj }) => {
+    const value = obj.upcoming;
+    if (value === undefined || value === null) return undefined;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    return Boolean(value);
+  })
+  @IsBoolean()
+  upcoming?: boolean;
+}
 
 @ApiTags('events')
 @Controller('events')
@@ -22,15 +38,13 @@ export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   @Get()
-  @Public()
-  @ApiOperation({ summary: 'List upcoming events' })
+  @ApiOperation({ summary: 'List events with pagination' })
   @ApiResponse({ status: 200, description: 'Events list' })
-  async findAll() {
-    return this.eventsService.findAll();
+  async findAll(@Query() query: QueryEventsDto) {
+    return this.eventsService.findAll(query);
   }
 
   @Get('today')
-  @Public()
   @ApiOperation({ summary: 'Get today events' })
   @ApiResponse({ status: 200, description: 'Today events' })
   async findToday() {
@@ -38,7 +52,6 @@ export class EventsController {
   }
 
   @Get(':id')
-  @Public()
   @ApiOperation({ summary: 'Get event by ID' })
   @ApiResponse({ status: 200, description: 'Event details' })
   @ApiResponse({ status: 404, description: 'Event not found' })
@@ -48,7 +61,7 @@ export class EventsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.Admin)
+  @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create event (Admin only)' })
   @ApiResponse({ status: 201, description: 'Event created' })
@@ -58,7 +71,7 @@ export class EventsController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.Admin)
+  @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update event (Admin only)' })
   async update(@Param('id') id: string, @Body() body: any) {
@@ -67,7 +80,7 @@ export class EventsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.Admin)
+  @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete event (Admin only)' })
   async remove(@Param('id') id: string) {

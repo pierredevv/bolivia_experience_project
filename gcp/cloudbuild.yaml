@@ -1,0 +1,54 @@
+steps:
+  # Build API image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/bolivia-experience/api:$COMMIT_SHA', './api']
+
+  # Push API image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/bolivia-experience/api:$COMMIT_SHA']
+
+  # Deploy API to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'bolivia-experience-api'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/bolivia-experience/api:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+
+  # Build Web image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/bolivia-experience/web:$COMMIT_SHA', './web']
+
+  # Push Web image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/bolivia-experience/web:$COMMIT_SHA']
+
+  # Deploy Web to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'bolivia-experience-web'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/bolivia-experience/web:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/bolivia-experience/api:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/bolivia-experience/web:$COMMIT_SHA'
+
+timeout: '1200s'
+options:
+  logging: CLOUD_LOGGING_ONLY

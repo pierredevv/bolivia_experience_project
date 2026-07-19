@@ -1,0 +1,86 @@
+# Docker Compose - Producción
+# Usar con: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  db:
+    image: postgis/postgis:15-3.4
+    container_name: bolivia_experience_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: bolivia_experience
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bolivia-network
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: bolivia_experience_api
+    restart: always
+    environment:
+      DB_PROVIDER: postgresql
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/bolivia_experience
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: 15m
+      REFRESH_TOKEN_EXPIRATION: 7d
+      PORT: 3000
+      NODE_ENV: production
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://boliviaexperience.com}
+      GCS_BUCKET: ${GCS_BUCKET}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - bolivia-network
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: bolivia_experience_web
+    restart: always
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - bolivia-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: bolivia_experience_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+      - web
+    networks:
+      - bolivia-network
+
+volumes:
+  pgdata:
+  uploads:
+
+networks:
+  bolivia-network:
+    driver: bridge

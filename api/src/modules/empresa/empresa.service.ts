@@ -1,63 +1,21 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { UpdateEmpresaPlaceDto, QueryEmpresaReviewsDto } from './dto';
+import { UpdatePlaceDto, EmpresaReviewsDto } from './dto';
 import { PaginatedResponse } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class EmpresaService {
   constructor(private prisma: PrismaService) {}
 
-  async getDashboard(ownerId: string) {
+  async getOwnerPlace(userId: string) {
     const place = await this.prisma.place.findFirst({
-      where: { ownerId },
-      select: { id: true },
-    });
-
-    if (!place) {
-      throw new NotFoundException('No place found for this user');
-    }
-
-    const [totalReviews, pendingReviews, averageRating, recentReviews] =
-      await Promise.all([
-        this.prisma.review.count({
-          where: { placeId: place.id, isApproved: true },
-        }),
-        this.prisma.review.count({
-          where: { placeId: place.id, isApproved: false },
-        }),
-        this.prisma.review.aggregate({
-          where: { placeId: place.id, isApproved: true },
-          _avg: { rating: true },
-        }),
-        this.prisma.review.findMany({
-          where: { placeId: place.id, isApproved: true },
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-          include: {
-            user: { select: { id: true, name: true, photoUrl: true } },
-          },
-        }),
-      ]);
-
-    return {
-      stats: {
-        totalReviews,
-        pendingReviews,
-        averageRating: averageRating._avg.rating || 0,
-      },
-      recentReviews,
-    };
-  }
-
-  async getPlace(ownerId: string) {
-    const place = await this.prisma.place.findFirst({
-      where: { ownerId },
+      where: { ownerId: userId },
       include: {
-        category: { select: { id: true, name: true, icon: true } },
+        category: { select: { id: true, name: true, slug: true } },
         photos: { orderBy: { displayOrder: 'asc' } },
         hours: { orderBy: { dayOfWeek: 'asc' } },
         _count: {
-          select: { reviews: { where: { isApproved: true } }, favorites: true },
+          select: { reviews: true, favorites: true },
         },
       },
     });
@@ -69,9 +27,9 @@ export class EmpresaService {
     return place;
   }
 
-  async updatePlace(ownerId: string, dto: UpdateEmpresaPlaceDto) {
+  async updateOwnerPlace(userId: string, dto: UpdatePlaceDto) {
     const place = await this.prisma.place.findFirst({
-      where: { ownerId },
+      where: { ownerId: userId },
     });
 
     if (!place) {
@@ -81,83 +39,116 @@ export class EmpresaService {
     return this.prisma.place.update({
       where: { id: place.id },
       data: dto,
-      include: { category: true },
+      include: {
+        category: { select: { id: true, name: true, slug: true } },
+        photos: { orderBy: { displayOrder: 'asc' } },
+        hours: { orderBy: { dayOfWeek: 'asc' } },
+      },
     });
   }
 
-  async getReviews(ownerId: string, query: QueryEmpresaReviewsDto) {
+  async getOwnerReviews(userId: string, dto: EmpresaReviewsDto) {
     const place = await this.prisma.place.findFirst({
-      where: { ownerId },
-      select: { id: true },
+      where: { ownerId: userId },
     });
 
     if (!place) {
       throw new NotFoundException('No place found for this user');
     }
 
-    const skip = ((query.page ?? 1) - 1) * (query.limit ?? 20);
+    const page = dto.page ?? 1;
+    const limit = dto.limit ?? 20;
+    const skip = (page - 1) * limit;
 
     const [reviews, total] = await Promise.all([
       this.prisma.review.findMany({
         where: { placeId: place.id },
         include: {
-          user: { select: { id: true, name: true, photoUrl: true } },
+          user: {
+            select: { id: true, name: true, email: true, photoUrl: true },
+          },
           replies: {
-            include: { user: { select: { id: true, name: true } } },
+            include: {
+              user: { select: { id: true, name: true } },
+            },
           },
         },
-        orderBy: { createdAt: 'desc' },
         skip,
-        take: query.limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.review.count({ where: { placeId: place.id } }),
     ]);
 
-    return new PaginatedResponse(reviews, total, query.page ?? 1, query.limit ?? 20);
+    return new PaginatedResponse(reviews, total, page, limit);
   }
 
-  async getAnalytics(ownerId: string) {
+  async getOwnerStats(userId: string) {
     const place = await this.prisma.place.findFirst({
-      where: { ownerId },
-      select: { id: true },
+      where: { ownerId: userId },
     });
 
     if (!place) {
       throw new NotFoundException('No place found for this user');
     }
 
-    const [reviewStats, favoriteCount, promotionCount] = await Promise.all([
-      this.prisma.review.aggregate({
-        where: { placeId: place.id, isApproved: true },
-        _avg: { rating: true },
-        _count: { id: true },
-      }),
-      this.prisma.favorite.count({
+    const [totalReviews, approvedReviews, pendingReviews, favoriteCount] =
+      await Promise.all([
+        this.prisma.review.count({ where: { placeId: place.id } }),
+        this.prisma.review.count({
+          where: { placeId: place.id, isApproved: true },
+        }),
+        this.prisma.review.count({
+          where: { placeId: place.id, isApproved: false },
+        }),
+        this.prisma.favorite.count({ where: { placeId: place.id } }),
+      ]);
+
+    return {
+      placeId: place.id,
+      placeName: place.name,
+      ratingAvg: place.ratingAvg,
+      ratingCount: place.ratingCount,
+      totalReviews,
+      approvedReviews,
+      pendingReviews,
+      favoriteCount,
+    };
+  }
+
+  async getOwnerDashboard(userId: string) {
+    const place = await this.prisma.place.findFirst({
+      where: { ownerId: userId },
+    });
+
+    if (!place) {
+      throw new NotFoundException('No place found for this user');
+    }
+
+    const [totalReviews, favoriteCount, recentReviews] = await Promise.all([
+      this.prisma.review.count({ where: { placeId: place.id } }),
+      this.prisma.favorite.count({ where: { placeId: place.id } }),
+      this.prisma.review.findMany({
         where: { placeId: place.id },
-      }),
-      this.prisma.promotion.count({
-        where: { placeId: place.id, isActive: true },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: { select: { id: true, name: true } },
+        },
       }),
     ]);
 
-    const ratingDistribution = await this.prisma.review.groupBy({
-      by: ['rating'],
-      where: { placeId: place.id, isApproved: true },
-      _count: { rating: true },
-      orderBy: { rating: 'asc' },
-    });
-
     return {
-      stats: {
-        averageRating: reviewStats._avg.rating || 0,
-        totalReviews: reviewStats._count.id,
-        totalFavorites: favoriteCount,
-        activePromotions: promotionCount,
+      place: {
+        id: place.id,
+        name: place.name,
+        address: place.address,
+        ratingAvg: place.ratingAvg,
+        ratingCount: place.ratingCount,
+        totalReviews,
+        favoriteCount,
       },
-      ratingDistribution: ratingDistribution.map((item) => ({
-        rating: item.rating,
-        count: item._count.rating,
-      })),
+      recentReviews,
     };
   }
 }

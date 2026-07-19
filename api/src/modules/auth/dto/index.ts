@@ -37,3 +37,45 @@ export class RefreshTokenDto {
   @IsString()
   refreshToken: string;
 }
+
+export class RegisterBusinessDto {
+  @ApiProperty({ example: 'empresa@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: 'Carlos Mendoza' })
+  @IsString()
+  @MinLength(2)
+  name: string;
+
+  @ApiProperty({ example: 'password123' })
+  @IsString()
+  @MinLength(6)
+  password: string;
+
+  @ApiProperty({ example: 'Restaurante El Sabor' })
+  @IsString()
+  @MinLength(2)
+  businessName: string;
+
+  @ApiPropertyOptional({ example: '+591 3 123456' })
+  @IsOptional()
+  @IsString()
+  businessPhone?: string;
+
+  @ApiProperty({ example: 'Av. Principal #123' })
+  @IsString()
+  address: string;
+
+  @ApiProperty({ description: 'Category ID for the place' })
+  @IsString()
+  categoryId: string;
+
+  @ApiPropertyOptional({ example: -17.7833 })
+  @IsOptional()
+  latitude?: number;
+
+  @ApiPropertyOptional({ example: -63.1821 })
+  @IsOptional()
+  longitude?: number;
+}

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
+import { useTheme } from '../../contexts/ThemeContext'
 import {
   LayoutDashboard,
   Users,
@@ -14,38 +16,46 @@ import {
   LogOut,
   Bell,
   ChevronDown,
+  Sun,
+  Moon,
 } from 'lucide-react'
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Usuarios', href: '/admin/users', icon: Users },
-  { name: 'Lugares', href: '/admin/places', icon: MapPin },
-  { name: 'Reseñas', href: '/admin/reviews', icon: Star },
-  { name: 'Eventos', href: '/admin/events', icon: Calendar },
-  { name: 'Promociones', href: '/admin/promotions', icon: Tag },
-  { name: 'Categorías', href: '/admin/categories', icon: FolderOpen },
-  { name: 'Configuración', href: '/admin/settings', icon: Settings },
+  { name: 'Dashboard', href: '/admin-panel', icon: LayoutDashboard },
+  { name: 'Empresas', href: '/admin-panel/businesses', icon: MapPin },
+  { name: 'Usuarios', href: '/admin-panel/users', icon: Users },
+  { name: 'Lugares', href: '/admin-panel/places', icon: MapPin },
+  { name: 'Reseñas', href: '/admin-panel/reviews', icon: Star },
+  { name: 'Eventos', href: '/admin-panel/events', icon: Calendar },
+  { name: 'Promociones', href: '/admin-panel/promotions', icon: Tag },
+  { name: 'Categorías', href: '/admin-panel/categories', icon: FolderOpen },
+  { name: 'Configuración', href: '/admin-panel/settings', icon: Settings },
 ]
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
+  const { resolvedTheme, setTheme } = useTheme()
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    navigate('/login')
+    logout()
+    navigate('/admin-panel/login')
   }
 
+  const userInitial = user?.name?.[0]?.toUpperCase() || 'A'
+
   return (
-    <div className="min-h-screen bg-neutral-100">
+    <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 transition-colors">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
-          <div className="flex items-center justify-between p-4 border-b">
+        <div className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-neutral-800 shadow-xl">
+          <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
             <h1 className="text-xl font-bold text-primary-700">BoliviaExperience</h1>
             <button onClick={() => setSidebarOpen(false)}>
-              <X className="h-6 w-6" />
+              <X className="h-6 w-6 text-neutral-500 dark:text-neutral-400" />
             </button>
           </div>
           <nav className="p-4 space-y-1">
@@ -53,12 +63,12 @@ export default function AdminLayout() {
               <NavLink
                 key={item.name}
                 to={item.href}
-                end={item.href === '/admin'}
+                end={item.href === '/admin-panel'}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-neutral-700 hover:bg-neutral-100'
+                      ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
+                      : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
                   }`
                 }
                 onClick={() => setSidebarOpen(false)}
@@ -73,8 +83,8 @@ export default function AdminLayout() {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-1 bg-white border-r">
-          <div className="flex items-center gap-2 p-6 border-b">
+        <div className="flex flex-col flex-1 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700">
+          <div className="flex items-center gap-2 p-6 border-b border-neutral-200 dark:border-neutral-700">
             <div className="h-8 w-8 bg-primary-700 rounded-lg flex items-center justify-center">
               <MapPin className="h-5 w-5 text-white" />
             </div>
@@ -85,12 +95,12 @@ export default function AdminLayout() {
               <NavLink
                 key={item.name}
                 to={item.href}
-                end={item.href === '/admin'}
+                end={item.href === '/admin-panel'}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-neutral-700 hover:bg-neutral-100'
+                      ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
+                      : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
                   }`
                 }
               >
@@ -99,10 +109,10 @@ export default function AdminLayout() {
               </NavLink>
             ))}
           </nav>
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-neutral-200 dark:border-neutral-700">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+              className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             >
               <LogOut className="h-5 w-5" />
               Cerrar Sesión
@@ -114,25 +124,60 @@ export default function AdminLayout() {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 bg-white border-b">
+        <div className="sticky top-0 z-40 bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center justify-between px-4 py-3">
             <button
-              className="lg:hidden p-2 rounded-lg hover:bg-neutral-100"
+              className="lg:hidden p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
               onClick={() => setSidebarOpen(true)}
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-6 w-6 text-neutral-700 dark:text-neutral-300" />
             </button>
             <div className="flex items-center gap-4">
-              <button className="p-2 rounded-lg hover:bg-neutral-100 relative">
+              <button
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400"
+                title={resolvedTheme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              >
+                {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+              <button className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 relative text-neutral-500 dark:text-neutral-400">
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
               </button>
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary-700">A</span>
-                </div>
-                <span className="text-sm font-medium hidden sm:block">Admin</span>
-                <ChevronDown className="h-4 w-4 text-neutral-500" />
+              <div className="relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                >
+                  <div className="h-8 w-8 bg-primary-100 dark:bg-primary-900/50 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-primary-700 dark:text-primary-400">{userInitial}</span>
+                  </div>
+                  <span className="text-sm font-medium hidden sm:block text-neutral-700 dark:text-neutral-300">{user?.name || 'Admin'}</span>
+                  <ChevronDown className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+                </button>
+                {userMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-neutral-200 dark:border-neutral-700 z-50">
+                      <div className="p-3 border-b border-neutral-200 dark:border-neutral-700">
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{user?.name}</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{user?.email}</p>
+                        <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-400 rounded-full">
+                          {user?.role}
+                        </span>
+                      </div>
+                      <div className="p-1">
+                        <button
+                          onClick={() => { handleLogout(); setUserMenuOpen(false) }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Cerrar Sesión
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

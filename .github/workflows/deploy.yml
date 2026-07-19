@@ -1,0 +1,81 @@
+name: Deploy to GCP
+
+on:
+  push:
+    branches: [main]
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GAR_LOCATION: us-central1
+  API_SERVICE: bolivia-experience-api
+  WEB_SERVICE: bolivia-experience-web
+
+jobs:
+  build-and-deploy-api:
+    name: Build & Deploy API
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker ${{ GAR_LOCATION }}-docker.pkg.dev
+
+      - name: Build and Push API Image
+        run: |
+          docker build -t ${{ GAR_LOCATION }}-docker.pkg.dev/${{ PROJECT_ID }}/bolivia-experience/api:${{ github.sha }} ./api
+          docker push ${{ GAR_LOCATION }}-docker.pkg.dev/${{ PROJECT_ID }}/bolivia-experience/api:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ API_SERVICE }} \
+            --image ${{ GAR_LOCATION }}-docker.pkg.dev/${{ PROJECT_ID }}/bolivia-experience/api:${{ github.sha }} \
+            --region ${{ GAR_LOCATION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars "DB_PROVIDER=postgresql,DATABASE_URL=${{ secrets.DATABASE_URL }},JWT_SECRET=${{ secrets.JWT_SECRET }},NODE_ENV=production,CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}"
+
+  build-and-deploy-web:
+    name: Build & Deploy Web
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker ${{ GAR_LOCATION }}-docker.pkg.dev
+
+      - name: Build and Push Web Image
+        run: |
+          docker build -t ${{ GAR_LOCATION }}-docker.pkg.dev/${{ PROJECT_ID }}/bolivia-experience/web:${{ github.sha }} ./web
+          docker push ${{ GAR_LOCATION }}-docker.pkg.dev/${{ PROJECT_ID }}/bolivia-experience/web:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ WEB_SERVICE }} \
+            --image ${{ GAR_LOCATION }}-docker.pkg.dev/${{ PROJECT_ID }}/bolivia-experience/web:${{ github.sha }} \
+            --region ${{ GAR_LOCATION }} \
+            --platform managed \
+            --allow-unauthenticated

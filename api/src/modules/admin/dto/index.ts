@@ -1,50 +1,22 @@
-import { IsOptional, IsString, IsInt, Min } from 'class-validator';
+import { IsOptional, IsString, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { PaginationDto } from '../../../common/dto/pagination.dto';
 
-export class QueryUsersDto {
+export class AdminUsersDto extends PaginationDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ default: 1 })
+  @ApiPropertyOptional({ enum: ['admin', 'empresa', 'usuario'] })
   @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  page?: number = 1;
-
-  @ApiPropertyOptional({ default: 20 })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  limit?: number = 20;
+  @IsIn(['admin', 'empresa', 'usuario'])
+  role?: string;
 }
 
-export class QueryAllReviewsDto {
-  @ApiPropertyOptional()
+export class AdminReviewsDto extends PaginationDto {
+  @ApiPropertyOptional({ enum: ['pending', 'approved', 'rejected'] })
   @IsOptional()
-  @IsString()
-  search?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  placeId?: string;
-
-  @ApiPropertyOptional({ default: 1 })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  page?: number = 1;
-
-  @ApiPropertyOptional({ default: 20 })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  limit?: number = 20;
+  @IsIn(['pending', 'approved', 'rejected'])
+  status?: string;
 }
