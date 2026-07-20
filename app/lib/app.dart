@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'config/router.dart';
 import 'config/theme.dart';
+import 'l10n/app_localizations.dart';
 
 class BoliviaExperienceApp extends ConsumerWidget {
   const BoliviaExperienceApp({super.key});
@@ -20,15 +21,12 @@ class BoliviaExperienceApp extends ConsumerWidget {
       themeMode: themeMode,
       routerConfig: router,
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('es', 'BO'),
-        Locale('en', 'US'),
-        Locale('pt', 'BR'),
-      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       locale: const Locale('es', 'BO'),
     );
   }
