@@ -1035,6 +1035,40 @@ CORS_ORIGIN=http://localhost:5173
 
 ---
 
-**Última actualización**: 2026-07-18 (FASE 1 + FASE 2 completadas)
+## Git DevOps Agent
+
+### Available Agent
+- **git-devops**: Senior DevOps Engineer especializado en Git workflows, CI/CD y repository hygiene
+  - Location: `.mimocode/skills/git-devops/SKILL.md`
+  - Invocation: `/git-devops`
+  - Skills: workflow automation, conflict resolution, environment guard
+
+### How to Use
+- Invocar con `/git-devops` para iniciar el agente
+- El agente lee este handoff.md al inicio para contexto
+- Preguntar directamente o usar skills específicas:
+  - `/git-workflow` → Guiar crear rama → desarrollar → PR
+  - `/git-conflict-resolution` → Resolver conflictos de merge
+  - `/git-environment-guard` → Detectar secretos, validar .gitignore
+
+### Branch Strategy (Current)
+- **main**: Production-ready, rama protegida
+- **develop**: Integración, todas las features mergean aquí primero
+- **Naming convention**: `feature/`, `fix/`, `hotfix/`, `release/`, `chore/`
+- **Workflow**: Feature branch → PR to develop → PR to main
+
+### Workflow Convention
+1. **Iniciar**: `git checkout -b feature/{name} develop`
+2. **Desarrollar**: Commits pequeños con conventional commits
+3. **Completar**: `git push origin feature/{name}` + crear PR
+4. **Merge**: PR review → merge a develop → deploy a main
+
+### Rebase vs Merge
+- **Rebase**: Solo si la rama es tuya y nadie más la tocó
+- **Merge**: Si es compartida o no sabés
+
+---
+
+**Última actualización**: 2026-07-19 (Git DevOps Agent added)
 **Próximo entregable**: Entregable 9 — Testing Adicional (security tests, performance baseline)
 **Entregables completados**: FASE 1 (Security + File Upload + Notifications + Settings + E2E Tests) + FASE 2 (DevOps: Docker, Nginx, CI/CD, GCP) + 172 tests passing
