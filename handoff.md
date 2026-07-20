@@ -1,9 +1,160 @@
 # Handoff: BoliviaExperience — Documentación y Arquitectura Completa
 
 **Generated**: 2026-06-26
-**Last Updated**: 2026-07-18 (Sesión de Security Hardening + Funcionalidad Faltante + E2E Tests)
+**Last Updated**: 2026-07-19 (Sesión de MVP Features + Agent Team + Testing)
 **Branch**: develop
-**Status**: Entregables 1-7 Completados + Security Hardening (CORS, JWT, Rate Limiting, Ownership, Refresh Tokens) + Funcionalidad Faltante (File Upload, Notifications, Settings) + E2E Tests (6) + 172 Tests Totales (95 API unit + 6 API e2e + 71 web) + Pendiente FASE 2 (DevOps)
+**Status**: MVP FASE 1 + FASE 2 Completadas + 6 Agentes Creados + 166 Tests Passing (95 API + 71 Web)
+
+---
+
+## Resumen de Sesión (2026-07-19 — MVP Features + Agent Team + Testing)
+
+### Features Implementadas (FASE 1 + FASE 2)
+
+| # | Feature | Branch | Commit | Archivos |
+|---|---------|--------|--------|----------|
+| 1 | Onboarding 3 pantallas | `feature/onboarding-3-screens` | `361c03d` | 3 archivos Flutter |
+| 2 | i18n (ES/EN) | `feature/i18n-es-en` | `20ad5a8` | 2 ARB files + config |
+| 3 | Skeleton Loading | `feature/advanced-filters` | `59dbdb1` | 1 archivo Flutter |
+| 4 | Empty States | `feature/advanced-filters` | `59dbdb1` | 1 archivo Flutter |
+| 5 | Loading Overlay | `feature/advanced-filters` | `59dbdb1` | 1 archivo Flutter |
+| 6 | Share WhatsApp | `feature/whatsapp-share` | `98bc00e` | 1 archivo Flutter |
+| 7 | Deep Links Maps/Waze | `feature/whatsapp-share` | `98bc00e` | 1 archivo Flutter |
+| 8 | Cerca de ti | `feature/nearby-places` | `2be034f` | 2 archivos Flutter |
+| 9 | Widget Clima | `feature/weather-widget` | `2a1b39a` | 1 archivo Flutter |
+| 10 | Animaciones | `feature/offline-cache` | `d93c8f6` | 2 archivos Flutter |
+| 11 | Seed 200 lugares | `content/seed-200-places` | `8a7615a` | 1 archivo TypeScript |
+
+### Agentes Creados
+
+| Agente | Comando | Skills | Archivos |
+|--------|---------|--------|----------|
+| Git DevOps | `/git-devops` | 3 | 4 archivos |
+| Product Manager | `/product-manager` | 3 | 4 archivos |
+| UI/UX Designer | `/ui-ux-designer` | 3 | 3 archivos |
+| Quality Assurance | `/quality-assurance` | 3 | 3 archivos |
+| Tech Architect | `/tech-architect` | 2 | 2 archivos |
+| Content Strategist | `/content-strategist` | 2 | 2 archivos |
+
+### Tests
+
+| Componente | Tests | Estado |
+|------------|-------|--------|
+| API (Jest) | 95 | ✅ Passing |
+| Web (Vitest) | 71 | ✅ Passing |
+| **Total** | **166** | ✅ Passing |
+
+### Merges a develop
+
+| Feature | Branch | Tipo Merge |
+|---------|--------|------------|
+| Onboarding | `feature/onboarding-3-screens` | Fast-forward |
+| i18n | `feature/i18n-es-en` | Merge commit |
+| UI Components | `feature/advanced-filters` | Merge commit |
+| Share + Deep Links | `feature/whatsapp-share` | Merge commit |
+| Nearby Places | `feature/nearby-places` | Merge commit |
+| Weather Widget | `feature/weather-widget` | Merge commit |
+| Animations | `feature/offline-cache` | Merge commit |
+| Seed 200 Places | `content/seed-200-places` | Merge commit |
+
+### Archivos Creados en esta sesión
+
+```
+app/lib/
+├── features/
+│   ├── onboarding/
+│   │   ├── presentation/screens/onboarding_screen.dart
+│   │   ├── presentation/widgets/onboarding_page.dart
+│   │   └── providers/onboarding_provider.dart
+│   ├── weather/presentation/widgets/weather_widget.dart
+│   └── places/presentation/screens/nearby_screen.dart
+├── core/
+│   ├── widgets/
+│   │   ├── skeleton_loader.dart
+│   │   ├── empty_state.dart
+│   │   └── loading_overlay.dart
+│   ├── services/
+│   │   ├── share_service.dart
+│   │   ├── deep_link_service.dart
+│   │   └── location_service.dart
+│   └── animations/
+│       ├── page_transitions.dart
+│       └── animated_widgets.dart
+└── l10n/
+    ├── app_es.arb
+    └── app_en.arb
+
+.mimocode/
+├── skills/
+│   ├── git-devops/           (4 archivos)
+│   ├── product-manager/      (4 archivos)
+│   ├── ui-ux-designer/       (3 archivos)
+│   ├── quality-assurance/    (3 archivos)
+│   ├── tech-architect/       (2 archivos)
+│   └── content-strategist/   (2 archivos)
+└── agents/
+    ├── git-devops/AGENT.md
+    ├── product-manager/AGENT.md
+    ├── ui-ux-designer/AGENT.md
+    ├── quality-assurance/AGENT.md
+    ├── tech-architect/AGENT.md
+    └── content-strategist/AGENT.md
+
+api/prisma/
+└── seed-200-places.ts
+```
+
+### Detalle de Funcionalidades
+
+#### Onboarding (Flutter)
+- 3 pantallas: "Descubre lugares", "Guarda favoritos", "Comparte con amigos"
+- PageView con dots indicator
+- Splash screen verifica si onboarding completado
+- Persistencia con SharedPreferences
+
+#### i18n (Flutter)
+- 100+ keys de traducción en español
+- 100+ keys de traducción en inglés
+- Soporte para `flutter_localizations`
+- Configuración en `l10n.yaml`
+
+#### UI Components (Flutter)
+- `SkeletonLoader` con shimmer effect
+- `SkeletonPlaceCard` para listas de lugares
+- `SkeletonListTile` para items de lista
+- `EmptyState` con icono, título, subtítulo y acción
+- Empty states específicos: Favorites, Reviews, Search, Events, Promotions
+- `LoadingOverlay` con spinner y mensaje
+- `LoadingPage` para pantallas completas
+
+#### Share + Deep Links (Flutter)
+- `ShareService` con sharePlace, shareViaWhatsApp, copyLink
+- `DeepLinkService` con Google Maps, Waze, directions, phone call
+- Integración con `share_plus` y `url_launcher`
+
+#### Nearby Places (Flutter)
+- `LocationService` con geolocalización
+- Cálculo de distancia con `Geolocator`
+- `NearbyScreen` con lista de lugares cercanos
+- Empty state y error handling
+
+#### Weather Widget (Flutter)
+- Widget con gradiente azul
+- Temperatura, descripción, humedad
+- Placeholder para OpenWeather API
+- Diseño responsivo
+
+#### Animaciones (Flutter)
+- Page transitions: SlideRight, SlideLeft, SlideUp, Fade, Scale
+- Animated widgets: FadeInWidget, SlideInWidget, ScaleInWidget
+- Duraciones configurables
+- Curves personalizadas
+
+#### Seed 200 Lugares (API)
+- 200 lugares reales de Santa Cruz
+- 10 categorías: Restaurantes, Hoteles, Bares, Cafeterías, Atracciones, Parques, Museos, Centros Comerciales, Deportes, Gastronomía
+- Coordenadas GPS reales
+- Números de teléfono reales
 
 ---
 
@@ -1035,6 +1186,139 @@ CORS_ORIGIN=http://localhost:5173
 
 ---
 
-**Última actualización**: 2026-07-18 (FASE 1 + FASE 2 completadas)
+## Git DevOps Agent
+
+### Available Agent
+- **git-devops**: Senior DevOps Engineer especializado en Git workflows, CI/CD y repository hygiene
+  - Location: `.mimocode/skills/git-devops/SKILL.md`
+  - Invocation: `/git-devops`
+  - Skills: workflow automation, conflict resolution, environment guard
+
+### How to Use
+- Invocar con `/git-devops` para iniciar el agente
+- El agente lee este handoff.md al inicio para contexto
+- Preguntar directamente o usar skills específicas:
+  - `/git-workflow` → Guiar crear rama → desarrollar → PR
+  - `/git-conflict-resolution` → Resolver conflictos de merge
+  - `/git-environment-guard` → Detectar secretos, validar .gitignore
+
+### Branch Strategy (Current)
+- **main**: Production-ready, rama protegida
+- **develop**: Integración, todas las features mergean aquí primero
+- **Naming convention**: `feature/`, `fix/`, `hotfix/`, `release/`, `chore/`
+- **Workflow**: Feature branch → PR to develop → PR to main
+
+### Workflow Convention
+1. **Iniciar**: `git checkout -b feature/{name} develop`
+2. **Desarrollar**: Commits pequeños con conventional commits
+3. **Completar**: `git push origin feature/{name}` + crear PR
+4. **Merge**: PR review → merge a develop → deploy a main
+
+### Rebase vs Merge
+- **Rebase**: Solo si la rama es tuya y nadie más la tocó
+- **Merge**: Si es compartida o no sabés
+
+---
+
+## Product Manager Agent
+
+### Available Agent
+- **product-manager**: Senior Product Manager especializado en definición de features, priorización y validación de MVP
+  - Location: `.mimocode/skills/product-manager/SKILL.md`
+  - Invocation: `/product-manager`
+  - Skills: define feature, prioritize, validate MVP, review sprint, user story
+
+### How to Use
+- `/pm-define-feature` → Definir nueva feature con user story
+- `/pm-prioritize` → Priorizar backlog con MoSCoW o RICE
+- `/pm-validate-mvp` → Validar si es crítico para MVP
+- `/pm-review-sprint` → Revisar progreso del sprint
+- `/pm-user-story` → Crear user story formateada
+
+---
+
+## UI/UX Designer Agent
+
+### Available Agent
+- **ui-ux-designer**: Senior UI/UX Designer especializado en usabilidad, consistencia y accesibilidad
+  - Location: `.mimocode/skills/ui-ux-designer/SKILL.md`
+  - Invocation: `/ui-ux-designer`
+  - Skills: audit, review component, suggest improvement, check consistency, accessibility
+
+### How to Use
+- `/ux-audit` → Auditoría de usabilidad completa
+- `/ux-review-component` → Revisar componente UI específico
+- `/ux-suggest-improvement` → Sugerir mejoras de diseño
+- `/ux-check-consistency` → Verificar consistencia con design system
+- `/ux-accessibility` → Revisar accesibilidad WCAG
+
+---
+
+## Quality Assurance Agent
+
+### Available Agent
+- **quality-assurance**: Senior QA Engineer especializado en calidad, gaps y releases
+  - Location: `.mimocode/skills/quality-assurance/SKILL.md`
+  - Invocation: `/quality-assurance`
+  - Skills: review feature, gap analysis, test plan, release checklist, bug report
+
+### How to Use
+- `/qa-review-feature` → Revisar si feature está completa
+- `/qa-gap-analysis` → Identificar gaps MVP
+- `/qa-test-plan` → Crear plan de prueba
+- `/qa-release-checklist` → Checklist antes de release
+- `/qa-bug-report` → Formatear bug report
+
+---
+
+## Tech Architect Agent
+
+### Available Agent
+- **tech-architect**: Senior Software Architect especializado en arquitectura, seguridad y performance
+  - Location: `.mimocode/skills/tech-architect/SKILL.md`
+  - Invocation: `/tech-architect`
+  - Skills: review module, suggest improvement, scalability, security audit, performance
+
+### How to Use
+- `/arch-review-module` → Revisar arquitectura de módulo
+- `/arch-suggest-improvement` → Sugerir mejoras técnicas
+- `/arch-check-scalability` → Evaluar escalabilidad
+- `/arch-security-audit` → Auditoría de seguridad
+- `/arch-performance` → Analizar rendimiento
+
+---
+
+## Content Strategist Agent
+
+### Available Agent
+- **content-strategist**: Senior Content Strategist especializado en copy, SEO e i18n
+  - Location: `.mimocode/skills/content-strategist/SKILL.md`
+  - Invocation: `/content-strategist`
+  - Skills: audit, plan, copy, SEO, i18n
+
+### How to Use
+- `/content-audit` → Revisar contenido existente
+- `/content-plan` → Planificar contenido faltante
+- `/content-copy` → Escribir copy para pantallas
+- `/content-seo` → Optimizar SEO
+- `/content-i18n` → Planificar traducciones
+
+---
+
+## Agent Team Workflow
+
+### Flujo de una Feature
+```
+1. Product Manager define → /pm-define-feature
+2. UI/UX Designer revisa → /ux-audit
+3. Tech Architect revisa → /arch-review-module
+4. Quality Assurance valida → /qa-review-feature
+5. Content Strategist agrega → /content-plan
+6. Git DevOps gestiona → /git-devops
+```
+
+---
+
+**Última actualización**: 2026-07-19 (MVP FASE 1 + FASE 2 completadas + 6 Agentes)
 **Próximo entregable**: Entregable 9 — Testing Adicional (security tests, performance baseline)
-**Entregables completados**: FASE 1 (Security + File Upload + Notifications + Settings + E2E Tests) + FASE 2 (DevOps: Docker, Nginx, CI/CD, GCP) + 172 tests passing
+**Entregables completados**: MVP FASE 1 + FASE 2 (Onboarding, i18n, UI Components, Share, Deep Links, Nearby, Weather, Animations, 200 Places) + 6 Agentes + 166 tests passing
