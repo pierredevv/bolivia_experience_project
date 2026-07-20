@@ -1,9 +1,168 @@
 # Handoff: BoliviaExperience — Documentación y Arquitectura Completa
 
 **Generated**: 2026-06-26
-**Last Updated**: 2026-07-18 (Sesión de Security Hardening + Funcionalidad Faltante + E2E Tests)
+**Last Updated**: 2026-07-19 (Auth Flow + Social Login + Email Verification + Public Endpoints + Bug Fixes)
 **Branch**: develop
-**Status**: Entregables 1-7 Completados + Security Hardening (CORS, JWT, Rate Limiting, Ownership, Refresh Tokens) + Funcionalidad Faltante (File Upload, Notifications, Settings) + E2E Tests (6) + 172 Tests Totales (95 API unit + 6 API e2e + 71 web) + Pendiente FASE 2 (DevOps)
+**Status**: Entregables 1-7 Completados + FASE 1 (Security) + FASE 2 (DevOps) + FASE 3 (Flutter + Web) + FASE 4 (Auth Flow + Social Login + Email Verification)
+
+---
+
+## Resumen de Sesión (2026-07-19 — Auth Flow + Social Login + Email Verification + Bug Fixes)
+
+### Trabajo Realizado
+
+1. **Fix: "No token provided" al hacer login** — Los 5 endpoints de auth (`/auth/login`, `/auth/register`, `/auth/refresh`, `/auth/logout`, `/auth/register-business`) no tenían `@Public()`, entonces el JwtAuthGuard global los bloqueaba. Agregado `@Public()` a todos.
+2. **Fix: Favorites desde Place Detail** — `_getStoredToken()` retornaba `null` siempre. Reemplazado con `TokenManager` + `PlacesService.toggleFavorite/removeFavorite`
+3. **Fix: Event Detail Screen** — Datos 100% hardcodeados. Reescrito para usar `EventService.getEventById()` con UI completa
+4. **Fix: Events Route** — `EventsScreen` existía pero no tenía ruta. Agregada ruta `/events` en router.dart
+5. **Fix: Auth Service Dio Duplication** — `AuthService` creaba su propia instancia de Dio. Ahora usa el `dioProvider` compartido
+6. **Fix: Rating Bars** — Porcentajes hardcodeados reemplazados con cálculo dinámico desde reviews reales
+7. **Fix: Operating Hours** — Horarios hardcodeados reemplazados con datos del API o fallback informativo
+8. **Fix: Search History Clear** — Botón "Limpiar" conectado con `DELETE /search/history`
+9. **Fix: Profile Crash** — `UserProfile` no tenía `reviewCount`, `favoriteCount`, `avgRating`. Agregados al modelo
+10. **Fix: Google Login Error 10** — Error messages específicos por código de error de Google
+11. **Fix: ParentDataWidget** — `_SocialButton` retornaba `Expanded` sin padre Flex. Eliminado wrapper
+
+### Nuevos Módulos Flutter
+
+12. **Notifications Module** — `notification_service.dart` (CRUD + unread count), `notification_provider.dart`, `notifications_screen.dart`, `notification_tile.dart`. Conectado con bell icon en HomeScreen (badge unread count)
+13. **Promotions Module** — `promotion_service.dart`, `promotions_provider.dart`, `promotions_screen.dart`, `promotion_detail_screen.dart`, `promotion_card.dart`. Rutas `/promotions` y `/promotions/:id`
+
+### Auth Flow Profesional (6 archivos backend + 5 Flutter)
+
+14. **TokenManager con Secure Storage** — Reemplazado memoria estática por `flutter_secure_storage` para accessToken + refreshToken
+15. **Dio Interceptor con Lock de Concurrencia** — Manejo de 401 con refresh token. Lock/cola para evitar 5 refreshes simultáneos
+16. **Splash Screen Valida Token** — Valida token con `GET /users/me` en vez de solo verificar existencia de string
+17. **Refresh Token en Login** — Auth provider guarda ambos tokens (access + refresh) en secure storage
+18. **Logout con Revocación** — `POST /auth/logout` revoca refresh token en la DB + limpia secure storage
+
+### Email Verification (9 archivos)
+
+19. **Schema Prisma** — Campo `isEmailVerified` en User
+20. **Email Service** — `email.service.ts` con nodemailer, template HTML de verificación
+21. **Auth Service** — `verifyEmail()` + envío de email en `register()`
+22. **Auth Controller** — `GET /auth/verify-email`
+23. **Flutter Auth Provider** — `isEmailVerified` en AuthState
+24. **Flutter Login Screen** — Banner amarillo si email no verificado
+25. **Flutter Register Screen** — Mensaje "Revisa tu email"
+
+### Social Login — Google (6 archivos)
+
+26. **Schema Prisma** — Campos `provider`, `providerId` en User
+27. **Auth Service Backend** — `loginWithGoogle()` con verificación via Google Token Info API
+28. **Auth Controller** — `POST /auth/google` con `@Public()`
+29. **Flutter Auth Provider** — `loginWithGoogle()` con `google_sign_in` package
+30. **Flutter Login Screen** — Botón "Continuar con Google"
+31. **Android Config** — Google Services Gradle plugin, minSdk 21
+
+### Public Endpoints (5 controllers)
+
+32. **Places Controller** — `@Public()` en GET /places, /featured, /:id, /:id/photos
+33. **Events Controller** — `@Public()` en GET /events, /today, /:id
+34. **Promotions Controller** — `@Public()` en GET /promotions, /:id
+35. **Reviews Controller** — `@Public()` en GET /places/:id/reviews
+36. **Health Controller** — `@Public()` en GET /health
+
+### Web Fixes
+
+37. **Nginx `/uploads`** — Location block en nginx.conf y nginx.prod.conf
+38. **Notifications API Client** — Agregado a web/src/services/api.ts
+39. **LoginPage.tsx eliminado** — Archivo huérfano sin referencias
+40. **API Base URL** — Corregido de 192.168.1.9 a 192.168.1.8
+
+### Configuración Android
+
+41. **AndroidManifest.xml** — Permisos INTERNET, ubicación, cleartext traffic, Google Maps API key, Facebook App ID
+42. **build.gradle.kts** — Google Services plugin, minSdk 21
+43. **strings.xml** — Facebook App ID (comentado para futuro)
+
+### Pendiente
+
+- [ ] **Google Login funciona pero requiere**: SHA-1 de debug registrado en Google Cloud Console + oauth_client en google-services.json
+- [ ] **Facebook Login**: Código comentado, pendiente de configurar en Facebook Developer
+- [ ] **Tests adicionales**: Security tests, performance baseline
+- [ ] **Documentación**: README, manuales, guías
+
+---
+
+## Resumen de Sesión (2026-07-18 — Flutter Fixes + Notifications + Promotions + Web + Tests)
+
+### Trabajo Realizado
+
+1. **Fix: Favorites desde Place Detail** — `_getStoredToken()` retornaba `null` siempre. Reemplazado con `TokenManager` y `PlacesService.toggleFavorite/removeFavorite`
+2. **Fix: Event Detail Screen** — Datos 100% hardcodeados. Reescrito para usar `EventService.getEventById()` con UI completa (photo, dates, location, description, share, directions)
+3. **Fix: Events Route** — `EventsScreen` existía pero no tenía ruta. Agregada ruta `/events` en router.dart
+4. **Fix: Auth Service Dio Duplication** — `AuthService` creaba su propia instancia de Dio. Ahora usa el `dioProvider` compartido con interceptor automático de token
+5. **Nuevo: Notifications Module (Flutter)** — Módulo completo: `notification_service.dart` (CRUD + unread count), `notification_provider.dart` (state management), `notifications_screen.dart` (lista con empty/error/loading), `notification_tile.dart` (iconos por tipo, fechas relativas, swipe delete). Conectado con bell icon en HomeScreen (badge unread count)
+6. **Nuevo: Promotions Module (Flutter)** — Módulo completo: `promotion_service.dart` (model + API), `promotions_provider.dart` (list + detail), `promotions_screen.dart` (lista), `promotion_detail_screen.dart` (photo, discount badge, dates, place), `promotion_card.dart`. Rutas `/promotions` y `/promotions/:id`
+7. **Fix: Rating Bars** — Porcentajes hardcodeados (70/20/5/3/2%) reemplazados con cálculo dinámico desde reviews reales
+8. **Fix: Operating Hours** — Horarios hardcodeados (11:00-23:00) reemplazados con datos del API o fallback informativo. Campo `hours` agregado al modelo Place
+9. **Fix: Search History Clear** — Botón "Limpiar" sin funcionalidad conectado con `DELETE /search/history`
+10. **Fix: Nginx /uploads** — Agregado location block en `nginx.conf` y `nginx.prod.conf` para servir fotos subidas
+11. **Fix: Notifications API Client (Web)** — Agregado `notificationsApi` a `web/src/services/api.ts`
+12. **Fix: Orphan Cleanup** — Eliminado `LoginPage.tsx` huérfano (no referenciado en ninguna ruta)
+13. **Flutter Tests** — 4 archivos de test unitario: Event model (3 tests), Promotion model (3 tests), Notification model (3 tests), Place model (3 tests + PaginatedResponse)
+14. **Performance Baseline** — Documento `docs/PERFORMANCE_BASELINE.md` con benchmarks de 12 endpoints, métricas de monitoreo, y recomendaciones de load testing
+
+### Bugs Fixed
+
+| # | Bug | Archivo | Fix |
+|---|-----|---------|-----|
+| 1 | Favorites no funciona desde detail | `place_detail_provider.dart` | Usar TokenManager + PlacesService |
+| 2 | Event detail hardcodeado | `event_detail_screen.dart` | Conectar a API con EventService |
+| 3 | Events screen inalcanzable | `router.dart` | Agregar ruta `/events` |
+| 4 | Auth service Dio duplicado | `auth_service.dart` | Usar dioProvider compartido |
+| 5 | Rating bars hardcodeados | `place_detail_screen.dart` | Calcular desde reviews |
+| 6 | Operating hours hardcodeados | `place_detail_screen.dart` | Usar datos del API |
+| 7 | Search history no se limpia | `search_screen.dart` | Conectar DELETE endpoint |
+| 8 | Nginx sin /uploads | `nginx.conf`, `nginx.prod.conf` | Agregar location block |
+| 9 | Web sin notifications API | `api.ts` | Agregar notificationsApi |
+| 10 | LoginPage.tsx huérfano | `LoginPage.tsx` | Eliminar |
+
+### New Files Created
+
+| File | Description |
+|------|-------------|
+| `app/lib/features/notifications/data/notification_service.dart` | Notification model + API calls |
+| `app/lib/features/notifications/presentation/providers/notification_provider.dart` | Notification state management |
+| `app/lib/features/notifications/presentation/screens/notifications_screen.dart` | Notifications list screen |
+| `app/lib/features/notifications/presentation/widgets/notification_tile.dart` | Notification card widget |
+| `app/lib/features/promotions/data/promotion_service.dart` | Promotion model + API calls |
+| `app/lib/features/promotions/presentation/providers/promotions_provider.dart` | Promotions state management |
+| `app/lib/features/promotions/presentation/screens/promotions_screen.dart` | Promotions list screen |
+| `app/lib/features/promotions/presentation/screens/promotion_detail_screen.dart` | Promotion detail screen |
+| `app/lib/features/promotions/presentation/widgets/promotion_card.dart` | Promotion card widget |
+| `app/test/features/events/event_model_test.dart` | Event model unit tests (3) |
+| `app/test/features/promotions/promotion_model_test.dart` | Promotion model unit tests (3) |
+| `app/test/features/notifications/notification_model_test.dart` | Notification model unit tests (3) |
+| `app/test/features/places/place_model_test.dart` | Place model unit tests (4) |
+| `docs/PERFORMANCE_BASELINE.md` | API performance benchmarks |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `app/lib/features/places/presentation/providers/place_detail_provider.dart` | Fix _getStoredToken → TokenManager |
+| `app/lib/features/places/data/places_service.dart` | Added `hours` field to Place model |
+| `app/lib/features/places/presentation/screens/place_detail_screen.dart` | Dynamic rating bars + real operating hours |
+| `app/lib/features/events/presentation/screens/event_detail_screen.dart` | Full rewrite: API-connected |
+| `app/lib/features/auth/data/auth_service.dart` | Removed Dio duplication |
+| `app/lib/features/auth/presentation/providers/auth_provider.dart` | Use dioProvider for AuthService |
+| `app/lib/features/home/presentation/screens/home_screen.dart` | Bell icon → notifications, Ver todos links |
+| `app/lib/features/search/data/search_service.dart` | Added clearSearchHistory |
+| `app/lib/features/search/presentation/providers/search_provider.dart` | Added clearHistory |
+| `app/lib/features/search/presentation/screens/search_screen.dart` | Connected Limpiar button |
+| `app/lib/config/router.dart` | Added /events, /notifications, /promotions routes |
+| `app/lib/config/api_constants.dart` | Added notification endpoints |
+| `nginx/nginx.conf` | Added /uploads location block |
+| `nginx/nginx.prod.conf` | Added /uploads location block |
+| `web/src/services/api.ts` | Added notificationsApi |
+
+### Deleted Files
+
+| File | Reason |
+|------|--------|
+| `web/src/pages/LoginPage.tsx` | Orphaned — not referenced in any route |
 
 ---
 

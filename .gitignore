@@ -3,6 +3,13 @@
 .env.*
 !.env.example
 
+# Firebase / Google Services (contains API keys)
+app/android/app/google-services.json
+app/ios/Runner/GoogleService-Info.plist
+
+# Facebook config (contains app secrets)
+app/android/app/src/main/res/values/strings.xml
+
 # Node / NestJS
 node_modules/
 dist/
@@ -16,8 +23,12 @@ api/prisma/*.db-journal
 api/uploads/*
 !api/uploads/.gitkeep
 
-# MiMoCode internal
-.mimocode/
+# MiMoCode internal (ignore most, track skills and agents)
+.mimocode/*
+!.mimocode/skills/
+!.mimocode/skills/**
+!.mimocode/agents/
+!.mimocode/agents/**
 
 # Windows artifacts
 nul
