@@ -4,11 +4,11 @@ import { useLang } from '../contexts/LangContext'
 export default function FinalCTA() {
   const { t } = useLang()
   return (
-    <section id="download" className="bg-primary-700 py-16 lg:py-20 relative overflow-hidden">
+    <section id="download" className="bg-slate-900 py-16 lg:py-20 relative overflow-hidden">
       <div className="absolute inset-0 opacity-15">
         <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=60" alt="" className="w-full h-full object-cover" />
       </div>
-      <div className="absolute inset-0 bg-primary-700/85" />
+      <div className="absolute inset-0 bg-slate-900/85" />
 
       <div className="max-w-[1200px] mx-auto px-5 sm:px-8 lg:px-12 text-center relative z-10">
         <motion.h2

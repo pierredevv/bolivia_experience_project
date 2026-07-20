@@ -12,7 +12,7 @@ export default function EmpresaDashboard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-secondary-700" />
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
       </div>
     )
   }
@@ -29,29 +29,33 @@ export default function EmpresaDashboard() {
   const recentReviews = data?.recentReviews || []
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Dashboard</h1>
-        <p className="text-neutral-500 dark:text-neutral-400 mt-1">Bienvenido de vuelta</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="mb-2">
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Dashboard</h1>
+        <p className="text-slate-500 mt-1 text-sm">Bienvenido de vuelta</p>
       </div>
 
-      {/* Place Card */}
+      {/* Place Hero Card — Premium gradient */}
       {place && (
-        <div className="bg-gradient-to-r from-secondary-600 to-secondary-700 rounded-2xl p-6 mb-8 text-white">
-          <div className="flex items-start justify-between">
+        <div className="relative bg-slate-900 rounded-2xl p-6 md:p-8 overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 via-transparent to-sky-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute -top-20 -right-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl" />
+          <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-sm opacity-80">Tu negocio</p>
-              <h2 className="text-2xl font-bold mt-1">{place.name}</h2>
-              <div className="flex items-center gap-4 mt-2 text-sm">
-                <span className="flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-white" />
-                  {place.ratingAvg?.toFixed(1) || '0.0'} ({place.ratingCount || 0} reseñas)
+              <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider mb-1">Tu negocio</p>
+              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">{place.name}</h2>
+              <div className="flex items-center gap-4 mt-3 text-sm">
+                <span className="flex items-center gap-1.5 text-white/80">
+                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <span className="font-bold">{place.ratingAvg?.toFixed(1) || '0.0'}</span>
+                  <span className="text-white/50">({place.ratingCount || 0} reseñas)</span>
                 </span>
               </div>
             </div>
             <button
               onClick={() => navigate('/business/place')}
-              className="px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors backdrop-blur-sm"
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-semibold rounded-xl transition-colors border border-white/10"
             >
               Editar
             </button>
@@ -59,87 +63,99 @@ export default function EmpresaDashboard() {
         </div>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Reseñas</p>
-              <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-1">{place?.totalReviews || 0}</p>
+      {/* Bento Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="group relative bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300 p-5 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="bg-emerald-50 p-2.5 rounded-xl">
+                <MessageSquare className="h-5 w-5 text-emerald-600" />
+              </div>
+              <span className="bg-emerald-50 text-emerald-700 rounded-full px-2.5 py-0.5 text-xs font-black">+3</span>
             </div>
-            <div className="bg-yellow-500 p-2.5 rounded-xl">
-              <MessageSquare className="h-5 w-5 text-white" />
-            </div>
+            <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Reseñas</p>
+            <p className="text-slate-900 font-black text-3xl md:text-4xl mt-1">{place?.totalReviews || 0}</p>
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Favoritos</p>
-              <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-1">{place?.favoriteCount || 0}</p>
+
+        <div className="group relative bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300 p-5 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-rose-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="bg-rose-50 p-2.5 rounded-xl">
+                <Heart className="h-5 w-5 text-rose-600" />
+              </div>
+              <span className="bg-emerald-50 text-emerald-700 rounded-full px-2.5 py-0.5 text-xs font-black">+7</span>
             </div>
-            <div className="bg-red-500 p-2.5 rounded-xl">
-              <Heart className="h-5 w-5 text-white" />
-            </div>
+            <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Favoritos</p>
+            <p className="text-slate-900 font-black text-3xl md:text-4xl mt-1">{place?.favoriteCount || 0}</p>
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Rating Promedio</p>
-              <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-1">{place?.ratingAvg?.toFixed(1) || '0.0'}</p>
+
+        <div className="group relative bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300 p-5 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="bg-amber-50 p-2.5 rounded-xl">
+                <Star className="h-5 w-5 text-amber-600" />
+              </div>
+              <span className="bg-emerald-50 text-emerald-700 rounded-full px-2.5 py-0.5 text-xs font-black">+0.2</span>
             </div>
-            <div className="bg-green-500 p-2.5 rounded-xl">
-              <Star className="h-5 w-5 text-white" />
-            </div>
+            <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Rating Promedio</p>
+            <p className="text-slate-900 font-black text-3xl md:text-4xl mt-1">{place?.ratingAvg?.toFixed(1) || '0.0'}</p>
           </div>
         </div>
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Reseñas</p>
-              <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-1">{place?.ratingCount || 0}</p>
+
+        <div className="group relative bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300 p-5 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-sky-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <div className="bg-sky-50 p-2.5 rounded-xl">
+                <Eye className="h-5 w-5 text-sky-600" />
+              </div>
+              <span className="bg-emerald-50 text-emerald-700 rounded-full px-2.5 py-0.5 text-xs font-black">+15</span>
             </div>
-            <div className="bg-blue-500 p-2.5 rounded-xl">
-              <Eye className="h-5 w-5 text-white" />
-            </div>
+            <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Total Reseñas</p>
+            <p className="text-slate-900 font-black text-3xl md:text-4xl mt-1">{place?.ratingCount || 0}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Reviews */}
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm">
-          <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
-            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">Reseñas Recientes</h3>
+      {/* Bento Bottom Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        {/* Recent Reviews — takes 3 cols */}
+        <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-slate-100">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Reseñas Recientes</h3>
             <button
               onClick={() => navigate('/business/reviews')}
-              className="text-sm text-secondary-700 dark:text-secondary-400 hover:text-secondary-800 dark:hover:text-secondary-300 flex items-center gap-1"
+              className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors"
             >
-              Ver todas <ArrowUpRight className="h-4 w-4" />
+              Ver todas <ArrowUpRight className="h-3.5 w-3.5" />
             </button>
           </div>
-          <div className="p-4 space-y-3">
+          <div className="p-3 space-y-1">
             {recentReviews.length === 0 ? (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-4">No hay reseñas aún</p>
+              <p className="text-sm text-slate-400 text-center py-6">No hay reseñas aún</p>
             ) : (
               recentReviews.map((review: any) => (
-                <div key={review.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700/50">
-                  <div className="h-8 w-8 bg-secondary-100 dark:bg-secondary-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-medium text-secondary-700 dark:text-secondary-400">
+                <div key={review.id} className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50/80 transition-colors">
+                  <div className="h-9 w-9 bg-emerald-50 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold text-emerald-600">
                       {review.user?.name?.[0] || '?'}
                     </span>
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{review.user?.name}</p>
+                      <p className="text-sm font-semibold text-slate-900">{review.user?.name}</p>
                       <div className="flex items-center gap-0.5">
                         {Array.from({ length: review.rating }).map((_, i) => (
-                          <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
                         ))}
                       </div>
                     </div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{review.comment}</p>
+                    <p className="text-sm text-slate-600 mt-1">{review.comment}</p>
                   </div>
                 </div>
               ))
@@ -147,47 +163,50 @@ export default function EmpresaDashboard() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm">
-          <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
-            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">Acciones Rápidas</h3>
+        {/* Quick Actions — takes 2 cols */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+          <div className="p-5 border-b border-slate-100">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Acciones Rápidas</h3>
           </div>
-          <div className="p-4 space-y-3">
+          <div className="p-4 space-y-2">
             <button
               onClick={() => navigate('/business/place')}
-              className="w-full flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors text-left"
+              className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/50 transition-all text-left group"
             >
-              <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="h-10 w-10 bg-slate-900 rounded-xl flex items-center justify-center group-hover:bg-emerald-600 transition-colors">
+                <MapPin className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="font-medium text-neutral-900 dark:text-neutral-100">Editar Información</p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Actualiza los datos de tu negocio</p>
+                <p className="font-semibold text-slate-900 text-sm">Editar Información</p>
+                <p className="text-xs text-slate-500">Actualiza los datos de tu negocio</p>
               </div>
+              <ArrowUpRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-600 ml-auto transition-colors" />
             </button>
             <button
               onClick={() => navigate('/business/reviews')}
-              className="w-full flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors text-left"
+              className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/50 transition-all text-left group"
             >
-              <div className="h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <MessageSquare className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className="h-10 w-10 bg-slate-900 rounded-xl flex items-center justify-center group-hover:bg-emerald-600 transition-colors">
+                <MessageSquare className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="font-medium text-neutral-900 dark:text-neutral-100">Responder Reseñas</p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Gestiona las reseñas de tus clientes</p>
+                <p className="font-semibold text-slate-900 text-sm">Responder Reseñas</p>
+                <p className="text-xs text-slate-500">Gestiona las reseñas de tus clientes</p>
               </div>
+              <ArrowUpRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-600 ml-auto transition-colors" />
             </button>
             <button
               onClick={() => navigate('/business/promotions')}
-              className="w-full flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors text-left"
+              className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/50 transition-all text-left group"
             >
-              <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <div className="h-10 w-10 bg-slate-900 rounded-xl flex items-center justify-center group-hover:bg-emerald-600 transition-colors">
+                <TrendingUp className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="font-medium text-neutral-900 dark:text-neutral-100">Crear Promoción</p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Atrae más clientes con ofertas</p>
+                <p className="font-semibold text-slate-900 text-sm">Crear Promoción</p>
+                <p className="text-xs text-slate-500">Atrae más clientes con ofertas</p>
               </div>
+              <ArrowUpRight className="h-4 w-4 text-slate-300 group-hover:text-emerald-600 ml-auto transition-colors" />
             </button>
           </div>
         </div>

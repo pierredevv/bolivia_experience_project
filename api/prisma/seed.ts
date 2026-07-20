@@ -342,17 +342,9 @@ async function main() {
         placeId: place.id,
         dayOfWeek: day,
         isClosed: day === 6,
+        openTime: day === 6 ? null : '08:00',
+        closeTime: day === 6 ? null : (day === 5 ? '23:00' : '22:00'),
       };
-
-      if (isSQLite) {
-        // SQLite: store times as strings
-        hourData.openTime = day === 6 ? null : '08:00';
-        hourData.closeTime = day === 6 ? null : (day === 5 ? '23:00' : '22:00');
-      } else {
-        // PostgreSQL: store times as Date objects
-        hourData.openTime = day === 6 ? null : new Date(1970, 0, 1, 8, 0, 0);
-        hourData.closeTime = day === 6 ? null : new Date(1970, 0, 1, day === 5 ? 23 : 22, 0, 0);
-      }
 
       await prisma.placeHour.create({ data: hourData });
     }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MapPin, Menu, X, Download } from 'lucide-react'
+import { Menu, X, Download } from 'lucide-react'
 import { useLang } from '../contexts/LangContext'
 
 export default function Navbar() {
@@ -47,19 +47,17 @@ export default function Navbar() {
       <a href="#main-content" className="skip-link">{t('a11y.skip')}</a>
 
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out ${
-          scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-transparent'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-transparent'
+          }`}
       >
         <div className="max-w-[1200px] mx-auto px-5 sm:px-8 lg:px-12 h-16 flex items-center justify-between">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2.5 shrink-0">
-            <div className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${scrolled ? 'bg-primary-700' : 'bg-white/20 backdrop-blur-sm'}`}>
-              <MapPin className="h-4 w-4 text-white" />
-            </div>
-            <span className={`text-lg font-bold tracking-tight transition-colors ${scrolled ? 'text-neutral-900' : 'text-white'}`}>
-              Bolivia<span className={scrolled ? 'text-primary-700' : 'text-primary-300'}>Experience</span>
-            </span>
+          <a href="/" className="flex items-center shrink-0">
+            <img
+              src="/BoliviaExperience.png"
+              alt="BoliviaExperience"
+              className="h-16 md:h-20 w-auto object-contain"
+            />
           </a>
 
           {/* Desktop nav */}
@@ -68,9 +66,8 @@ export default function Navbar() {
               <a
                 key={link.href}
                 href={link.href}
-                className={`text-sm font-medium transition-colors ${
-                  scrolled ? 'text-neutral-600 hover:text-neutral-900' : 'text-white/70 hover:text-white'
-                }`}
+                className={`text-sm font-medium transition-colors ${scrolled ? 'text-neutral-600 hover:text-neutral-900' : 'text-white/70 hover:text-white'
+                  }`}
               >
                 {link.label}
               </a>
@@ -81,11 +78,10 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             <button
               onClick={toggle}
-              className={`px-2.5 py-1.5 text-xs font-semibold rounded-full border transition-colors ${
-                scrolled
-                  ? 'border-neutral-200 text-neutral-600 hover:border-neutral-300'
-                  : 'border-white/30 text-white/80 hover:border-white/50'
-              }`}
+              className={`px-2.5 py-1.5 text-xs font-semibold rounded-full border transition-colors ${scrolled
+                ? 'border-neutral-200 text-neutral-600 hover:border-neutral-300'
+                : 'border-white/30 text-white/80 hover:border-white/50'
+                }`}
               aria-label={lang === 'es' ? 'Switch to English' : 'Cambiar a Español'}
             >
               {lang === 'es' ? 'EN' : 'ES'}
@@ -94,23 +90,15 @@ export default function Navbar() {
             {/* Business partner login — visible on desktop only */}
             <a
               href="/business/login"
-              className={`hidden md:inline-flex items-center gap-1 text-xs font-medium transition-colors ${
-                scrolled
-                  ? 'text-neutral-500 hover:text-secondary-700'
-                  : 'text-white/50 hover:text-white/80'
-              }`}
+              className="hidden md:inline-flex items-center gap-1 text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors"
             >
               {t('nav.business.login')}{' '}
-              <span className={`font-semibold ${scrolled ? 'text-secondary-700' : 'text-white/80'}`}>{t('nav.business.login.cta')}</span>
+              <span className="text-emerald-600 font-bold">{t('nav.business.login.cta')}</span>
             </a>
 
             <a
               href="#download"
-              className={`hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
-                scrolled
-                  ? 'bg-primary-700 text-white hover:bg-primary-800'
-                  : 'bg-white text-primary-700 hover:bg-white/90'
-              }`}
+              className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
             >
               <Download className="h-4 w-4" />
               {t('nav.download')}
@@ -166,7 +154,7 @@ export default function Navbar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => { setMobileOpen(false); menuBtnRef.current?.focus() }}
-                    className="block py-3 text-2xl font-medium text-neutral-900 hover:text-primary-700 transition-colors"
+                    className="block py-3 text-2xl font-medium text-neutral-900 hover:text-emerald-600 transition-colors"
                   >
                     {link.label}
                   </a>
@@ -182,7 +170,7 @@ export default function Navbar() {
                 <a
                   href="#download"
                   onClick={() => { setMobileOpen(false); menuBtnRef.current?.focus() }}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-700 text-white font-semibold rounded-full hover:bg-primary-800 transition-colors"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-colors"
                 >
                   <Download className="h-5 w-5" />
                   {t('nav.download')}

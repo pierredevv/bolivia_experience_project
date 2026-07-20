@@ -3,15 +3,15 @@ import { useLang } from '../contexts/LangContext'
 
 {/* Placeholder — reemplazar con testimonios reales post-beta */}
 const testimonials = [
-  { key: 'test.t1' as const, nameKey: 'test.t1.name' as const, roleKey: 'test.t1.role' as const, color: 'from-primary-500 to-primary-600' },
-  { key: 'test.t2' as const, nameKey: 'test.t2.name' as const, roleKey: 'test.t2.role' as const, color: 'from-secondary-500 to-secondary-600' },
-  { key: 'test.t3' as const, nameKey: 'test.t3.name' as const, roleKey: 'test.t3.role' as const, color: 'from-green-500 to-green-600' },
+  { key: 'test.t1' as const, nameKey: 'test.t1.name' as const, roleKey: 'test.t1.role' as const, color: 'from-emerald-500 to-emerald-600' },
+  { key: 'test.t2' as const, nameKey: 'test.t2.name' as const, roleKey: 'test.t2.role' as const, color: 'from-emerald-600 to-emerald-700' },
+  { key: 'test.t3' as const, nameKey: 'test.t3.name' as const, roleKey: 'test.t3.role' as const, color: 'from-emerald-400 to-emerald-500' },
 ]
 
 export default function Testimonials() {
   const { t } = useLang()
   return (
-    <section id="testimonios" className="bg-primary-50 py-16 lg:py-24">
+    <section id="testimonios" className="bg-white py-16 lg:py-24">
       <div className="max-w-[1200px] mx-auto px-5 sm:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -19,8 +19,8 @@ export default function Testimonials() {
           viewport={{ once: true, margin: '-100px' }}
           className="flex items-center gap-3 mb-6"
         >
-          <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-primary-700 text-white text-xs sm:text-sm font-semibold flex items-center justify-center" aria-hidden="true">5</span>
-          <span className="text-xs sm:text-sm font-medium border border-primary-200 rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-neutral-600">{t('test.badge')}</span>
+          <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center" aria-hidden="true">5</span>
+          <span className="text-xs sm:text-sm font-medium border border-neutral-200 rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-slate-500">{t('test.badge')}</span>
         </motion.div>
 
         <motion.h2

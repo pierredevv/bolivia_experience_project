@@ -47,7 +47,7 @@ export default function FAQ() {
   const items = tab === 'tourists' ? touristQ : businessQ
 
   return (
-    <section id="faq" className="bg-neutral-100 py-16 lg:py-24">
+    <section id="faq" className="bg-white py-16 lg:py-24">
       <div className="max-w-[1200px] mx-auto px-5 sm:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -55,8 +55,8 @@ export default function FAQ() {
           viewport={{ once: true, margin: '-100px' }}
           className="flex items-center gap-3 mb-6"
         >
-          <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-primary-700 text-white text-xs sm:text-sm font-semibold flex items-center justify-center" aria-hidden="true">7</span>
-          <span className="text-xs sm:text-sm font-medium border border-neutral-300 rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-neutral-600">{t('faq.badge')}</span>
+          <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center" aria-hidden="true">7</span>
+          <span className="text-xs sm:text-sm font-medium border border-neutral-200 rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-slate-500">{t('faq.badge')}</span>
         </motion.div>
 
         <motion.h2
@@ -78,10 +78,10 @@ export default function FAQ() {
               aria-selected={tab === tabKey}
               aria-controls="faq-panel"
               onClick={() => { setTab(tabKey); setOpenIdx(null) }}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
                 tab === tabKey
-                  ? 'bg-primary-700 text-white'
-                  : 'bg-white text-neutral-600 border border-neutral-200 hover:border-neutral-300'
+                  ? 'bg-emerald-600 text-white px-4 py-2 rounded-xl font-black'
+                  : 'text-slate-400 font-bold bg-slate-900/40 px-4 py-2 rounded-xl hover:text-white transition-colors'
               }`}
             >
               {tabKey === 'tourists' ? t('faq.tab.tourists') : t('faq.tab.business')}

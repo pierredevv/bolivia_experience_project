@@ -22,8 +22,8 @@ export default function MapSection() {
           viewport={{ once: true, margin: '-100px' }}
           className="flex items-center gap-3 mb-6"
         >
-          <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-primary-700 text-white text-xs sm:text-sm font-semibold flex items-center justify-center" aria-hidden="true">6</span>
-          <span className="text-xs sm:text-sm font-medium border border-neutral-200 rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-neutral-600">{t('map.badge')}</span>
+          <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center" aria-hidden="true">6</span>
+          <span className="text-xs sm:text-sm font-medium border border-neutral-200 rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-slate-500">{t('map.badge')}</span>
         </motion.div>
 
         <motion.h2

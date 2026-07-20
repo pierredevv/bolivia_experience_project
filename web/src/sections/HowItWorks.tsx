@@ -3,9 +3,9 @@ import { Search, MapPin, Heart } from 'lucide-react'
 import { useLang } from '../contexts/LangContext'
 
 const steps = [
-  { icon: Search, key: 'how.s1' as const, color: 'bg-primary-50 text-primary-700' },
-  { icon: MapPin, key: 'how.s2' as const, color: 'bg-secondary-50 text-secondary-700' },
-  { icon: Heart, key: 'how.s3' as const, color: 'bg-green-50 text-green-700' },
+  { icon: Search, key: 'how.s1' as const, color: 'bg-emerald-50 text-emerald-700' },
+  { icon: MapPin, key: 'how.s2' as const, color: 'bg-emerald-50 text-emerald-700' },
+  { icon: Heart, key: 'how.s3' as const, color: 'bg-emerald-50 text-emerald-700' },
 ]
 
 export default function HowItWorks() {
@@ -19,8 +19,8 @@ export default function HowItWorks() {
           viewport={{ once: true, margin: '-100px' }}
           className="flex items-center gap-3 mb-6"
         >
-          <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-primary-700 text-white text-xs sm:text-sm font-semibold flex items-center justify-center" aria-hidden="true">1</span>
-          <span className="text-xs sm:text-sm font-medium border border-neutral-200 rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-neutral-600">{t('how.badge')}</span>
+          <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center" aria-hidden="true">1</span>
+          <span className="text-xs sm:text-sm font-medium border border-neutral-200 rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-slate-500">{t('how.badge')}</span>
         </motion.div>
 
         <motion.h2
