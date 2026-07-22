@@ -253,3 +253,31 @@ model RefreshToken {
   @@index([token])
   @@map("refresh_tokens")
 }
+
+model Referral {
+  id             String   @id @default(cuid())
+  userId         String   @unique @map("user_id")
+  code           String   @unique
+  referralCount  Int      @default(0) @map("referral_count")
+  rewardsEarned  Int      @default(0) @map("rewards_earned")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referredVia ReferralUse[] @relation("ReferredVia")
+
+  @@index([code])
+  @@map("referrals")
+}
+
+model ReferralUse {
+  id             String   @id @default(cuid())
+  referrerId     String   @map("referrer_id")
+  referredUserId String   @unique @map("referred_user_id")
+  code           String
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  referrer     Referral @relation("ReferredVia", fields: [referrerId], references: [userId], onDelete: Cascade)
+  referredUser User     @relation(fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  @@map("referral_uses")
+}
