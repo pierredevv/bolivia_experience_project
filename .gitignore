@@ -16,8 +16,12 @@ api/prisma/*.db-journal
 api/uploads/*
 !api/uploads/.gitkeep
 
-# MiMoCode internal
-.mimocode/
+# MiMoCode internal (ignore most, track skills and agents)
+.mimocode/*
+!.mimocode/skills/
+!.mimocode/skills/**
+!.mimocode/agents/
+!.mimocode/agents/**
 
 # Windows artifacts
 nul
