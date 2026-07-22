@@ -1,9 +1,39 @@
 # Handoff: BoliviaExperience — Documentación y Arquitectura Completa
 
 **Generated**: 2026-06-26
-**Last Updated**: 2026-07-19 (Sesión de MVP Features + Agent Team + Testing)
+**Last Updated**: 2026-07-21 (Unificación de Identidad Visual + Mejora de Agentes)
 **Branch**: develop
-**Status**: MVP FASE 1 + FASE 2 Completadas + 6 Agentes Creados + 166 Tests Passing (95 API + 71 Web)
+**Status**: MVP FASE 1 + FASE 2 Completadas + 6 Agentes Mejorados + Identidad Visual Unificada
+
+---
+
+## Identidad Visual Oficial
+
+### Logo
+El logo de BoliviaExperience es **multicolor** representando la diversidad geográfica y cultural de Bolivia:
+- **Rojo** (#E53935): Cultura, festivales, energía
+- **Naranja/Amarillo** (#FF9800 / #FFC107): Sol, calidez, oriente
+- **Verde** (#43A047 / #2E7D32): Naturaleza, Yungas, selva
+- **Azul** (#1565C0 / #0D47A1): Cielo, agua, tecnología
+- **Hoja verde**: Icono de naturaleza/sostenibilidad
+
+### Design Tokens Oficiales
+- **Primary**: Verde (#43A047) — Color principal, CTAs, acentos
+- **Secondary**: Azul (#1976D2) — Links, info, acentos alternativos
+- **Brand Colors**: Rojo, Naranja, Amarillo del logo (decorativos)
+- **Neutral**: Grises para texto y fondos
+
+### Tono de Voz
+- Cercano y amigable (tutear al usuario)
+- Entusiasta sin ser exagerado
+- Orientado a acción (CTAs claros)
+- Local: usar "Santa Cruz", "Bolivia"
+
+### Archivos de Referencia
+- `docs/design/3.1-design-tokens.md` — Tokens oficiales
+- `web/tailwind.config.js` — Configuración de colores
+- `web/public/BoliviaExperience.png` — Logo completo con texto
+- `web/public/Logo.png` — Solo icono del logo
 
 ---
 
@@ -710,7 +740,7 @@ web/src/components/layout/EmpresaLayout.tsx  # Dark mode + user dropdown menu
 - [x] **Cards** — rounded-xl → rounded-2xl en todos los pages admin y empresa
 - [x] **Componentes UI con accent** — Input, Select, Textarea, EmptyState, Pagination con prop `accent` para cambiar focus ring y colores entre primary (azul/admin) y secondary (naranja/empresa)
 - [x] **Businesses.tsx** — Input styles y loading color alineados con resto de admin
-- [x] **primary-700** — Ajustado a #1565C0 (mismo que landing)
+- [x] **primary-700** — Ajustado a #43A047 (verde, color oficial)
 
 ### NUEVO: Auth con Validación de Aprobación ✅
 
@@ -1319,6 +1349,6 @@ CORS_ORIGIN=http://localhost:5173
 
 ---
 
-**Última actualización**: 2026-07-19 (MVP FASE 1 + FASE 2 completadas + 6 Agentes)
+**Última actualización**: 2026-07-21 (Agentes reescritos al estándar profesional MiMoCode)
 **Próximo entregable**: Entregable 9 — Testing Adicional (security tests, performance baseline)
-**Entregables completados**: MVP FASE 1 + FASE 2 (Onboarding, i18n, UI Components, Share, Deep Links, Nearby, Weather, Animations, 200 Places) + 6 Agentes + 166 tests passing
+**Entregables completados**: MVP FASE 1 + FASE 2 (Onboarding, i18n, UI Components, Share, Deep Links, Nearby, Weather, Animations, 200 Places) + 6 Agentes reescritos (estándar profesional) + 195 tests passing
