@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../providers/profile_provider.dart';
@@ -13,10 +14,11 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileProvider);
     final favoritesState = ref.watch(favoritesProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Perfil'),
+        title: Text(l10n.profileTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -29,6 +31,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildBody(BuildContext context, WidgetRef ref, ProfileState state, FavoritesState favoritesState) {
+    final l10n = AppLocalizations.of(context);
     if (state.status == ProfileStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -121,23 +124,23 @@ class ProfileScreen extends ConsumerWidget {
 
           _ProfileMenuItem(
             icon: Icons.edit_outlined,
-            title: 'Editar Perfil',
+            title: l10n.profileEdit,
             onTap: () => context.push('/profile/edit'),
           ),
           _ProfileMenuItem(
             icon: Icons.rate_review_outlined,
-            title: 'Mis Reseñas',
+            title: l10n.profileReviews,
             onTap: () {},
           ),
           _ProfileMenuItem(
             icon: Icons.language,
-            title: 'Idioma',
+            title: l10n.settingsLanguage,
             subtitle: 'Español',
             onTap: () {},
           ),
           _ProfileMenuItem(
             icon: Icons.dark_mode_outlined,
-            title: 'Modo Oscuro',
+            title: l10n.settingsDarkMode,
             trailing: Switch(
               value: false,
               onChanged: (value) {},
@@ -145,7 +148,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
           _ProfileMenuItem(
             icon: Icons.notifications_outlined,
-            title: 'Notificaciones',
+            title: l10n.notificationsTitle,
             trailing: Switch(
               value: true,
               onChanged: (value) {},
@@ -153,12 +156,12 @@ class ProfileScreen extends ConsumerWidget {
           ),
           _ProfileMenuItem(
             icon: Icons.info_outline,
-            title: 'Acerca de',
+            title: l10n.settingsAbout,
             onTap: () {},
           ),
           _ProfileMenuItem(
             icon: Icons.privacy_tip_outlined,
-            title: 'Política de Privacidad',
+            title: l10n.settingsPrivacy,
             onTap: () {},
           ),
 
@@ -171,17 +174,17 @@ class ProfileScreen extends ConsumerWidget {
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('Cerrar Sesión'),
-                    content: const Text('¿Estás seguro que querés cerrar sesión?'),
+                    title: Text(l10n.profileLogout),
+                    content: Text(l10n.profileLogout),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancelar'),
+                        child: Text(l10n.cancel),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
                         child: Text(
-                          'Cerrar Sesión',
+                          l10n.profileLogout,
                           style: TextStyle(color: AppColors.error700),
                         ),
                       ),
@@ -196,7 +199,7 @@ class ProfileScreen extends ConsumerWidget {
               },
               icon: Icon(Icons.logout, color: AppColors.error700),
               label: Text(
-                'Cerrar Sesión',
+                l10n.profileLogout,
                 style: TextStyle(color: AppColors.error700),
               ),
               style: OutlinedButton.styleFrom(

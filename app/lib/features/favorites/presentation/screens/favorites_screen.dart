@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import '../../../../config/colors.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/favorites_provider.dart';
 
 class FavoritesScreen extends ConsumerWidget {
@@ -11,16 +13,19 @@ class FavoritesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final favoritesState = ref.watch(favoritesProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favoritos'),
+        title: Text(l10n.favoritesTitle),
       ),
       body: _buildBody(context, ref, favoritesState),
     );
   }
 
   Widget _buildBody(BuildContext context, WidgetRef ref, FavoritesState state) {
+    final l10n = AppLocalizations.of(context);
+
     if (state.status == FavoritesStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -43,7 +48,7 @@ class FavoritesScreen extends ConsumerWidget {
               ElevatedButton.icon(
                 onPressed: () => ref.read(favoritesProvider.notifier).loadFavorites(),
                 icon: const Icon(Icons.refresh),
-                label: const Text('Reintentar'),
+                label: Text(l10n.retry),
               ),
             ],
           ),
@@ -54,9 +59,9 @@ class FavoritesScreen extends ConsumerWidget {
     if (state.favorites.isEmpty) {
       return EmptyState(
         icon: Icons.favorite_outline,
-        title: 'Sin favoritos',
-        subtitle: 'Guarda tus lugares favoritos para encontrarlos fácilmente',
-        actionLabel: 'Explorar lugares',
+        title: l10n.favoritesEmpty,
+        subtitle: l10n.favoritesEmptySubtitle,
+        actionLabel: l10n.exploreTitle,
         onAction: () => context.go('/explore'),
       );
     }
