@@ -32,7 +32,7 @@ export default function Hero() {
       </div>
 
       {/* Phone mockup — decorative, hidden from screen readers */}
-      <div className="hidden lg:block absolute right-[8%] top-1/2 -translate-y-1/2 z-20" aria-hidden="true">
+      <div className="hidden lg:block absolute right-[4%] top-1/2 -translate-y-1/2 z-20" aria-hidden="true">
         <motion.div
           initial={{ opacity: 0, y: 40, rotateY: -10 }}
           animate={{ opacity: 1, y: 0, rotateY: 0 }}
@@ -92,7 +92,7 @@ export default function Hero() {
       </div>
 
       {/* Content — Floating dark card */}
-      <div className="relative z-10 w-full max-w-[1200px] mx-auto px-5 sm:px-8 lg:px-12 pb-14 sm:pb-16 lg:pb-20 pt-32">
+      <div className="relative z-10 w-full max-w-[1200px] lg:max-w-[700px] mx-auto px-5 sm:px-8 lg:px-12 pb-14 sm:pb-16 lg:pb-20 pt-32">
         <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 md:p-12 shadow-xl border border-slate-800/50">
           <div className="max-w-[600px]">
             <motion.div
