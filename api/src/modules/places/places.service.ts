@@ -34,6 +34,32 @@ export class PlacesService {
       ];
     }
 
+    // Advanced filters
+    if (query.minRating) {
+      where.ratingAvg = { gte: query.minRating };
+    }
+
+    if (query.isOpenNow) {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      where.hours = {
+        some: {
+          dayOfWeek,
+          openTime: { lte: currentTime },
+          closeTime: { gte: currentTime },
+        },
+      };
+    }
+
+    // Sorting
+    let orderBy: any = { ratingAvg: 'desc' };
+    if (query.sortBy === 'name') {
+      orderBy = { name: 'asc' };
+    } else if (query.sortBy === 'newest') {
+      orderBy = { createdAt: 'desc' };
+    }
+
     const [places, total] = await Promise.all([
       this.prisma.place.findMany({
         where,
@@ -41,14 +67,41 @@ export class PlacesService {
           category: { select: { id: true, name: true, icon: true } },
           photos: { take: 1, orderBy: { displayOrder: 'asc' } },
         },
-        orderBy: { ratingAvg: 'desc' },
+        orderBy,
         skip,
         take: limit,
       }),
       this.prisma.place.count({ where }),
     ]);
 
-    return new PaginatedResponse(places, total, page, limit);
+    // Filter by distance if coordinates provided
+    let filteredPlaces = places;
+    if (query.maxDistance && query.latitude && query.longitude) {
+      filteredPlaces = places.filter((place) => {
+        if (!place.latitude || !place.longitude) return false;
+        const distance = this.calculateDistance(
+          query.latitude!, query.longitude!,
+          place.latitude, place.longitude
+        );
+        (place as any).distance = Math.round(distance);
+        return distance <= query.maxDistance!;
+      });
+      filteredPlaces.sort((a: any, b: any) => a.distance - b.distance);
+    }
+
+    return new PaginatedResponse(filteredPlaces, filteredPlaces.length, page, limit);
+  }
+
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371e3;
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   }
 
   async findFeatured() {
