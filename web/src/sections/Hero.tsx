@@ -91,9 +91,8 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* Content — Floating dark card */}
+      {/* Content — floating over gradient background */}
       <div className="relative z-10 w-full max-w-[1200px] lg:max-w-[1000px] mx-auto px-5 sm:px-8 lg:px-12 pb-14 sm:pb-16 lg:pb-20 pt-32">
-        <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 md:p-12 shadow-xl border border-slate-800/50">
           <div className="max-w-[600px]">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -152,7 +151,6 @@ export default function Hero() {
               </div>
             </motion.div>
           </div>
-        </div>
       </div>
     </section>
   )
