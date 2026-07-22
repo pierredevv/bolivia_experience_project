@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../config/api_constants.dart';
 import '../../../../config/colors.dart';
+import '../../../../core/network/dio_provider.dart';
 import '../../../../core/services/location_service.dart';
 import '../../../../core/widgets/empty_state.dart';
-import '../../../../core/widgets/skeleton_loader.dart';
 
 class NearbyScreen extends ConsumerStatefulWidget {
   const NearbyScreen({super.key});
@@ -40,10 +41,18 @@ class _NearbyScreenState extends ConsumerState<NearbyScreen> {
         return;
       }
 
-      // TODO: Call API with nearby places endpoint
-      // For now, show empty state
+      final dio = ref.read(dioProvider);
+      final response = await dio.get(ApiConstants.mapNearby, queryParameters: {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'radius': 5000,
+      });
+
+      final data = response.data;
+      final items = (data['data'] ?? []) as List;
+
       setState(() {
-        _nearbyPlaces = [];
+        _nearbyPlaces = items.cast<Map<String, dynamic>>();
         _isLoading = false;
       });
     } catch (e) {

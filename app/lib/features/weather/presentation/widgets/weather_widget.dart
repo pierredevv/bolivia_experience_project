@@ -28,16 +28,26 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     });
 
     try {
-      // TODO: Replace with real OpenWeather API call
-      // For now, show placeholder
-      await Future.delayed(const Duration(seconds: 1));
+      final dio = Dio();
+      final response = await dio.get('${ApiConstants.baseUrl}${ApiConstants.weatherCurrent}');
+      final data = response.data;
+      final weatherData = data['data'] ?? data;
+
+      // Map weather condition to emoji
+      String icon = '☀️';
+      final desc = (weatherData['description'] ?? '').toLowerCase();
+      if (desc.contains('nublado') || desc.contains('cloud')) icon = '⛅';
+      if (desc.contains('lluvia') || desc.contains('rain')) icon = '🌧️';
+      if (desc.contains('tormenta') || desc.contains('storm')) icon = '⛈️';
+      if (desc.contains('niebla') || desc.contains('fog')) icon = '🌫️';
+
       setState(() {
         _weather = {
-          'temp': 28,
-          'description': 'Parcialmente nublado',
-          'icon': '⛅',
-          'humidity': 65,
-          'wind': 12,
+          'temp': weatherData['temperature'] ?? weatherData['temp'] ?? 28,
+          'description': weatherData['description'] ?? 'Clima actual',
+          'icon': icon,
+          'humidity': weatherData['humidity'] ?? 65,
+          'wind': weatherData['windSpeed'] ?? weatherData['wind'] ?? 12,
         };
         _isLoading = false;
       });

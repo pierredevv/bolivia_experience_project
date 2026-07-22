@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_provider.dart';
+import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../../data/places_service.dart';
 
 enum PlaceDetailStatus { initial, loading, loaded, error }
@@ -47,14 +48,15 @@ final placeDetailServiceProvider = Provider<PlacesService>((ref) {
 });
 
 final placeDetailProvider = StateNotifierProvider.family<PlaceDetailNotifier, PlaceDetailState, String>((ref, placeId) {
-  return PlaceDetailNotifier(ref.read(placeDetailServiceProvider), placeId);
+  return PlaceDetailNotifier(ref.read(placeDetailServiceProvider), ref, placeId);
 });
 
 class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
   final PlacesService _placesService;
+  final Ref _ref;
   final String _placeId;
 
-  PlaceDetailNotifier(this._placesService, this._placeId) : super(const PlaceDetailState()) {
+  PlaceDetailNotifier(this._placesService, this._ref, this._placeId) : super(const PlaceDetailState()) {
     loadPlaceDetail();
   }
 
@@ -69,12 +71,20 @@ class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
         _placesService.getPlaceReviews(_placeId),
       ]);
 
+      // Check favorite status
+      bool isFav = false;
+      try {
+        final favService = _ref.read(favoritesServiceProvider);
+        isFav = await favService.checkFavorite(_placeId);
+      } catch (_) {}
+
       if (!mounted) return;
       state = state.copyWith(
         status: PlaceDetailStatus.loaded,
         place: results[0] as Place,
         photos: results[1] as List<dynamic>,
         reviews: results[2] as List<dynamic>,
+        isFavorite: isFav,
       );
     } on DioException catch (e) {
       if (!mounted) return;
@@ -103,5 +113,18 @@ class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
         errorMessage: 'Error inesperado. Intentá de nuevo.',
       );
     }
+  }
+
+  Future<void> toggleFavorite() async {
+    try {
+      final favNotifier = _ref.read(favoritesProvider.notifier);
+      if (state.isFavorite) {
+        await favNotifier.removeFavorite(_placeId);
+      } else {
+        await favNotifier.addFavorite(_placeId);
+      }
+      if (!mounted) return;
+      state = state.copyWith(isFavorite: !state.isFavorite);
+    } catch (_) {}
   }
 }

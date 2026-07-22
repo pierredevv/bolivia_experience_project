@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../config/colors.dart';
+import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../providers/place_detail_provider.dart';
 
 class PlaceDetailScreen extends ConsumerWidget {
@@ -100,13 +102,16 @@ class PlaceDetailScreen extends ConsumerWidget {
                 color: state.isFavorite ? AppColors.error500 : null,
               ),
               onPressed: () {
-                // TODO: Toggle favorite
+                ref.read(placeDetailProvider(placeId).notifier).toggleFavorite();
               },
             ),
             IconButton(
               icon: const Icon(Icons.share),
               onPressed: () {
-                // TODO: Share place
+                Share.share(
+                  '¡Mira este lugar en BoliviaExperience! 🇧🇴\n\n${place.name}\nhttps://boliviaexperience.app/places/$placeId',
+                  subject: place.name,
+                );
               },
             ),
           ],
@@ -182,7 +187,10 @@ class PlaceDetailScreen extends ConsumerWidget {
                       label: 'Compartir',
                       color: AppColors.secondary700,
                       onTap: () {
-                        // TODO: Share
+                        Share.share(
+                          '¡Mira este lugar en BoliviaExperience! 🇧🇴\n\n${place.name}\nhttps://boliviaexperience.app/places/$placeId',
+                          subject: place.name,
+                        );
                       },
                     ),
                   ],
