@@ -55,8 +55,8 @@ class FavoritesScreen extends ConsumerWidget {
       return EmptyState(
         icon: Icons.favorite_outline,
         title: 'Sin favoritos',
-        message: 'Guarda tus lugares favoritos para encontrarlos fácilmente',
-        actionText: 'Explorar lugares',
+        subtitle: 'Guarda tus lugares favoritos para encontrarlos fácilmente',
+        actionLabel: 'Explorar lugares',
         onAction: () => context.go('/explore'),
       );
     }

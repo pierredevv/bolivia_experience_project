@@ -34,6 +34,11 @@ final eventsServiceProvider = Provider<EventsService>((ref) {
   return EventsService(dio);
 });
 
+final eventDetailProvider = FutureProvider.family<Event, String>((ref, id) async {
+  final service = ref.read(eventsServiceProvider);
+  return service.getEventById(id);
+});
+
 final eventsProvider = StateNotifierProvider<EventsNotifier, EventsState>((ref) {
   return EventsNotifier(ref.read(eventsServiceProvider));
 });

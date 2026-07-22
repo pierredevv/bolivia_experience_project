@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../providers/profile_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -11,6 +12,7 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileProvider);
+    final favoritesState = ref.watch(favoritesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -22,11 +24,11 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: _buildBody(context, ref, profileState),
+      body: _buildBody(context, ref, profileState, favoritesState),
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, ProfileState state) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, ProfileState state, FavoritesState favoritesState) {
     if (state.status == ProfileStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -109,9 +111,9 @@ class ProfileScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _StatItem(value: '12', label: 'Reseñas'),
-              _StatItem(value: '25', label: 'Favoritos'),
-              _StatItem(value: '4.5', label: 'Rating'),
+              _StatItem(value: '${favoritesState.favorites.length}', label: 'Favoritos'),
+              const _StatItem(value: '-', label: 'Reseñas'),
+              const _StatItem(value: '-', label: 'Rating'),
             ],
           ),
 

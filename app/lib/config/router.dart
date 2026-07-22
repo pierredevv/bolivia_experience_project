@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 
+import '../core/auth/token_manager.dart';
 import '../features/auth/presentation/screens/splash_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/register_screen.dart';
@@ -24,6 +25,29 @@ import '../features/home/presentation/screens/main_shell.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
+    redirect: (context, state) {
+      final isAuthenticated = TokenManager.instance.hasToken;
+      final isAuthRoute = state.matchedLocation == '/login' ||
+          state.matchedLocation == '/register' ||
+          state.matchedLocation == '/splash' ||
+          state.matchedLocation == '/onboarding';
+
+      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/settings'];
+      final isProtectedRoute = protectedRoutes.any((r) => state.matchedLocation.startsWith(r));
+      final isReviewRoute = state.matchedLocation.contains('/review');
+
+      // If not authenticated and trying to access protected route, redirect to login
+      if (!isAuthenticated && (isProtectedRoute || isReviewRoute)) {
+        return '/login';
+      }
+
+      // If authenticated and on auth routes, redirect to home
+      if (isAuthenticated && isAuthRoute && state.matchedLocation != '/splash') {
+        return '/';
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/splash',
