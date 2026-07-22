@@ -135,6 +135,18 @@ Al finalizar: **anexar** (no sobreescribir) una entrada con este formato exacto:
 
 **Al alcanzar un límite**: documentar en `handoff.md` (ver Protocolo, paso 5) y no detener el resto del trabajo.
 
+## Lecciones de Diseño
+
+### Solapamiento de elementos absolutos y relativos
+Cuando un elemento absoluto (ej: phone mockup con `absolute right-[X%]`) y un elemento relativo (ej: content card con `max-w-[Xpx]`) coexisten en el mismo contenedor:
+1. **Calcular si el phone cae dentro del área del card** — si `right-[8%]` + `w-[280px]` < card width, hay overlap visual
+2. **Reducir max-width del card** en el breakpoint donde el phone es visible (ej: `lg:max-w-[700px]`)
+3. **O reposicionar el phone** más hacia el borde (ej: `right-[4%]`)
+4. **Verificar en多种 tamaños de pantalla** — el overlap puede variar según viewport
+
+### Regla general
+> Nunca asumir que un elemento absoluto "cabe" a la derecha sin verificar el ancho del contenedor relativo. Siempre calcular la superposición explícitamente.
+
 ## Delegación
 
 ### A subagentes genéricos (ejecución/investigación)
