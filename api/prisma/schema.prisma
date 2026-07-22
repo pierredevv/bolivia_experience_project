@@ -68,6 +68,8 @@ model Place {
   ratingCount   Int      @default(0) @map("rating_count")
   categoryId    String   @map("category_id")
   ownerId       String?  @map("owner_id")
+  city          String   @default("santa-cruz")
+  isEcoFriendly Boolean  @default(false) @map("is_eco_friendly")
   isFeatured    Boolean  @default(false) @map("is_featured")
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")

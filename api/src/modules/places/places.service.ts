@@ -34,6 +34,11 @@ export class PlacesService {
       ];
     }
 
+    // City filter
+    if (query.city) {
+      where.city = query.city;
+    }
+
     // Advanced filters
     if (query.minRating) {
       where.ratingAvg = { gte: query.minRating };

@@ -169,4 +169,9 @@ export class QueryPlacesDto extends PaginationDto {
   @IsOptional()
   @IsString()
   sortBy?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by city: santa-cruz, la-paz, cochabamba' })
+  @IsOptional()
+  @IsString()
+  city?: string;
 }
