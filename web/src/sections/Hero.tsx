@@ -32,7 +32,7 @@ export default function Hero() {
       </div>
 
       {/* Phone mockup — decorative, hidden from screen readers */}
-      <div className="hidden lg:block absolute right-[8%] top-1/2 -translate-y-1/2 z-10" aria-hidden="true">
+      <div className="hidden lg:block absolute right-[8%] top-1/2 -translate-y-1/2 z-20" aria-hidden="true">
         <motion.div
           initial={{ opacity: 0, y: 40, rotateY: -10 }}
           animate={{ opacity: 1, y: 0, rotateY: 0 }}
