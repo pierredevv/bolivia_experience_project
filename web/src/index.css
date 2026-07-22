@@ -91,6 +91,12 @@
   top: 0;
 }
 
+/* Phone mockup scroll animation */
+@keyframes phone-scroll {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-60px); }
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,

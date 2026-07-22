@@ -40,7 +40,7 @@ export default function Hero() {
           className="relative"
         >
           <div className="w-[280px] h-[560px] rounded-[3rem] bg-slate-900 border-[3px] border-slate-800 shadow-2xl overflow-hidden relative">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-900 rounded-b-2xl z-20" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-slate-900 rounded-b-2xl z-20" />
             <div className="w-full h-full bg-gradient-to-b from-slate-50 to-white overflow-hidden">
               <div className="h-10 bg-emerald-600 flex items-end px-5 pb-1">
                 <span className="text-[10px] text-white/80 font-medium">9:41</span>
@@ -53,7 +53,7 @@ export default function Hero() {
                   <span className="text-xs font-bold text-neutral-900">BoliviaExperience</span>
                 </div>
               </div>
-              <div className="px-4 py-3">
+              <div className="px-4 pt-2 pb-3">
                 <div className="bg-neutral-100 rounded-xl px-3 py-2.5 flex items-center gap-2">
                   <svg className="h-3.5 w-3.5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="11" cy="11" r="8" strokeWidth="2"/><path strokeWidth="2" d="m21 21-4.35-4.35"/></svg>
                   <span className="text-[11px] text-neutral-400">Buscar lugares...</span>
@@ -64,24 +64,26 @@ export default function Hero() {
                   <span key={c} className="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full whitespace-nowrap font-medium">{c}</span>
                 ))}
               </div>
-              <div className="px-4 space-y-2.5 mt-1">
-                {[
-                  { name: 'Restaurante El Churrasquito', cat: 'Gastronomía', rating: '4.5', img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=70' },
-                  { name: 'Hotel Buganvilia', cat: 'Hoteles', rating: '4.8', img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=300&q=70' },
-                  { name: 'Lomas de Arena', cat: 'Turismo', rating: '4.7', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&q=70' },
-                ].map((place) => (
-                  <div key={place.name} className="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden flex">
-                    <img src={place.img} alt="" className="w-16 h-16 object-cover" loading="lazy" />
-                    <div className="px-2.5 py-2 flex-1 min-w-0">
-                      <p className="text-[10px] font-bold text-neutral-900 truncate">{place.name}</p>
-                      <p className="text-[9px] text-neutral-400">{place.cat}</p>
-                      <div className="flex items-center gap-0.5 mt-0.5">
-                        <svg className="h-2.5 w-2.5 fill-amber-400 text-amber-400" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                        <span className="text-[9px] font-semibold text-neutral-700">{place.rating}</span>
+              <div className="px-4 space-y-2.5 mt-1 overflow-hidden">
+                <div className="animate-[phone-scroll_8s_ease-in-out_infinite]">
+                  {[
+                    { name: 'Restaurante El Churrasquito', cat: 'Gastronomía', rating: '4.5', img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=70' },
+                    { name: 'Hotel Buganvilia', cat: 'Hoteles', rating: '4.8', img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=300&q=70' },
+                    { name: 'Lomas de Arena', cat: 'Turismo', rating: '4.7', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&q=70' },
+                  ].map((place) => (
+                    <div key={place.name} className="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden flex mb-2.5">
+                      <img src={place.img} alt="" className="w-16 h-16 object-cover" loading="lazy" />
+                      <div className="px-2.5 py-2 flex-1 min-w-0">
+                        <p className="text-[10px] font-bold text-neutral-900 truncate">{place.name}</p>
+                        <p className="text-[9px] text-neutral-400">{place.cat}</p>
+                        <div className="flex items-center gap-0.5 mt-0.5">
+                          <svg className="h-2.5 w-2.5 fill-amber-400 text-amber-400" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                          <span className="text-[9px] font-semibold text-neutral-700">{place.rating}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>

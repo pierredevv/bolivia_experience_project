@@ -79,7 +79,7 @@ export default function ForBusiness() {
             <ul className="space-y-3 mb-8">
               {[1, 2].map(i => (
                 <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
-                  <Check className="h-4 w-4 text-success-500 mt-0.5 shrink-0" aria-hidden="true" />
+                  <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" aria-hidden="true" />
                   {t(`biz.plan.free.f${i}`)}
                 </li>
               ))}
@@ -130,7 +130,7 @@ export default function ForBusiness() {
             <ul className="space-y-3 mb-8">
               {[1, 2, 3].map(i => (
                 <li key={i} className="flex items-start gap-2.5 text-sm text-white/70">
-                  <Check className="h-4 w-4 text-success-500 mt-0.5 shrink-0" aria-hidden="true" />
+                  <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" aria-hidden="true" />
                   {t(`biz.plan.ent.f${i}`)}
                 </li>
               ))}

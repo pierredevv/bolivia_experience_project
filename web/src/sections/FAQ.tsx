@@ -55,7 +55,7 @@ export default function FAQ() {
           viewport={{ once: true, margin: '-100px' }}
           className="flex items-center gap-3 mb-6"
         >
-          <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center" aria-hidden="true">7</span>
+          <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center" aria-hidden="true">6</span>
           <span className="text-xs sm:text-sm font-medium border border-neutral-200 rounded-full px-3 sm:px-4 py-1 sm:py-1.5 text-slate-500">{t('faq.badge')}</span>
         </motion.div>
 
@@ -80,8 +80,8 @@ export default function FAQ() {
               onClick={() => { setTab(tabKey); setOpenIdx(null) }}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
                 tab === tabKey
-                  ? 'bg-emerald-600 text-white px-4 py-2 rounded-xl font-black'
-                  : 'text-slate-400 font-bold bg-slate-900/40 px-4 py-2 rounded-xl hover:text-white transition-colors'
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-slate-500 bg-slate-100 hover:bg-slate-200 hover:text-slate-700'
               }`}
             >
               {tabKey === 'tourists' ? t('faq.tab.tourists') : t('faq.tab.business')}
