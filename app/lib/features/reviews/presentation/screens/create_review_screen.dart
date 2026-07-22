@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../config/colors.dart';
 import '../providers/reviews_provider.dart';
 
@@ -17,11 +19,43 @@ class _CreateReviewScreenState extends ConsumerState<CreateReviewScreen> {
   int _rating = 0;
   final _commentController = TextEditingController();
   bool _isSubmitting = false;
+  final List<File> _selectedPhotos = [];
+  final ImagePicker _picker = ImagePicker();
+  DateTime? _visitDate;
 
   @override
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Tomar foto'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Seleccionar de galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source != null) {
+      final image = await _picker.pickImage(source: source, maxWidth: 1024, imageQuality: 80);
+      if (image != null) {
+        setState(() => _selectedPhotos.add(File(image.path)));
+      }
+    }
   }
 
   @override
@@ -117,9 +151,41 @@ class _CreateReviewScreenState extends ConsumerState<CreateReviewScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _AddPhotoButton(
-                  onTap: () {},
-                ),
+                ..._selectedPhotos.asMap().entries.map((entry) {
+                  return Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          entry.value,
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() => _selectedPhotos.removeAt(entry.key));
+                          },
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, size: 16, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+                if (_selectedPhotos.length < 5)
+                  _AddPhotoButton(
+                    onTap: _pickImage,
+                  ),
               ],
             ),
 
@@ -131,10 +197,22 @@ class _CreateReviewScreenState extends ConsumerState<CreateReviewScreen> {
             ),
             const SizedBox(height: 8),
             InkWell(
-              onTap: () {},
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: _visitDate ?? DateTime.now(),
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now(),
+                );
+                if (date != null) {
+                  setState(() => _visitDate = date);
+                }
+              },
               child: InputDecorator(
                 decoration: InputDecoration(
-                  hintText: 'Seleccionar fecha',
+                  hintText: _visitDate != null
+                      ? '${_visitDate!.day}/${_visitDate!.month}/${_visitDate!.year}'
+                      : 'Seleccionar fecha',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

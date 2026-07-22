@@ -1,56 +1,95 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
+import '../../../../config/api_constants.dart';
 import '../../../../config/colors.dart';
+import '../../../../core/network/dio_provider.dart';
 import '../providers/events_provider.dart';
 
-class EventsScreen extends ConsumerWidget {
+class EventsScreen extends ConsumerStatefulWidget {
   const EventsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EventsScreen> createState() => _EventsScreenState();
+}
+
+class _EventsScreenState extends ConsumerState<EventsScreen> {
+  bool _showTodayOnly = false;
+  List<dynamic> _todayEvents = [];
+  bool _loadingToday = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTodayEvents();
+  }
+
+  Future<void> _loadTodayEvents() async {
+    setState(() => _loadingToday = true);
+    try {
+      final dio = ref.read(dioProvider);
+      final response = await dio.get(ApiConstants.todayEvents);
+      final data = response.data;
+      setState(() {
+        _todayEvents = data['data'] ?? [];
+        _loadingToday = false;
+      });
+    } catch (_) {
+      setState(() => _loadingToday = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final eventsState = ref.watch(eventsProvider);
+    final displayEvents = _showTodayOnly ? _todayEvents : eventsState.events;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Eventos'),
       ),
-      body: _buildBody(context, ref, eventsState),
+      body: Column(
+        children: [
+          // Filter chips
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                FilterChip(
+                  label: const Text('Todos'),
+                  selected: !_showTodayOnly,
+                  onSelected: (selected) => setState(() => _showTodayOnly = false),
+                  selectedColor: AppColors.primary100,
+                  checkmarkColor: AppColors.primary700,
+                ),
+                const SizedBox(width: 8),
+                FilterChip(
+                  label: const Text('Hoy'),
+                  selected: _showTodayOnly,
+                  onSelected: (selected) => setState(() => _showTodayOnly = true),
+                  selectedColor: AppColors.primary100,
+                  checkmarkColor: AppColors.primary700,
+                  avatar: const Icon(Icons.today, size: 16),
+                ),
+              ],
+            ),
+          ),
+          // Events list
+          Expanded(
+            child: _buildBody(displayEvents),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, EventsState state) {
-    if (state.status == EventsStatus.loading) {
+  Widget _buildBody(List<dynamic> events) {
+    if (_loadingToday || events.isEmpty && ref.watch(eventsProvider).status == EventsStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (state.status == EventsStatus.error) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: AppColors.error500),
-              const SizedBox(height: 16),
-              Text(
-                state.errorMessage ?? 'Error al cargar eventos',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => ref.read(eventsProvider.notifier).loadEvents(),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Reintentar'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (state.events.isEmpty) {
+    if (events.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -60,14 +99,8 @@ class EventsScreen extends ConsumerWidget {
               Icon(Icons.event_outlined, size: 64, color: AppColors.neutral400),
               const SizedBox(height: 16),
               Text(
-                'No hay eventos disponibles',
+                _showTodayOnly ? 'No hay eventos hoy' : 'No hay eventos disponibles',
                 style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'No se encontraron eventos en este momento',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ],
           ),
@@ -76,12 +109,15 @@ class EventsScreen extends ConsumerWidget {
     }
 
     return RefreshIndicator(
-      onRefresh: () => ref.read(eventsProvider.notifier).loadEvents(),
+      onRefresh: () async {
+        ref.read(eventsProvider.notifier).loadEvents();
+        await _loadTodayEvents();
+      },
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: state.events.length,
+        itemCount: events.length,
         itemBuilder: (context, index) {
-          final event = state.events[index];
+          final event = events[index];
           return _EventCard(
             event: event,
             onTap: () => context.go('/events/${event.id}'),
