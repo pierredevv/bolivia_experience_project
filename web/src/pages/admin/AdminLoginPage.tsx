@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { useLogin } from '../../hooks/useAuth'
 
 export default function AdminLoginPage() {
@@ -14,20 +14,27 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-neutral-800 rounded-2xl shadow-2xl p-8 border border-neutral-700">
+        {/* Floating dark card */}
+        <div className="bg-slate-900 rounded-[2rem] shadow-2xl p-8 border border-slate-700/50">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center h-16 w-16 bg-primary-700 rounded-2xl mb-4">
-              <MapPin className="h-8 w-8 text-white" />
+            <img
+              src="/BoliviaExperience.png"
+              alt="BoliviaExperience"
+              className="h-16 md:h-20 w-auto object-contain mx-auto mb-4"
+            />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600/15 border border-emerald-600/25 text-emerald-400 text-xs font-bold mb-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Control Global
             </div>
-            <h1 className="text-2xl font-bold text-white">BoliviaExperience</h1>
-            <p className="text-primary-300 mt-1 font-medium">Panel Administrativo Global</p>
+            <h1 className="text-2xl font-bold text-white">Panel Administrativo</h1>
+            <p className="text-slate-500 mt-1 text-sm font-medium">Acceso restringido al equipo</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             {loginMutation.isError && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm">
+              <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/25 rounded-xl text-red-400 text-sm">
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <span>
                   {(loginMutation.error as any)?.response?.data?.error?.message ||
@@ -37,21 +44,21 @@ export default function AdminLoginPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-400 mb-1.5">
                 Email
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl border border-neutral-600 bg-neutral-700 text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/50 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 outline-none transition-all text-sm"
                 placeholder="admin@boliviaexperience.com"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1">
+              <label className="block text-sm font-semibold text-slate-400 mb-1.5">
                 Contraseña
               </label>
               <div className="relative">
@@ -59,14 +66,14 @@ export default function AdminLoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl border border-neutral-600 bg-neutral-700 text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all pr-12"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/50 text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 outline-none transition-all pr-12 text-sm"
                   placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -76,7 +83,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loginMutation.isPending}
-              className="w-full py-3 mt-6 bg-primary-700 text-white rounded-xl font-semibold hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 mt-6 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/10 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loginMutation.isPending ? (
                 <span className="flex items-center justify-center gap-2">
@@ -92,6 +99,9 @@ export default function AdminLoginPage() {
             </button>
           </form>
         </div>
+        <p className="text-center mt-6 text-xs text-slate-400">
+          Solo personal autorizado
+        </p>
       </div>
     </div>
   )
