@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import '../../../../config/colors.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -37,7 +36,7 @@ class FavoritesScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: AppColors.error500),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error500),
               const SizedBox(height: 16),
               Text(
                 state.errorMessage ?? 'Error al cargar favoritos',
@@ -130,13 +129,13 @@ class _FavoritePlaceCard extends StatelessWidget {
                           photoUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                            return Center(
+                            return const Center(
                               child: Icon(Icons.image, color: AppColors.neutral400),
                             );
                           },
                         ),
                       )
-                    : Center(
+                    : const Center(
                         child: Icon(Icons.image, color: AppColors.neutral400),
                       ),
               ),
@@ -160,7 +159,7 @@ class _FavoritePlaceCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.star, size: 14, color: AppColors.secondary500),
+                        const Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
                         Text(
                           '$averageRating',
@@ -172,7 +171,7 @@ class _FavoritePlaceCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.favorite, color: AppColors.error500),
+                icon: const Icon(Icons.favorite, color: AppColors.error500),
                 onPressed: onRemove,
               ),
             ],

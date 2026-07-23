@@ -4,7 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:dio/dio.dart';
 import '../../config/api_constants.dart';
-import 'token_manager.dart';
+import '../auth/token_manager.dart';
 
 class PushNotificationService {
   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
@@ -128,7 +128,7 @@ class PushNotificationService {
 
   static Future<void> _sendTokenToServer(String token) async {
     try {
-      final authToken = await TokenManager.instance.token;
+      final authToken = TokenManager.token;
       if (authToken == null) return;
 
       final dio = Dio();

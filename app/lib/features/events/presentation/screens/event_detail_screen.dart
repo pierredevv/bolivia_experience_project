@@ -22,7 +22,7 @@ class EventDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: AppColors.error500),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error500),
               const SizedBox(height: 16),
               Text('Error al cargar evento', style: Theme.of(context).textTheme.bodyLarge),
               const SizedBox(height: 16),
@@ -44,7 +44,7 @@ class EventDetailScreen extends ConsumerWidget {
                     ? Image.network(event.photoUrl!, fit: BoxFit.cover)
                     : Container(
                         color: AppColors.primary100,
-                        child: Center(
+                        child: const Center(
                           child: Icon(Icons.event, size: 80, color: AppColors.primary700),
                         ),
                       ),
@@ -86,7 +86,7 @@ class EventDetailScreen extends ConsumerWidget {
                         padding: const EdgeInsets.all(16),
                         child: Row(
                           children: [
-                            Icon(Icons.calendar_today, color: AppColors.primary700),
+                            const Icon(Icons.calendar_today, color: AppColors.primary700),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
@@ -118,7 +118,7 @@ class EventDetailScreen extends ConsumerWidget {
                           padding: const EdgeInsets.all(16),
                           child: Row(
                             children: [
-                              Icon(Icons.location_on, color: AppColors.error700),
+                              const Icon(Icons.location_on, color: AppColors.error700),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(

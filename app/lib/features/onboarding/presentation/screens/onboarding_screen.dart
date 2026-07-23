@@ -19,19 +19,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _currentPage = 0;
 
   final List<OnboardingPageData> _pages = [
-    OnboardingPageData(
+    const OnboardingPageData(
       icon: Icons.explore,
       title: 'Descubre lugares increíbles',
       subtitle: 'Explora lo mejor de Santa Cruz de la Sierra',
       color: AppColors.primary700,
     ),
-    OnboardingPageData(
+    const OnboardingPageData(
       icon: Icons.favorite,
       title: 'Guarda tus favoritos',
       subtitle: 'Crea tu lista personal de lugares que te encantan',
       color: AppColors.secondary700,
     ),
-    OnboardingPageData(
+    const OnboardingPageData(
       icon: Icons.share,
       title: 'Comparte con amigos',
       subtitle: 'Recomienda lugares geniales a tus amigos',
@@ -133,7 +133,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: _completeOnboarding,
-                    child: Text(
+                    child: const Text(
                       'Omitir',
                       style: TextStyle(
                         color: AppColors.neutral500,

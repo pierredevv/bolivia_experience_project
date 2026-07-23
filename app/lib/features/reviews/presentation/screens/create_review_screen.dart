@@ -78,7 +78,7 @@ class _CreateReviewScreenState extends ConsumerState<CreateReviewScreen> {
                     color: AppColors.neutral200,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.image, color: AppColors.neutral400),
+                  child: const Icon(Icons.image, color: AppColors.neutral400),
                 ),
                 title: const Text('Lugar'),
                 subtitle: const Text('Reseña'),
@@ -217,9 +217,9 @@ class _CreateReviewScreenState extends ConsumerState<CreateReviewScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Text('Seleccionar fecha'),
                     Icon(Icons.calendar_today),
                   ],
@@ -339,11 +339,11 @@ class _AddPhotoButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.neutral300),
         ),
-        child: Column(
+        child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.add_a_photo, color: AppColors.neutral500),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               'Agregar',
               style: TextStyle(color: AppColors.neutral50, fontSize: 10),

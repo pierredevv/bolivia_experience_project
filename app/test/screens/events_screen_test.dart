@@ -8,7 +8,6 @@ import 'package:mockito/mockito.dart';
 import 'package:dio/dio.dart';
 import 'package:bolivia_experience/features/events/presentation/screens/events_screen.dart';
 import 'package:bolivia_experience/features/events/presentation/providers/events_provider.dart';
-import 'package:bolivia_experience/core/network/dio_provider.dart';
 
 class MockEventsNotifier extends StateNotifier<EventsState> implements EventsNotifier {
   MockEventsNotifier() : super(const EventsState());

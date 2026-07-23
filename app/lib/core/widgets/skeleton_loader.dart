@@ -36,8 +36,8 @@ class SkeletonPlaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(right: 12),
+    return const Card(
+      margin: EdgeInsets.only(right: 12),
       child: SizedBox(
         width: 160,
         child: Column(
@@ -49,7 +49,7 @@ class SkeletonPlaceCard extends StatelessWidget {
               borderRadius: 12,
             ),
             Padding(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -57,7 +57,7 @@ class SkeletonPlaceCard extends StatelessWidget {
                     width: 120,
                     height: 16,
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   SkeletonLoader(
                     width: 80,
                     height: 12,
@@ -77,16 +77,16 @@ class SkeletonListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          const SkeletonLoader(
+          SkeletonLoader(
             width: 48,
             height: 48,
             borderRadius: 24,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,7 +95,7 @@ class SkeletonListTile extends StatelessWidget {
                   width: double.infinity,
                   height: 16,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 SkeletonLoader(
                   width: 150,
                   height: 12,

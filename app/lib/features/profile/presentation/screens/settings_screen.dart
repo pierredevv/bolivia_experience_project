@@ -21,7 +21,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // Appearance
-          _SectionHeader(title: 'Apariencia'),
+          const _SectionHeader(title: 'Apariencia'),
           SwitchListTile(
             title: const Text('Modo Oscuro'),
             subtitle: const Text('Cambiar entre tema claro y oscuro'),
@@ -40,7 +40,7 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
 
           // Notifications
-          _SectionHeader(title: 'Notificaciones'),
+          const _SectionHeader(title: 'Notificaciones'),
           SwitchListTile(
             title: const Text('Notificaciones Push'),
             subtitle: const Text('Recibir notificaciones de eventos y promociones'),
@@ -48,7 +48,7 @@ class SettingsScreen extends ConsumerWidget {
             onChanged: (value) {
               // TODO: Toggle notifications
             },
-            secondary: Icon(Icons.notifications_outlined, color: AppColors.neutral700),
+            secondary: const Icon(Icons.notifications_outlined, color: AppColors.neutral700),
           ),
           SwitchListTile(
             title: const Text('Sonido'),
@@ -57,13 +57,13 @@ class SettingsScreen extends ConsumerWidget {
             onChanged: (value) {
               // TODO: Toggle sound
             },
-            secondary: Icon(Icons.volume_up_outlined, color: AppColors.neutral700),
+            secondary: const Icon(Icons.volume_up_outlined, color: AppColors.neutral700),
           ),
 
           const Divider(),
 
           // Location
-          _SectionHeader(title: 'Ubicación'),
+          const _SectionHeader(title: 'Ubicación'),
           SwitchListTile(
             title: const Text('Servicios de Ubicación'),
             subtitle: const Text('Permitir acceso a tu ubicación'),
@@ -71,15 +71,15 @@ class SettingsScreen extends ConsumerWidget {
             onChanged: (value) {
               // TODO: Toggle location
             },
-            secondary: Icon(Icons.location_on_outlined, color: AppColors.neutral700),
+            secondary: const Icon(Icons.location_on_outlined, color: AppColors.neutral700),
           ),
 
           const Divider(),
 
           // Language
-          _SectionHeader(title: 'Idioma'),
+          const _SectionHeader(title: 'Idioma'),
           ListTile(
-            leading: Icon(Icons.language, color: AppColors.neutral700),
+            leading: const Icon(Icons.language, color: AppColors.neutral700),
             title: const Text('Idioma de la App'),
             subtitle: const Text('Español'),
             trailing: const Icon(Icons.chevron_right),
@@ -91,26 +91,26 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
 
           // About
-          _SectionHeader(title: 'Acerca de'),
-          ListTile(
+          const _SectionHeader(title: 'Acerca de'),
+          const ListTile(
             leading: Icon(Icons.info_outline, color: AppColors.neutral700),
-            title: const Text('Versión'),
-            subtitle: const Text('1.0.0'),
+            title: Text('Versión'),
+            subtitle: Text('1.0.0'),
           ),
           ListTile(
-            leading: Icon(Icons.description_outlined, color: AppColors.neutral700),
+            leading: const Icon(Icons.description_outlined, color: AppColors.neutral700),
             title: const Text('Términos y Condiciones'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {},
           ),
           ListTile(
-            leading: Icon(Icons.privacy_tip_outlined, color: AppColors.neutral700),
+            leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.neutral700),
             title: const Text('Política de Privacidad'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {},
           ),
           ListTile(
-            leading: Icon(Icons.code, color: AppColors.neutral700),
+            leading: const Icon(Icons.code, color: AppColors.neutral700),
             title: const Text('Licencias'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {

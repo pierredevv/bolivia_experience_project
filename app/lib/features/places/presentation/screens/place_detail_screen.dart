@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../config/colors.dart';
-import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../providers/place_detail_provider.dart';
 
 class PlaceDetailScreen extends ConsumerWidget {
@@ -33,7 +32,7 @@ class PlaceDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: AppColors.error500),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error500),
               const SizedBox(height: 16),
               Text(
                 state.errorMessage ?? 'Error al cargar detalles',
@@ -80,7 +79,7 @@ class PlaceDetailScreen extends ConsumerWidget {
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
                             color: AppColors.neutral200,
-                            child: Center(
+                            child: const Center(
                               child: Icon(Icons.image, size: 80, color: AppColors.neutral400),
                             ),
                           );
@@ -90,7 +89,7 @@ class PlaceDetailScreen extends ConsumerWidget {
                   )
                 : Container(
                     color: AppColors.neutral200,
-                    child: Center(
+                    child: const Center(
                       child: Icon(Icons.image, size: 80, color: AppColors.neutral400),
                     ),
                   ),
@@ -139,11 +138,11 @@ class PlaceDetailScreen extends ConsumerWidget {
                         ),
                         child: Text(
                           category['name'] ?? '',
-                          style: TextStyle(color: AppColors.primary700, fontSize: 12),
+                          style: const TextStyle(color: AppColors.primary700, fontSize: 12),
                         ),
                       ),
                     const SizedBox(width: 8),
-                    Icon(Icons.star, size: 16, color: AppColors.secondary500),
+                    const Icon(Icons.star, size: 16, color: AppColors.secondary500),
                     const SizedBox(width: 4),
                     Text('$averageRating ($ratingCount reseñas)'),
                   ],
@@ -237,7 +236,7 @@ class PlaceDetailScreen extends ConsumerWidget {
                       color: AppColors.neutral200,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Center(
+                    child: const Center(
                       child: Icon(Icons.map, size: 50, color: AppColors.neutral400),
                     ),
                   ),
@@ -287,7 +286,7 @@ class PlaceDetailScreen extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(width: 24),
-                        Expanded(
+                        const Expanded(
                           child: Column(
                             children: [
                               _RatingBar(label: '5', value: 0.7),
@@ -347,7 +346,7 @@ class _ActionButton extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color),
@@ -399,7 +398,7 @@ class _RatingBar extends StatelessWidget {
             child: LinearProgressIndicator(
               value: value,
               backgroundColor: AppColors.neutral200,
-              valueColor: AlwaysStoppedAnimation(AppColors.secondary500),
+              valueColor: const AlwaysStoppedAnimation(AppColors.secondary500),
             ),
           ),
         ],

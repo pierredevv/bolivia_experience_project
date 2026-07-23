@@ -49,7 +49,7 @@ class HomeScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: AppColors.error500),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error500),
               const SizedBox(height: 16),
               Text(
                 state.errorMessage ?? 'Error al cargar datos',
@@ -86,10 +86,10 @@ class HomeScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.neutral300),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
                       Icon(Icons.search, color: AppColors.neutral500),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Text(
                         '¿Qué estás buscando?',
                         style: TextStyle(color: AppColors.neutral500),
@@ -200,7 +200,7 @@ class HomeScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.explore_outlined, size: 64, color: AppColors.neutral400),
+                      const Icon(Icons.explore_outlined, size: 64, color: AppColors.neutral400),
                       const SizedBox(height: 16),
                       Text(
                         'No hay contenido disponible',
@@ -269,7 +269,7 @@ class _CategoryChip extends StatelessWidget {
         label: Text(label),
         onPressed: onTap,
         backgroundColor: AppColors.primary50,
-        labelStyle: TextStyle(color: AppColors.primary700),
+        labelStyle: const TextStyle(color: AppColors.primary700),
       ),
     );
   }
@@ -326,9 +326,9 @@ class _PlaceCard extends StatelessWidget {
             children: [
               Container(
                 height: 100,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.neutral200,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                 ),
                 child: photoUrl != null
                     ? ClipRRect(
@@ -338,13 +338,13 @@ class _PlaceCard extends StatelessWidget {
                           fit: BoxFit.cover,
                           width: double.infinity,
                           errorBuilder: (context, error, stackTrace) {
-                            return Center(
+                            return const Center(
                               child: Icon(Icons.image, color: AppColors.neutral400),
                             );
                           },
                         ),
                       )
-                    : Center(
+                    : const Center(
                         child: Icon(Icons.image, color: AppColors.neutral400),
                       ),
               ),
@@ -366,7 +366,7 @@ class _PlaceCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.star, size: 14, color: AppColors.secondary500),
+                        const Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
                         Text('$averageRating', style: Theme.of(context).textTheme.bodySmall),
                       ],
@@ -403,9 +403,9 @@ class _EventCard extends StatelessWidget {
             children: [
               Container(
                 height: 80,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.primary100,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                 ),
                 child: photoUrl != null
                     ? ClipRRect(
@@ -415,13 +415,13 @@ class _EventCard extends StatelessWidget {
                           fit: BoxFit.cover,
                           width: double.infinity,
                           errorBuilder: (context, error, stackTrace) {
-                            return Center(
+                            return const Center(
                               child: Icon(Icons.event, color: AppColors.primary700, size: 32),
                             );
                           },
                         ),
                       )
-                    : Center(
+                    : const Center(
                         child: Icon(Icons.event, color: AppColors.primary700, size: 32),
                       ),
               ),
@@ -438,7 +438,7 @@ class _EventCard extends StatelessWidget {
                     ),
                     Row(
                       children: [
-                        Icon(Icons.access_time, size: 14, color: AppColors.neutral500),
+                        const Icon(Icons.access_time, size: 14, color: AppColors.neutral500),
                         const SizedBox(width: 4),
                         Text(
                           event['dateStart'] ?? '',

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dio/dio.dart';
 import '../../../../config/api_constants.dart';
 import '../../../../config/colors.dart';
 import '../../../../core/network/dio_provider.dart';
@@ -96,7 +95,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.event_outlined, size: 64, color: AppColors.neutral400),
+              const Icon(Icons.event_outlined, size: 64, color: AppColors.neutral400),
               const SizedBox(height: 16),
               Text(
                 _showTodayOnly ? 'No hay eventos hoy' : 'No hay eventos disponibles',
@@ -162,13 +161,13 @@ class _EventCard extends StatelessWidget {
                           photoUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                            return Center(
+                            return const Center(
                               child: Icon(Icons.event, color: AppColors.primary700, size: 32),
                             );
                           },
                         ),
                       )
-                    : Center(
+                    : const Center(
                         child: Icon(Icons.event, color: AppColors.primary700, size: 32),
                       ),
               ),
@@ -194,7 +193,7 @@ class _EventCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.access_time, size: 14, color: AppColors.neutral500),
+                        const Icon(Icons.access_time, size: 14, color: AppColors.neutral500),
                         const SizedBox(width: 4),
                         Text(
                           event.dateStart ?? '',

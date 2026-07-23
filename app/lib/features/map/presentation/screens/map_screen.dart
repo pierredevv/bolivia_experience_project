@@ -28,7 +28,7 @@ class MapScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.map, size: 80, color: AppColors.neutral400),
+                  const Icon(Icons.map, size: 80, color: AppColors.neutral400),
                   const SizedBox(height: 16),
                   Text(
                     'Mapa Interactivo',
@@ -60,16 +60,16 @@ class MapScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Row(
+                child: const Row(
                   children: [
                     Icon(Icons.search, color: AppColors.neutral500),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Text(
                       'Buscar en el mapa...',
                       style: TextStyle(color: AppColors.neutral500),
@@ -81,7 +81,7 @@ class MapScreen extends ConsumerWidget {
           ),
 
           // Filter chips
-          Positioned(
+          const Positioned(
             top: 70,
             left: 16,
             child: SingleChildScrollView(
@@ -163,7 +163,7 @@ class _MapControlButton extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

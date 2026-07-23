@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 import '../../data/auth_service.dart';
 import '../../../../core/auth/token_manager.dart';
 export '../../data/auth_service.dart' show AuthException;

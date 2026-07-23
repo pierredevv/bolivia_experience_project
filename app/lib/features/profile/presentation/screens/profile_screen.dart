@@ -43,7 +43,7 @@ class ProfileScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: AppColors.error500),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error500),
               const SizedBox(height: 16),
               Text(
                 state.errorMessage ?? 'Error al cargar perfil',
@@ -78,7 +78,7 @@ class ProfileScreen extends ConsumerWidget {
                       ? NetworkImage(profile!.photo!)
                       : null,
                   child: profile?.photo == null
-                      ? Icon(
+                      ? const Icon(
                           Icons.person,
                           size: 50,
                           color: AppColors.primary700,
@@ -185,7 +185,7 @@ class ProfileScreen extends ConsumerWidget {
                         onPressed: () => Navigator.pop(context, true),
                         child: Text(
                           l10n.profileLogout,
-                          style: TextStyle(color: AppColors.error700),
+                          style: const TextStyle(color: AppColors.error700),
                         ),
                       ),
                     ],
@@ -197,13 +197,13 @@ class ProfileScreen extends ConsumerWidget {
                   context.go('/login');
                 }
               },
-              icon: Icon(Icons.logout, color: AppColors.error700),
+              icon: const Icon(Icons.logout, color: AppColors.error700),
               label: Text(
                 l10n.profileLogout,
-                style: TextStyle(color: AppColors.error700),
+                style: const TextStyle(color: AppColors.error700),
               ),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppColors.error300),
+                side: const BorderSide(color: AppColors.error300),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),

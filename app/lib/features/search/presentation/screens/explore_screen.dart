@@ -40,7 +40,7 @@ class ExploreScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline, size: 48, color: AppColors.error500),
+                    const Icon(Icons.error_outline, size: 48, color: AppColors.error500),
                     const SizedBox(height: 16),
                     Text(
                       'Error al cargar categorías',
@@ -66,7 +66,7 @@ class ExploreScreen extends ConsumerWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.category_outlined, size: 48, color: AppColors.neutral400),
+                        const Icon(Icons.category_outlined, size: 48, color: AppColors.neutral400),
                         const SizedBox(height: 16),
                         Text(
                           'No hay categorías disponibles',

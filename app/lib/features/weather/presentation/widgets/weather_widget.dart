@@ -109,7 +109,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
           margin: const EdgeInsets.symmetric(horizontal: 16),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               colors: [AppColors.primary700, AppColors.primary500],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -164,7 +164,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(

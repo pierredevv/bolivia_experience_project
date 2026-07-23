@@ -140,7 +140,7 @@ class _NearbyPlaceCard extends StatelessWidget {
         ),
         subtitle: Text(
           place['distance'] ?? '',
-          style: TextStyle(color: AppColors.neutral600, fontSize: 12),
+          style: const TextStyle(color: AppColors.neutral600, fontSize: 12),
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
