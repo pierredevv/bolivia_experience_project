@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -304,7 +304,7 @@ model Reservation {
   date         DateTime
   time         String
   partySize    Int      @map("party_size")
-  status       String   @default("pending") // pending, confirmed, cancelled, completed
+  status       String   @default("pending")
   notes        String?
   contactPhone String?  @map("contact_phone")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -320,16 +320,16 @@ model Reservation {
 }
 
 model Coupon {
-  id          String    @id @default(cuid())
-  code        String    @unique
+  id          String   @id @default(cuid())
+  code        String   @unique
   description String
-  discount    Int       // percentage
-  maxUses     Int       @map("max_uses")
-  usedCount   Int       @default(0) @map("used_count")
-  validFrom   DateTime  @map("valid_from")
-  validUntil  DateTime  @map("valid_until")
-  isActive    Boolean   @default(true) @map("is_active")
-  createdAt   DateTime  @default(now()) @map("created_at")
+  discount    Int
+  maxUses     Int      @map("max_uses")
+  usedCount   Int      @default(0) @map("used_count")
+  validFrom   DateTime @map("valid_from")
+  validUntil  DateTime @map("valid_until")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([code])
   @@map("coupons")
@@ -342,7 +342,7 @@ model Tour {
   descriptionEn String? @map("description_en")
   price       Float
   currency    String   @default("BOB")
-  duration    String   // e.g., "3 hours"
+  duration    String
   maxGroup    Int      @map("max_group")
   providerId  String   @map("provider_id")
   placeId     String?  @map("place_id")
@@ -364,10 +364,10 @@ model Ticket {
   id           String   @id @default(cuid())
   eventId      String   @map("event_id")
   userId       String?  @map("user_id")
-  ticketType   String   @map("ticket_type") // general, vip, etc.
+  ticketType   String   @map("ticket_type")
   price        Float
   currency     String   @default("BOB")
-  status       String   @default("available") // available, sold, reserved, used
+  status       String   @default("available")
   qrCode       String?  @unique @map("qr_code")
   purchasedAt  DateTime? @map("purchased_at")
   usedAt       DateTime? @map("used_at")
@@ -388,9 +388,9 @@ model Payment {
   amount        Float
   currency      String    @default("BOB")
   description   String
-  type          String    // reservation, ticket, tour, coupon
+  type          String
   referenceId   String    @map("reference_id")
-  status        String    @default("pending") // pending, completed, failed, refunded
+  status        String    @default("pending")
   transactionId String?   @map("transaction_id")
   qrData        String?   @map("qr_data")
   paidAt        DateTime? @map("paid_at")
@@ -421,7 +421,7 @@ model ChatConversation {
 model ChatMessage {
   id              String   @id @default(cuid())
   conversationId  String   @map("conversation_id")
-  role            String   // user, assistant, system
+  role            String
   content         String
   createdAt       DateTime @default(now()) @map("created_at")
 

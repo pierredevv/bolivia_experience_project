@@ -118,7 +118,7 @@ async function main() {
       });
     }
 
-    await prisma.place.createMany({ data: batch, skipDuplicates: true });
+    await prisma.place.createMany({ data: batch });
     created += batch.length;
     console.log(`Created ${created}/1000 places`);
   }
