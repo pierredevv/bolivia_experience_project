@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/auth_service.dart';
 import '../../../../core/auth/token_manager.dart';
+import '../../../../config/api_constants.dart';
 export '../../data/auth_service.dart' show AuthException;
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
@@ -44,12 +46,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _checkInitialAuth();
   }
 
-  void _checkInitialAuth() {
+  void _checkInitialAuth() async {
     if (TokenManager.hasToken) {
-      state = AuthState(
-        status: AuthStatus.authenticated,
-        token: TokenManager.token,
-      );
+      try {
+        final dio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
+        final response = await dio.get(
+          ApiConstants.userProfile,
+          options: Options(
+            headers: {'Authorization': 'Bearer ${TokenManager.token}'},
+          ),
+        );
+
+        if (response.statusCode == 200) {
+          state = AuthState(
+            status: AuthStatus.authenticated,
+            token: TokenManager.token,
+          );
+        } else {
+          await TokenManager.clear();
+          state = const AuthState(status: AuthStatus.unauthenticated);
+        }
+      } catch (e) {
+        await TokenManager.clear();
+        state = const AuthState(status: AuthStatus.unauthenticated);
+      }
     } else {
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
