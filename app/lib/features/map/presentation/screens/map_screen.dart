@@ -1,47 +1,89 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../config/colors.dart';
 
-class MapScreen extends ConsumerWidget {
+class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  final Completer<GoogleMapController> _mapController = Completer();
+
+  // Santa Cruz de la Sierra center
+  static const CameraPosition _santaCruz = CameraPosition(
+    target: LatLng(-17.7833, -63.1821),
+    zoom: 13,
+  );
+
+  final Set<Marker> _markers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPlaceMarkers();
+  }
+
+  void _loadPlaceMarkers() {
+    // Sample places from seed data
+    final places = [
+      {'name': 'El Palmar', 'lat': -17.7833, 'lng': -63.1821},
+      {'name': 'Cocina Mestiza', 'lat': -17.7754, 'lng': -63.1715},
+      {'name': 'Hotel Buganvilia', 'lat': -17.7801, 'lng': -63.1789},
+      {'name': 'Lomas de Arena', 'lat': -17.8200, 'lng': -63.2200},
+      {'name': 'Museo Noel Kempff', 'lat': -17.7650, 'lng': -63.1500},
+      {'name': 'Café Munaipata', 'lat': -17.7810, 'lng': -63.1850},
+      {'name': 'Blue Velvet Bar', 'lat': -17.7780, 'lng': -63.1760},
+      {'name': 'Churrasquía Don Toto', 'lat': -17.7890, 'lng': -63.1950},
+      {'name': 'CC Ventura', 'lat': -17.7600, 'lng': -63.1300},
+      {'name': 'Cristo Redentor', 'lat': -17.7730, 'lng': -63.1630},
+    ];
+
+    setState(() {
+      for (final place in places) {
+        _markers.add(
+          Marker(
+            markerId: MarkerId(place['name'] as String),
+            position: LatLng(place['lat'] as double, place['lng'] as double),
+            infoWindow: InfoWindow(title: place['name'] as String),
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mapa'),
         actions: [
           IconButton(
             icon: const Icon(Icons.my_location),
-            onPressed: () {
-              // TODO: Center on user location
+            onPressed: () async {
+              final controller = await _mapController.future;
+              controller.animateCamera(CameraUpdate.newCameraPosition(_santaCruz));
             },
           ),
         ],
       ),
       body: Stack(
         children: [
-          // Map placeholder
-          Container(
-            color: AppColors.neutral200,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.map, size: 80, color: AppColors.neutral400),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Mapa Interactivo',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Google Maps se cargará aquí',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
+          // Real Google Map
+          GoogleMap(
+            initialCameraPosition: _santaCruz,
+            markers: _markers,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            onMapCreated: (controller) {
+              if (!_mapController.isCompleted) {
+                _mapController.complete(controller);
+              }
+            },
           ),
 
           // Search bar overlay
@@ -97,7 +139,7 @@ class MapScreen extends ConsumerWidget {
             ),
           ),
 
-          // Controls
+          // Zoom controls
           Positioned(
             bottom: 100,
             right: 16,
@@ -105,17 +147,18 @@ class MapScreen extends ConsumerWidget {
               children: [
                 _MapControlButton(
                   icon: Icons.add,
-                  onPressed: () {},
+                  onPressed: () async {
+                    final controller = await _mapController.future;
+                    controller.animateCamera(CameraUpdate.zoomIn());
+                  },
                 ),
                 const SizedBox(height: 8),
                 _MapControlButton(
                   icon: Icons.remove,
-                  onPressed: () {},
-                ),
-                const SizedBox(height: 16),
-                _MapControlButton(
-                  icon: Icons.layers,
-                  onPressed: () {},
+                  onPressed: () async {
+                    final controller = await _mapController.future;
+                    controller.animateCamera(CameraUpdate.zoomOut());
+                  },
                 ),
               ],
             ),
