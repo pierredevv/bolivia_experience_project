@@ -49,6 +49,18 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
+    try {
+      final response = await _dio.post(
+        '/auth/google',
+        data: {'idToken': idToken},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   Exception _handleDioError(DioException e) {
     if (e.response != null) {
       final statusCode = e.response?.statusCode;
