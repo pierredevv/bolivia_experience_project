@@ -14,7 +14,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileProvider);
     final favoritesState = ref.watch(favoritesProvider);
-    final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
@@ -31,7 +31,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildBody(BuildContext context, WidgetRef ref, ProfileState state, FavoritesState favoritesState) {
-    final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
     if (state.status == ProfileStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }

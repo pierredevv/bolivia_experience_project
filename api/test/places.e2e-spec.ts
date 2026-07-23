@@ -107,6 +107,34 @@ describe('Places (e2e)', () => {
     });
   });
 
+  describe('GET /api/v1/places - Advanced Filters', () => {
+    it('should filter by minRating', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/places?minRating=4')
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.data).toBeDefined();
+    });
+
+    it('should filter by city', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/places?city=santa-cruz')
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+    });
+
+    it('should support sortBy parameter', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/places?sortBy=name')
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data.data)).toBe(true);
+    });
+  });
+
   describe('GET /api/v1/places/:id/photos', () => {
     it('should return photos for a place', async () => {
       const listRes = await request(app.getHttpServer())

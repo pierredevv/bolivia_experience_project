@@ -23,13 +23,22 @@ model User {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  places        Place[]
-  reviews       Review[]
-  favorites     Favorite[]
-  replies       ReviewReply[]
-  searchHistory SearchHistory[]
-  notifications Notification[]
-  refreshTokens RefreshToken[]
+  points        Int      @default(0)
+
+  places              Place[]
+  reviews             Review[]
+  favorites           Favorite[]
+  replies             ReviewReply[]
+  searchHistory       SearchHistory[]
+  notifications       Notification[]
+  refreshTokens       RefreshToken[]
+  referral            Referral?
+  referredUses        ReferralUse[]
+  reservations        Reservation[]
+  tours               Tour[]
+  tickets             Ticket[]
+  payments            Payment[]
+  chatConversations   ChatConversation[]
 
   @@map("users")
 }
@@ -75,13 +84,15 @@ model Place {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  category   Category    @relation(fields: [categoryId], references: [id])
-  owner      User?       @relation(fields: [ownerId], references: [id])
+  category   Category      @relation(fields: [categoryId], references: [id])
+  owner      User?         @relation(fields: [ownerId], references: [id])
   photos     PlacePhoto[]
   hours      PlaceHour[]
   reviews    Review[]
   favorites  Favorite[]
   promotions Promotion[]
+  reservations Reservation[]
+  tours      Tour[]
 
   @@index([categoryId])
   @@index([ownerId])
@@ -185,6 +196,8 @@ model Event {
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tickets Ticket[]
 
   @@index([dateStart])
   @@map("events")

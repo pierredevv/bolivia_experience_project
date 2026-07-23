@@ -18,6 +18,11 @@ import { WeatherModule } from './modules/weather/weather.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { EmpresaModule } from './modules/empresa/empresa.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ReservationsModule } from './modules/reservations/reservations.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
+import { RecommendationsModule } from './modules/recommendations/recommendations.module';
+import { ChatbotModule } from './modules/chatbot/chatbot.module';
 import { HealthController } from './common/controllers/health.controller';
 import configuration from './config/configuration';
 
@@ -55,6 +60,11 @@ import configuration from './config/configuration';
     AdminModule,
     EmpresaModule,
     NotificationsModule,
+    ReservationsModule,
+    PaymentsModule,
+    ReferralsModule,
+    RecommendationsModule,
+    ChatbotModule,
   ],
   controllers: [HealthController],
   providers: [

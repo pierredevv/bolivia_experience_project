@@ -43,6 +43,11 @@ dependencies:
   url_launcher: ^6.2.2
   share_plus: ^7.2.1
   pull_to_refresh: ^2.0.0
+  image_picker: ^1.0.7
+
+  # Notifications
+  firebase_messaging: ^14.7.15
+  flutter_local_notifications: ^17.2.4
 
   # Utils
   intl: 0.20.2
