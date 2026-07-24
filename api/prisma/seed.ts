@@ -10,6 +10,18 @@ async function main() {
   console.log(`Starting seed... (database: ${isSQLite ? 'SQLite' : 'PostgreSQL'})`);
 
   // Clean existing data (order matters for foreign keys)
+  await prisma.chatMessage.deleteMany();
+  await prisma.chatConversation.deleteMany();
+  await prisma.payment.deleteMany();
+  await prisma.ticket.deleteMany();
+  await prisma.tour.deleteMany();
+  await prisma.coupon.deleteMany();
+  await prisma.referralUse.deleteMany();
+  await prisma.referral.deleteMany();
+  await prisma.refreshToken.deleteMany();
+  await prisma.tripItem.deleteMany();
+  await prisma.tripDay.deleteMany();
+  await prisma.trip.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.searchHistory.deleteMany();
   await prisma.reviewReply.deleteMany();
@@ -101,9 +113,7 @@ async function main() {
   const [catRestaurantes, catHoteles, catBares, catCafes, catAtracciones, catParques, catMuseos, catComercios, catDeportes, catGastro] = categories;
 
   // ── Places ─────────────────────────────────────────────────
-  const places = await Promise.all([
-    prisma.place.create({
-      data: {
+  const placesData = [{
         name: 'El Palmar',
         description: 'Restaurante de comida cruceña tradicional. Famous por sus anticuchos y saice.',
         descriptionEn: 'Traditional Santa Cruz restaurant. Famous for its anticuchos and saice.',
@@ -119,9 +129,7 @@ async function main() {
         isFeatured: true,
         isActive: true,
       },
-    }),
-    prisma.place.create({
-      data: {
+    {
         name: 'Cocina Mestiza',
         description: 'Fusión de sabores bolivianos con influencias internacionales. Menú ejecutivo y carta.',
         descriptionEn: 'Fusion of Bolivian flavors with international influences.',
@@ -136,9 +144,7 @@ async function main() {
         isFeatured: true,
         isActive: true,
       },
-    }),
-    prisma.place.create({
-      data: {
+    {
         name: 'Hotel Buganvilia',
         description: 'Hotel boutique en el corazón de Equipetrol. Piscina, restaurante y spa.',
         descriptionEn: 'Boutique hotel in the heart of Equipetrol. Pool, restaurant and spa.',
@@ -154,9 +160,7 @@ async function main() {
         isFeatured: true,
         isActive: true,
       },
-    }),
-    prisma.place.create({
-      data: {
+    {
         name: 'Parque Municipal Lomas de Arena',
         description: 'Reserva natural con dunas de arena, lagunas y senderismo. Ideal para un día de aventura.',
         descriptionEn: 'Natural reserve with sand dunes, lagoons and hiking. Perfect for an adventure day.',
@@ -171,9 +175,7 @@ async function main() {
         isFeatured: true,
         isActive: true,
       },
-    }),
-    prisma.place.create({
-      data: {
+    {
         name: 'Museo de Historia Natural Noel Kempff',
         description: 'Museo con exhibiciones de fauna y flora del departamento de Santa Cruz.',
         descriptionEn: 'Museum with exhibitions of fauna and flora of the Santa Cruz department.',
@@ -188,9 +190,7 @@ async function main() {
         isFeatured: true,
         isActive: true,
       },
-    }),
-    prisma.place.create({
-      data: {
+    {
         name: 'Café Munaipata',
         description: 'Café artesanal con granos de Yungas. Desayunos, tortas y ambiente acogedor.',
         descriptionEn: 'Artisanal café with Yungas beans. Breakfasts, cakes and cozy atmosphere.',
@@ -205,9 +205,7 @@ async function main() {
         isFeatured: true,
         isActive: true,
       },
-    }),
-    prisma.place.create({
-      data: {
+    {
         name: 'Blue Velvet Bar',
         description: 'Bar de coctelería de autor con música en vivo. Noches de jazz y bossa nova.',
         descriptionEn: 'Cocktail bar with live music. Jazz and bossa nova nights.',
@@ -222,9 +220,7 @@ async function main() {
         isFeatured: false,
         isActive: true,
       },
-    }),
-    prisma.place.create({
-      data: {
+    {
         name: 'Churrasquía Don Toto',
         description: 'Parrilla criolla con cortes premium y ensaladas. El mejor asado de la ciudad.',
         descriptionEn: 'Creole grill with premium cuts and salads. The best roast in town.',
@@ -239,9 +235,7 @@ async function main() {
         isFeatured: true,
         isActive: true,
       },
-    }),
-    prisma.place.create({
-      data: {
+    {
         name: 'CC Ventura',
         description: 'El centro comercial más grande de Santa Cruz. Tiendas, cine, gastronomía y entretenimiento.',
         descriptionEn: 'The largest shopping center in Santa Cruz. Shops, cinema, dining and entertainment.',
@@ -257,9 +251,7 @@ async function main() {
         isFeatured: false,
         isActive: true,
       },
-    }),
-    prisma.place.create({
-      data: {
+    {
         name: 'Coliseo de Domingo Savio',
         description: 'Coliseo deportivo para eventos, conciertos y encuentros deportivos.',
         descriptionEn: 'Sports coliseum for events, concerts and sports competitions.',
@@ -274,9 +266,7 @@ async function main() {
         isFeatured: false,
         isActive: true,
       },
-    }),
-    prisma.place.create({
-      data: {
+    {
         name: 'Aero Club Santa Cruz',
         description: 'Club deportivo con piscina olímpica, canchas de tenis, fútbol y gym.',
         descriptionEn: 'Sports club with Olympic pool, tennis courts, soccer fields and gym.',
@@ -291,9 +281,7 @@ async function main() {
         isFeatured: false,
         isActive: true,
       },
-    }),
-    prisma.place.create({
-      data: {
+    {
         name: 'Cristo Redentor',
         description: 'Monumento icónico de Santa Cruz con vista panorámica de la ciudad.',
         descriptionEn: 'Iconic monument of Santa Cruz with panoramic views of the city.',
@@ -306,9 +294,13 @@ async function main() {
         ownerId: null,
         isFeatured: true,
         isActive: true,
-      },
-    }),
-  ]);
+      }];
+
+  const places: any[] = [];
+  for (const placeData of placesData) {
+    const place = await prisma.place.create({ data: placeData });
+    places.push(place);
+  }
   console.log(`Created ${places.length} places`);
 
   // ── Place Photos ───────────────────────────────────────────
@@ -699,6 +691,65 @@ async function main() {
   ]);
   console.log(`Created ${notifications.length} notifications`);
 
+  // ── Trip Demos ──────────────────────────────────────────────
+
+  const trip1 = await prisma.trip.create({
+    data: {
+      userId: usuario1.id,
+      name: 'Santa Cruz 3 Días — Low Cost',
+      description: 'Recorrido económico por los mejores lugares de Santa Cruz',
+      destination: 'Santa Cruz',
+      startDate: new Date(now.getTime() + 14 * 86400000),
+      endDate: new Date(now.getTime() + 17 * 86400000),
+      budgetType: 'low_cost',
+      budgetMin: 500,
+      budgetMax: 1000,
+      isPublic: true,
+    },
+  });
+
+  const trip1Day1 = await prisma.tripDay.create({ data: { tripId: trip1.id, dayNumber: 1, date: new Date(now.getTime() + 14 * 86400000), description: 'Aventura en dunas' } });
+  const trip1Day2 = await prisma.tripDay.create({ data: { tripId: trip1.id, dayNumber: 2, date: new Date(now.getTime() + 15 * 86400000), description: 'Cultura y gastronomía' } });
+  const trip1Day3 = await prisma.tripDay.create({ data: { tripId: trip1.id, dayNumber: 3, date: new Date(now.getTime() + 16 * 86400000), description: 'Compras y vida nocturna' } });
+
+  await prisma.tripItem.create({ data: { tripDayId: trip1Day1.id, placeId: places[3].id, title: 'Lomas de Arena', description: 'Senderismo y dunas', timeSlot: 'morning', orderIndex: 0 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip1Day1.id, placeId: places[7].id, title: 'Churrasquía Don Toto', description: 'Almuerzo criollo', timeSlot: 'afternoon', orderIndex: 1 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip1Day2.id, placeId: places[11].id, title: 'Cristo Redentor', description: 'Vista panorámica', timeSlot: 'morning', orderIndex: 0 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip1Day2.id, placeId: places[4].id, title: 'Museo Noel Kempff', description: 'Exhibiciones naturales', timeSlot: 'afternoon', orderIndex: 1 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip1Day2.id, placeId: places[5].id, title: 'Café Munaipata', description: 'Café artesanal', timeSlot: 'evening', orderIndex: 2 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip1Day3.id, placeId: places[8].id, title: 'CC Ventura', description: 'Compras', timeSlot: 'afternoon', orderIndex: 0 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip1Day3.id, placeId: places[6].id, title: 'Blue Velvet Bar', description: 'Coctelería de autor', timeSlot: 'evening', orderIndex: 1 } });
+
+  const trip2 = await prisma.trip.create({
+    data: {
+      userId: usuario1.id,
+      name: 'Santa Cruz Premium — 4 Días',
+      description: 'Experiencia premium con los mejores lugares',
+      destination: 'Santa Cruz',
+      startDate: new Date(now.getTime() + 28 * 86400000),
+      endDate: new Date(now.getTime() + 32 * 86400000),
+      budgetType: 'luxury',
+      budgetMin: 3000,
+      budgetMax: 5000,
+      isPublic: true,
+    },
+  });
+
+  const trip2Day1 = await prisma.tripDay.create({ data: { tripId: trip2.id, dayNumber: 1, date: new Date(now.getTime() + 28 * 86400000), description: 'Llegada y check-in' } });
+  const trip2Day2 = await prisma.tripDay.create({ data: { tripId: trip2.id, dayNumber: 2, date: new Date(now.getTime() + 29 * 86400000), description: 'Día de aventura' } });
+  const trip2Day3 = await prisma.tripDay.create({ data: { tripId: trip2.id, dayNumber: 3, date: new Date(now.getTime() + 30 * 86400000), description: 'Gastronomía y cultura' } });
+  const trip2Day4 = await prisma.tripDay.create({ data: { tripId: trip2.id, dayNumber: 4, date: new Date(now.getTime() + 31 * 86400000), description: 'Despedida' } });
+
+  await prisma.tripItem.create({ data: { tripDayId: trip2Day1.id, placeId: places[2].id, title: 'Hotel Buganvilia', description: 'Check-in premium', timeSlot: 'morning', orderIndex: 0 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip2Day1.id, placeId: places[1].id, title: 'Cocina Mestiza', description: 'Cena de bienvenida', timeSlot: 'evening', orderIndex: 1 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip2Day2.id, placeId: places[3].id, title: 'Tour Lomas de Arena', description: 'Aventura completa', timeSlot: 'full_day', orderIndex: 0 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip2Day3.id, placeId: places[11].id, title: 'Cristo Redentor', description: 'Vista panorámica al amanecer', timeSlot: 'morning', orderIndex: 0 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip2Day3.id, placeId: places[0].id, title: 'El Palmar', description: 'Almuerzo tradicional', timeSlot: 'afternoon', orderIndex: 1 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip2Day3.id, placeId: places[6].id, title: 'Blue Velvet Bar', description: 'Noche de jazz', timeSlot: 'evening', orderIndex: 2 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip2Day4.id, placeId: places[10].id, title: 'Aero Club', description: 'Actividades deportivas', timeSlot: 'morning', orderIndex: 0 } });
+  await prisma.tripItem.create({ data: { tripDayId: trip2Day4.id, placeId: places[5].id, title: 'Café Munaipata', description: 'Despedida con café', timeSlot: 'afternoon', orderIndex: 1 } });
+
+  console.log('Created 2 demo trips with days and items');
   console.log('Seed completed successfully!');
 }
 

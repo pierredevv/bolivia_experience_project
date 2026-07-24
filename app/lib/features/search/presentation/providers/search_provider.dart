@@ -13,6 +13,7 @@ class SearchState {
   final List<dynamic> searchHistory;
   final String? errorMessage;
   final String query;
+  final bool showSuggestions;
 
   const SearchState({
     this.status = SearchStatus.initial,
@@ -21,6 +22,7 @@ class SearchState {
     this.searchHistory = const [],
     this.errorMessage,
     this.query = '',
+    this.showSuggestions = false,
   });
 
   SearchState copyWith({
@@ -30,6 +32,7 @@ class SearchState {
     List<dynamic>? searchHistory,
     String? errorMessage,
     String? query,
+    bool? showSuggestions,
   }) {
     return SearchState(
       status: status ?? this.status,
@@ -38,6 +41,7 @@ class SearchState {
       searchHistory: searchHistory ?? this.searchHistory,
       errorMessage: errorMessage,
       query: query ?? this.query,
+      showSuggestions: showSuggestions ?? this.showSuggestions,
     );
   }
 }
@@ -53,38 +57,48 @@ final searchProvider = StateNotifierProvider<SearchNotifier, SearchState>((ref) 
 
 class SearchNotifier extends StateNotifier<SearchState> {
   final SearchService _searchService;
-  Timer? _debounceTimer;
+  Timer? _suggestionsDebounce;
+  Timer? _searchDebounce;
 
   SearchNotifier(this._searchService) : super(const SearchState());
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
+    _suggestionsDebounce?.cancel();
+    _searchDebounce?.cancel();
     super.dispose();
   }
 
   void updateQuery(String query) {
     state = state.copyWith(query: query);
 
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      if (query.length >= 2) {
-        search(query);
+    _suggestionsDebounce?.cancel();
+    _searchDebounce?.cancel();
+
+    if (query.length >= 2) {
+      _suggestionsDebounce = Timer(const Duration(milliseconds: 300), () {
         getSuggestions(query);
-      } else {
-        state = state.copyWith(results: [], suggestions: []);
-      }
-    });
+      });
+      _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+        search(query);
+      });
+    } else {
+      state = state.copyWith(
+        results: [],
+        suggestions: [],
+        showSuggestions: false,
+      );
+    }
   }
 
   Future<void> search(String query) async {
     if (!mounted) return;
     if (query.isEmpty) {
-      state = state.copyWith(results: [], status: SearchStatus.initial);
+      state = state.copyWith(results: [], status: SearchStatus.initial, showSuggestions: false);
       return;
     }
 
-    state = state.copyWith(status: SearchStatus.loading);
+    state = state.copyWith(status: SearchStatus.loading, showSuggestions: false);
 
     try {
       final results = await _searchService.search(query: query);
@@ -122,13 +136,17 @@ class SearchNotifier extends StateNotifier<SearchState> {
 
   Future<void> getSuggestions(String query) async {
     if (query.isEmpty) {
-      state = state.copyWith(suggestions: []);
+      state = state.copyWith(suggestions: [], showSuggestions: false);
       return;
     }
 
     try {
       final suggestions = await _searchService.getSuggestions(query: query);
-      state = state.copyWith(suggestions: suggestions);
+      if (!mounted) return;
+      state = state.copyWith(
+        suggestions: suggestions,
+        showSuggestions: suggestions.isNotEmpty,
+      );
     } catch (e) {
       // Silently fail for suggestions
     }
@@ -143,8 +161,13 @@ class SearchNotifier extends StateNotifier<SearchState> {
     }
   }
 
+  void hideSuggestions() {
+    state = state.copyWith(showSuggestions: false);
+  }
+
   void clearSearch() {
-    _debounceTimer?.cancel();
+    _suggestionsDebounce?.cancel();
+    _searchDebounce?.cancel();
     state = const SearchState();
   }
 }

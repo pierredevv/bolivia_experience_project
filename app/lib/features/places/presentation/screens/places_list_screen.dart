@@ -130,7 +130,7 @@ class _PlacesListScreenState extends ConsumerState<PlacesListScreen> {
         final place = state.places[index];
         return _PlaceListCard(
           place: place,
-          onTap: () => context.go('/places/${place.id}'),
+          onTap: () => context.push('/places/${place.id}'),
         );
       },
     );

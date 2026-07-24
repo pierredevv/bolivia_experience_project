@@ -119,7 +119,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
           final event = events[index];
           return _EventCard(
             event: event,
-            onTap: () => context.go('/events/${event.id}'),
+            onTap: () => context.push('/events/${event.id}'),
           );
         },
       ),

@@ -6,7 +6,10 @@ description: >
   componente UI, se verifique accesibilidad WCAG, o se chequee consistencia con
   el design system. Ejemplos: "Audita la pantalla de home", "Revisa el componente
   de botón primario", "¿Cumple WCAG 2.1 AA este formulario?".
-tools: [Read, Grep, Glob]
+tools:
+  read: true
+  grep: true
+  glob: true
 model: sonnet
 ---
 

@@ -6,7 +6,12 @@ description: >
   se analicen gaps del MVP, o se revise la completitud de una feature. Ejemplos:
   "Revisa si la feature de favoritos está completa", "Crea un bug report para el
   error de login", "¿Qué features del MVP faltan?", "Checklist de release para v1.1".
-tools: [Read, Grep, Glob, Bash, Write]
+tools:
+  read: true
+  grep: true
+  glob: true
+  bash: true
+  write: true
 model: sonnet
 ---
 

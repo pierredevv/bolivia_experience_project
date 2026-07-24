@@ -144,7 +144,7 @@ class _NearbyPlaceCard extends StatelessWidget {
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
-          context.go('/places/${place['id']}');
+          context.push('/places/${place['id']}');
         },
       ),
     );

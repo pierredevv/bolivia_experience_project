@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
 import '../providers/home_provider.dart';
+import '../../../weather/presentation/widgets/weather_widget.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -100,6 +101,80 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
 
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: WeatherWidget(),
+            ),
+            const SizedBox(height: 16),
+
+            GestureDetector(
+              onTap: () => context.go('/trips'),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary700, AppColors.primary400],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.map_outlined,
+                      size: 40,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Crea tu itinerario perfecto',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Segun tu presupuesto y preferencias',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white.withAlpha(200),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Empezar',
+                        style: TextStyle(
+                          color: AppColors.primary700,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
             if (state.categories.isNotEmpty) ...[
               SizedBox(
                 height: 40,
@@ -138,7 +213,7 @@ class HomeScreen extends ConsumerWidget {
                     final place = state.featuredPlaces[index];
                     return _PlaceCard(
                       place: place,
-                      onTap: () => context.go('/places/${place['id']}'),
+                      onTap: () => context.push('/places/${place['id']}'),
                     );
                   },
                 ),
@@ -161,7 +236,7 @@ class HomeScreen extends ConsumerWidget {
                     final event = state.todayEvents[index];
                     return _EventCard(
                       event: event,
-                      onTap: () => context.go('/events/${event['id']}'),
+                      onTap: () => context.push('/events/${event['id']}'),
                     );
                   },
                 ),
