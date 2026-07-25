@@ -208,7 +208,7 @@ class _PlaceListCard extends StatelessWidget {
                         const Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
                         Text(
-                          '$averageRating ($ratingCount)',
+                          '${averageRating is double ? averageRating.toStringAsFixed(1) : averageRating} ($ratingCount)',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],

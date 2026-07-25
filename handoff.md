@@ -1,6 +1,6 @@
 # Handoff de Sesión — BoliviaExperience
 
-**Fecha**: 24 de julio, 2026
+**Fecha**: 25 de julio, 2026
 **Agente**: MiMoCode (build agent)
 **Rama**: develop
 
@@ -8,86 +8,129 @@
 
 ## Resumen de la Sesión
 
-Sesión completa de debugging y fixes masivos. Se identificaron y corrigieron **35+ bugs** que afectaban las funciones core de la app: home vacío, categorías sin cargar, mapa sin markers, búsqueda incorrecta, y errores de navegación. Los problemas raíz incluían: parsing de respuestas paginadas incompatibles entre backend y frontend, providers Riverpod con race conditions, parámetros de query rechazados por ValidationPipe, y interfaces de datos incompletas.
+Sesión de **rediseño arquitectónico del sistema de reseñas** y corrección de múltiples bugs UI. Se implementó una nueva arquitectura de estados para reseñas (PUBLISHED/UNDER_REVIEW/HIDDEN/DELETED) siguiendo el patrón de plataformas profesionales (Google Maps, Airbnb, Booking). Además se corrigieron bugs de UI: rating con exceso de decimales, fecha de visita sin mostrar, nombre del lugar no visible al crear reseña, favoritos con rating 0, y búsqueda con rating 0.
 
 ---
 
-## Commits Realizados (1 commit)
+## Arquitectura Implementada — Sistema de Reseñas
+
+### Modelo de Estados
+
+```
+enum ReviewStatus {
+  PUBLISHED    // Visible públicamente
+  UNDER_REVIEW // Reservado para futura moderación automática
+  HIDDEN       // Administrador ocultó (acción de moderación)
+  DELETED      // Usuario eliminó su reseña (terminal, no reversible)
+}
+```
+
+### Reglas de Arquitectura
+
+1. **DELETED nunca aparece en listados normales**
+   - Listado público → solo PUBLISHED
+   - Panel empresa → PUBLISHED + HIDDEN
+   - Panel admin → todos (con filtro)
+
+2. **Place.ratingAvg y Place.ratingCount son datos derivados**
+   - Siempre se recalculan con `recalculatePlaceRating()`
+   - Nunca se modifican manualmente
+
+3. **Toda operación que modifique reseñas invoca recalculatePlaceRating()**
+   - create() → recalculatePlaceRating()
+   - update() → recalculatePlaceRating() (si cambió rating)
+   - remove() → recalculatePlaceRating()
+   - updateStatus() → recalculatePlaceRating()
+
+4. **Reseñas se publican inmediatamente** (sin aprobación manual)
+
+5. **Solo admin puede cambiar status** (empresa solo responde)
+
+---
+
+## Commits Realizados
 
 | Commit | Tipo | Descripción |
 |--------|------|-------------|
-| `37dad80` | fix | critical bug fixes - home empty, categories loading, map markers, search matching |
+| Pendiente | feat | Rediseño sistema de reseñas + fixes UI |
 
 ---
 
 ## Archivos Modificados
 
-### API (Backend) — 5 archivos
-| Archivo | Cambio |
-|---------|--------|
-| `api/src/common/dto/pagination.dto.ts` | Agregado `hasNext`/`hasPrevious` calculados al `PaginatedResponse` |
-| `api/src/modules/places/dto/index.ts` | Agregado campo `categorySlug` a `QueryPlacesDto` |
-| `api/src/modules/places/places.service.ts` | Resolución de `categorySlug` → `categoryId` en `findAll()`; removido `description` de búsqueda |
-| `api/src/modules/places/repositories/geo.repository.ts` | Agregado `latitude`/`longitude` a respuestas `findByBoundsSQLite` y `findNearbySQLite`; actualizada interfaz `NearbyPlace` |
-| `api/src/modules/search/search.service.ts` | Removido `description` de la búsqueda (solo name/address) |
+### API (Backend) — 14 archivos
 
-### Flutter (Frontend) — 18 archivos
 | Archivo | Cambio |
 |---------|--------|
-| `app/lib/config/router.dart` | Agregado `rootNavigatorKey`, `navigatorKey` en GoRouter, fallback `categoryName` via query param |
-| `app/lib/core/network/dio_provider.dart` | Agregado redirect a `/login` en 401 con navigator key global |
-| `app/lib/features/events/data/events_service.dart` | Fix `Event.id` toString, parsing de paginated response en `getEvents()` |
-| `app/lib/features/home/data/home_service.dart` | Fix `getPromotions()` para desempaquetar `PaginatedResponse` anidado |
-| `app/lib/features/home/presentation/providers/home_provider.dart` | Fix `copyWith` errorMessage, removido `.catchError` silenciador, cambiado a `autoDispose` |
-| `app/lib/features/home/presentation/screens/home_screen.dart` | Fix category navigation a `/places/category/:slug`, fix photo/category safety checks |
-| `app/lib/features/home/presentation/screens/main_shell.dart` | Fix bottom nav highlight con `startsWith('/explore')` |
-| `app/lib/features/map/data/map_service.dart` | Fix `MapPlace.fromJson` para aceptar snake_case y camelCase; fix response parsing |
-| `app/lib/features/map/presentation/providers/map_provider.dart` | Mejorado error message con detalle del exception |
-| `app/lib/features/map/presentation/screens/map_screen.dart` | `myLocationEnabled: false` (sin permisos) |
-| `app/lib/features/places/data/places_service.dart` | Fix query param `categorySlug`, parsing `meta` vs `pagination`, `Place.id` toString, `getPlaceReviews` unpack |
-| `app/lib/features/places/presentation/providers/place_detail_provider.dart` | Reemplazado `Future.wait` por carga individual con try/catch, fix `copyWith` errorMessage |
-| `app/lib/features/places/presentation/providers/places_provider.dart` | Convertido a `StateNotifierProvider.family.autoDispose` con auto-load |
-| `app/lib/features/places/presentation/screens/place_detail_screen.dart` | Fix star rating logic, rating distribution dinámica, uso de `dioProvider` |
-| `app/lib/features/places/presentation/screens/places_list_screen.dart` | Eliminada carga manual en `initState`, fix photoUrl safety check |
-| `app/lib/features/reviews/data/reviews_service.dart` | Fix field names camelCase, `getPlaceReviews` paginated unpack |
-| `app/lib/features/search/presentation/screens/explore_screen.dart` | Fix `_CategoryCard` overflow con `Flexible`/`mainAxisSize.min`, fix navigation a query param |
-| `app/lib/features/search/presentation/screens/search_screen.dart` | Cancel button: `Navigator.pop` → `context.go('/map')` |
+| `api/prisma/schema.prisma` | Reemplazado `isApproved Boolean` por `status String @default("PUBLISHED")`, agregado `moderatedAt`, `moderatedById` con relación a User, `@@index([status])` |
+| `api/prisma/schema.sqlite.prisma` | Sincronizado con schema.prisma (mismos cambios) |
+| `api/prisma/seed.ts` | Reviews creadas con `status: 'PUBLISHED'`, places con `ratingAvg: 0` y `ratingCount: 0` (recálculo automático) |
+| `api/src/common/constants/review-status.ts` | **Nuevo**: Constantes PUBLISHED, UNDER_REVIEW, HIDDEN, DELETED |
+| `api/src/modules/reviews/reviews.service.ts` | Reescritura completa: `create()` con `$transaction` + auto-publicar, `update()` con validación DELETED/HIDDEN, `updateStatus()` con auditoría, `remove()` soft delete, `recalculatePlaceRating()` privado |
+| `api/src/modules/reviews/reviews.controller.ts` | Endpoint `@Patch('reviews/:id/status')` para admin (reemplaza `approve`) |
+| `api/src/modules/reviews/dto/update-review-status.dto.ts` | **Nuevo**: DTO con `@IsEnum(ReviewStatus)` |
+| `api/src/modules/reviews/dto/index.ts` | Exporta `UpdateReviewStatusDto` |
+| `api/src/modules/reviews/reviews.service.spec.ts` | Tests actualizados: mocks con `aggregate`, validación de status, soft delete |
+| `api/src/modules/empresa/empresa.service.ts` | Usa `ReviewStatus` de constants, filtra PUBLISHED+HIDDEN, stats sin DELETED |
+| `api/src/modules/empresa/dto/index.ts` | Agregado `filter` field a `EmpresaReviewsDto` |
+| `api/src/modules/admin/admin.service.ts` | Usa `ReviewStatus` de constants, filtros por status |
+| `api/src/modules/admin/admin.service.spec.ts` | Tests actualizados con nuevos status |
+| `api/src/modules/places/places.service.ts` | `findById` usa `status: 'PUBLISHED'` en vez de `isApproved: true` |
+| `api/src/scripts/migrate-review-status.ts` | **Nuevo**: Script de migración de datos |
+| `api/src/scripts/recalculate-ratings.ts` | **Nuevo**: Script de recálculo de ratings |
+| `api/src/scripts/add-status-column.ts` | **Nuevo**: Script para agregar columna status |
+
+### Flutter (Frontend) — 7 archivos
+
+| Archivo | Cambio |
+|---------|--------|
+| `app/lib/features/reviews/presentation/screens/create_review_screen.dart` | Agregado `placeName` parameter, Card muestra nombre real, `ref.invalidate(placeDetailProvider)` después de crear reseña, fecha de visita dinámica en input |
+| `app/lib/features/places/presentation/screens/place_detail_screen.dart` | Rating formateado a 1 decimal (`toStringAsFixed(1)`), pasa `place.name` vía `extra` al navegar a crear reseña |
+| `app/lib/features/places/presentation/screens/places_list_screen.dart` | Rating formateado a 1 decimal |
+| `app/lib/features/home/presentation/screens/home_screen.dart` | Rating formateado a 1 decimal |
+| `app/lib/features/search/presentation/screens/search_screen.dart` | Rating formateado a 1 decimal, fix `result['ratingAvg']` en vez de `result['rating']['average']` |
+| `app/lib/features/favorites/presentation/screens/favorites_screen.dart` | Rating formateado a 1 decimal, fix `place['ratingAvg']` en vez de `place['rating']['average']` |
+| `app/lib/config/router.dart` | Pasa `placeName` vía `state.extra` en ruta de crear reseña |
 
 ---
 
-## Bugs Corregidos (Raíz → Fix)
+## Bugs Corregidos
 
-### Home vacío
-- **Raíz**: `home_provider.dart` tenía `.catchError((_) => [])` que traga TODOS los errores silenciosamente; `getPromotions()` no desempaquetaba el `PaginatedResponse` del backend
-- **Fix**: Removido `.catchError`, cada llamada tiene su propio try/catch; `getPromotions()` ahora lee `data['data']['data']`
+### 1. Reseñas no se publican (Bug crítico)
+- **Raíz**: `isApproved` defaultaba en `false`; `findByPlace()` filtraba por `isApproved: true`
+- **Fix**: Nuevo enum `ReviewStatus`, reseñas se crean con `PUBLISHED` automáticamente
 
-### Categorías sin cargar (loop infinito)
-- **Raíz**: Flutter enviaba `?category=slug` pero el backend solo aceptaba `categoryId` (cuid); `forbidNonWhitelisted: true` rechazaba el parámetro con 400; `placesProvider` no era `family` causando race conditions
-- **Fix**: Agregado `categorySlug` al DTO del backend con resolución a `categoryId`; provider convertido a `family.autoDispose`
+### 2. Rating del lugar no se actualiza
+- **Raíz**: `create()` solo insertaba Review, nunca actualizaba `ratingAvg`/`ratingCount` en Place
+- **Fix**: `recalculatePlaceRating()` dentro de `$transaction` en create/update/remove/updateStatus
 
-### Errores al tocar lugares
-- **Raíz**: `Future.wait` en 3 llamadas fallaba si CUALQUIERA fallaba; `getPlaceReviews()` no desempaquetaba paginated response
-- **Fix**: Carga individual con try/catch; `getPlaceReviews()` desempaqueta correctamente
+### 3. Barras de rating vacías
+- **Raíz**: Seed data seteaba `ratingCount` directamente sin crear Reviews reales
+- **Fix**: Seed con `ratingCount: 0`, recálculo automático desde Reviews reales
 
-### Mapa sin markers
-- **Raíz**: `GeoRepository` no retornaba `latitude`/`longitude` en la respuesta; todos los markers se colocaban en `(0, 0)`
-- **Fix**: Agregados `latitude`/`longitude` a `findByBoundsSQLite` y `findNearbySQLite`
+### 4. UI no refresca después de crear reseña
+- **Raíz**: `placeDetailProvider` mantenía data stale
+- **Fix**: `ref.invalidate(placeDetailProvider(widget.placeId))` después de crear reseña
 
-### Búsqueda incorrecta
-- **Raíz**: Backend buscaba en `name`, `description`, y `address`; "El Palmar" matcheaba "ho" por su descripción
-- **Fix**: Búsqueda limitada a `name` y `address`
+### 5. Rating con exceso de decimales (4.666666666667)
+- **Raíz**: `'$averageRating'` mostraba valor raw sin formatear
+- **Fix**: `averageRating.toStringAsFixed(1)` en todas las pantallas (home, detail, list, search, favorites)
 
-### Error al cancelar búsqueda
-- **Raíz**: `Navigator.pop(context)` fallaba porque la ruta fue reemplazada con `context.go('/search')`
-- **Fix**: Cambiado a `context.go('/map')`
+### 6. "Lugar" no muestra nombre al crear reseña
+- **Raíz**: `CreateReviewScreen` solo recibía `placeId`, no nombre
+- **Fix**: Agregado `placeName` parameter, pasado vía `context.push(..., extra: place.name)`
 
-### Pixel overflow en Explorar
-- **Raíz**: `_CategoryCard` sin `Flexible`/`mainAxisSize.min`
-- **Fix**: Agregado `Flexible` al Text y `mainAxisSize: MainAxisSize.min` al Column
+### 7. Fecha de visita no se muestra en input
+- **Raíz**: `InputDecorator` child era `const` con texto hardcodeado
+- **Fix**: Child dinámico según `_visitDate`
 
-### 401 sin redirect
-- **Raíz**: Interceptor limpiaba token pero no redirigía a login
-- **Fix**: Agregado redirect a `/login` con `rootNavigatorKey`
+### 8. Favoritos muestra rating 0
+- **Raíz**: Flutter buscaba `place['rating']['average']` pero API retorna `place['ratingAvg']`
+- **Fix**: Cambiado a `place['ratingAvg']`
+
+### 9. Búsqueda muestra rating 0
+- **Raíz**: Mismo problema que favoritos
+- **Fix**: Cambiado a `result['ratingAvg']`
 
 ---
 
@@ -105,47 +148,34 @@ Sesión completa de debugging y fixes masivos. Se identificaron y corrigieron **
 
 ---
 
-## Funcionalidades Corregidas
+## Funcionalidades Implementadas
 
-### Home Screen
-- Categorías, lugares destacados, eventos y promociones cargan correctamente
-- Tap en categoría → navega a lista filtrada por categoría
-- Promociones ahora se muestran (antes siempre vacías)
+### Sistema de Reseñas (API)
+- Publicación inmediata de reseñas (status PUBLISHED)
+- Recálculo automático de ratingAvg/ratingCount en transacción
+- Soft delete (DELETED es terminal, no reversible)
+- Moderación admin (HIDDEN/PUBLISHED/DELETED)
+- Auditoría (moderatedAt, moderatedBy)
+- Empresa puede responder pero no moderar
+- Validación: no editar reseñas DELETED/HIDDEN
+- Validación: no restaurar reseñas DELETED
 
-### Categorías (Places List)
-- Loading spinner resolve correctamente (antes loop infinito)
-- Filtrado por categoría funciona via `categorySlug`
-- Scroll infinito funciona (`hasNext`/`hasPrevious` calculados correctamente)
-- Cada categoría tiene su propio provider (no hay contaminación de datos)
-
-### Mapa
-- Markers se muestran en Santa Cruz (antes en 0,0)
-- Badge de lugares funciona
-- `myLocationEnabled` deshabilitado (sin permisos)
-
-### Búsqueda
-- Búsqueda por nombre funciona correctamente
-- Cancelar vuelve al mapa sin error
-- Resultados más precisos (solo name/address, no description)
-
-### Detalle de Lugar
-- Carga sin error (antes fallaba si photos/reviews fallaban)
-- Star rating muestra estrellas correctas (star_outline para vacías)
-- Rating distribution calculada desde reviews reales
-
-### Navegación
-- Bottom nav highlight funciona con query params
-- 401 redirige a login automáticamente
-- `categoryName` persiste via query param
+### UI Flutter
+- Crear reseña muestra nombre del lugar real
+- Fecha de visita se muestra correctamente en input
+- Rating promedio formateado a 1 decimal en todas las pantallas
+- Favoritos muestra rating real
+- Búsqueda muestra rating real
+- Detalle del lugar se refresca después de crear reseña
 
 ---
 
 ## Pendiente para el Usuario
 
-1. **Google Maps API Key**: Reemplazar `YOUR_GOOGLE_MAPS_API_KEY` en `app/android/app/src/main/AndroidManifest.xml`
-2. **Firebase (opcional)**: Configurar para Google Login
-3. **Regenerar Prisma Client**: `cd api && npx prisma generate`
-4. **Reconstruir BD SQLite**: `cd api && node setup-db.js sqlite --seed`
+1. **Regenerar Prisma Client**: `cd api && npx prisma generate`
+2. **Reconstruir BD SQLite**: `cd api && npx prisma db push --force-reset && npx prisma db seed`
+3. **Google Maps API Key**: Reemplazar `YOUR_GOOGLE_MAPS_API_KEY` en `app/android/app/src/main/AndroidManifest.xml`
+4. **Firebase (opcional)**: Configurar para Google Login
 
 ---
 
@@ -159,13 +189,12 @@ Sesión completa de debugging y fixes masivos. Se identificaron y corrigieron **
 3. **Profile screen**: Menús "Mis Reseñas", "Idioma", "Acerca de", "Privacidad" con handlers vacíos
 4. **Edit profile**: Botón "Guardar" no funciona (TODO)
 5. **Settings**: Toggles de notificaciones, sonido, ubicación no funcionan (TODO)
-6. **Weather widget**: Tests pendientes
-7. **Place detail**: Mapa embebido muestra placeholder gris
+6. **Place detail**: Mapa embebido muestra placeholder gris
 
-### Mejoras
-8. **Seed expandido**: 50-80 lugares reales de Santa Cruz
-9. **Fotos de lugares**: PlacePhotos con URLs de Unsplash
-10. **Reviews de ejemplo**: 3-5 reviews para places populares
+### Sistema de Reseñas — Futuro
+7. **Moderación automática**: Integrar IA para detectar spam/fraude → status UNDER_REVIEW
+8. **Sistema de reportes**: Modelo ReviewReport + endpoint de denuncia
+9. **Notificaciones**: Notificar a empresa cuando responden a su reseña
 
 ---
 
@@ -173,7 +202,7 @@ Sesión completa de debugging y fixes masivos. Se identificaron y corrigieron **
 
 ```bash
 # 1. API
-cd api && npm run start:dev
+cd api && npx prisma generate && npx prisma db push --force-reset && npx prisma db seed && npm run start:dev
 
 # 2. Flutter
 cd app && flutter clean && flutter pub get && flutter run
@@ -183,11 +212,11 @@ Email: maria@gmail.com
 Contraseña: password123
 
 # 4. Probar fixes
-- Home: Ver categorías, lugares destacados, eventos, promociones
-- Tap categoría: Debe cargar lugares filtrados
-- Mapa: Debe mostrar markers en Santa Cruz
-- Búsqueda: Buscar "h" → resultados por nombre
-- Cancelar búsqueda: Vuelve al mapa sin error
+- Crear reseña: Debe mostrar nombre del lugar, fecha funcional, rating actualiza
+- Detalle lugar: Rating con 1 decimal, barras de rating correctas
+- Favoritos: Rating real (no 0)
+- Búsqueda: Rating real (no 0)
+- Home: Rating con 1 decimal en cada lugar
 ```
 
 ---
@@ -196,10 +225,10 @@ Contraseña: password123
 
 | Métrica | Valor |
 |---------|-------|
-| Commits realizados | 1 |
-| Archivos modificados | 23 |
-| Líneas agregadas | ~283 |
-| Líneas eliminadas | ~118 |
-| Bugs corregidos | 35+ |
-| Backend archivos modificados | 5 |
-| Flutter archivos modificados | 18 |
+| Commits realizados | 1 (pendiente) |
+| Archivos modificados | 25 |
+| Archivos nuevos | 5 |
+| Backend archivos modificados | 14 |
+| Flutter archivos modificados | 7 |
+| Bugs corregidos | 9 |
+| Tests pasando | 36/36 |

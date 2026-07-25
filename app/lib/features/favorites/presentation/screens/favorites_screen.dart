@@ -101,8 +101,7 @@ class _FavoritePlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final photos = place['photos'] as List<dynamic>? ?? [];
     final photoUrl = photos.isNotEmpty ? photos[0]['url'] : null;
-    final rating = place['rating'] as Map<String, dynamic>? ?? {};
-    final averageRating = rating['average'] ?? 0;
+    final averageRating = place['ratingAvg'] ?? 0;
     final category = place['category'] as Map<String, dynamic>? ?? {};
 
     return Card(
@@ -162,7 +161,7 @@ class _FavoritePlaceCard extends StatelessWidget {
                         const Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
                         Text(
-                          '$averageRating',
+                          '${averageRating is double ? averageRating.toStringAsFixed(1) : averageRating}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],

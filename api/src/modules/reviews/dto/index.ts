@@ -44,3 +44,5 @@ export class UpdateReviewDto {
   @IsString({ each: true })
   photos?: string[];
 }
+
+export { UpdateReviewStatusDto } from './update-review-status.dto';

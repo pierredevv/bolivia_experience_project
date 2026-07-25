@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdatePlaceDto, EmpresaReviewsDto } from './dto';
 import { PaginatedResponse } from '../../common/dto/pagination.dto';
+import { ReviewStatus } from '../../common/constants/review-status';
 
 @Injectable()
 export class EmpresaService {
@@ -60,9 +61,19 @@ export class EmpresaService {
     const limit = dto.limit ?? 20;
     const skip = (page - 1) * limit;
 
+    // Empresa solo ve PUBLISHED y HIDDEN (nunca DELETED ni UNDER_REVIEW)
+    const where: any = { placeId: place.id };
+    if (dto.filter === 'published') {
+      where.status = ReviewStatus.PUBLISHED;
+    } else if (dto.filter === 'hidden') {
+      where.status = ReviewStatus.HIDDEN;
+    } else {
+      where.status = { in: [ReviewStatus.PUBLISHED, ReviewStatus.HIDDEN] };
+    }
+
     const [reviews, total] = await Promise.all([
       this.prisma.review.findMany({
-        where: { placeId: place.id },
+        where,
         include: {
           user: {
             select: { id: true, name: true, email: true, photoUrl: true },
@@ -77,7 +88,7 @@ export class EmpresaService {
         take: limit,
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.review.count({ where: { placeId: place.id } }),
+      this.prisma.review.count({ where }),
     ]);
 
     return new PaginatedResponse(reviews, total, page, limit);
@@ -92,17 +103,15 @@ export class EmpresaService {
       throw new NotFoundException('No place found for this user');
     }
 
-    const [totalReviews, approvedReviews, pendingReviews, favoriteCount] =
-      await Promise.all([
-        this.prisma.review.count({ where: { placeId: place.id } }),
-        this.prisma.review.count({
-          where: { placeId: place.id, isApproved: true },
-        }),
-        this.prisma.review.count({
-          where: { placeId: place.id, isApproved: false },
-        }),
-        this.prisma.favorite.count({ where: { placeId: place.id } }),
-      ]);
+    const [totalReviews, publishedReviews, favoriteCount] = await Promise.all([
+      this.prisma.review.count({
+        where: { placeId: place.id, status: { not: ReviewStatus.DELETED } },
+      }),
+      this.prisma.review.count({
+        where: { placeId: place.id, status: ReviewStatus.PUBLISHED },
+      }),
+      this.prisma.favorite.count({ where: { placeId: place.id } }),
+    ]);
 
     return {
       placeId: place.id,
@@ -110,8 +119,7 @@ export class EmpresaService {
       ratingAvg: place.ratingAvg,
       ratingCount: place.ratingCount,
       totalReviews,
-      approvedReviews,
-      pendingReviews,
+      publishedReviews,
       favoriteCount,
     };
   }
@@ -126,10 +134,15 @@ export class EmpresaService {
     }
 
     const [totalReviews, favoriteCount, recentReviews] = await Promise.all([
-      this.prisma.review.count({ where: { placeId: place.id } }),
+      this.prisma.review.count({
+        where: { placeId: place.id, status: { not: ReviewStatus.DELETED } },
+      }),
       this.prisma.favorite.count({ where: { placeId: place.id } }),
       this.prisma.review.findMany({
-        where: { placeId: place.id },
+        where: {
+          placeId: place.id,
+          status: { in: [ReviewStatus.PUBLISHED, ReviewStatus.HIDDEN] },
+        },
         take: 5,
         orderBy: { createdAt: 'desc' },
         include: {

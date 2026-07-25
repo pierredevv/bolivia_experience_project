@@ -320,8 +320,7 @@ class _SearchResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final photos = result['photos'] as List<dynamic>? ?? [];
     final photoUrl = photos.isNotEmpty ? photos[0]['url'] : null;
-    final rating = result['rating'] as Map<String, dynamic>? ?? {};
-    final averageRating = rating['average'] ?? 0;
+    final averageRating = result['ratingAvg'] ?? 0;
     final category = result['category'] as Map<String, dynamic>? ?? {};
 
     return Card(
@@ -381,7 +380,7 @@ class _SearchResultCard extends StatelessWidget {
                         const Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
                         Text(
-                          '$averageRating',
+                          '${averageRating is double ? averageRating.toStringAsFixed(1) : averageRating}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],

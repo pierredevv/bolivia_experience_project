@@ -39,4 +39,9 @@ export class UpdatePlaceDto {
   instagram?: string;
 }
 
-export class EmpresaReviewsDto extends PaginationDto {}
+export class EmpresaReviewsDto extends PaginationDto {
+  @ApiPropertyOptional({ enum: ['all', 'published', 'hidden'] })
+  @IsOptional()
+  @IsString()
+  filter?: 'all' | 'published' | 'hidden';
+}

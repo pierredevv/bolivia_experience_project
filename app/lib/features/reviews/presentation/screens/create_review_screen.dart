@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../config/colors.dart';
+import '../../../places/presentation/providers/place_detail_provider.dart';
 import '../providers/reviews_provider.dart';
 
 class CreateReviewScreen extends ConsumerStatefulWidget {
   final String placeId;
+  final String placeName;
 
-  const CreateReviewScreen({super.key, required this.placeId});
+  const CreateReviewScreen({super.key, required this.placeId, required this.placeName});
 
   @override
   ConsumerState<CreateReviewScreen> createState() => _CreateReviewScreenState();
@@ -78,9 +80,9 @@ class _CreateReviewScreenState extends ConsumerState<CreateReviewScreen> {
                     color: AppColors.neutral200,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.image, color: AppColors.neutral400),
+                  child: const Icon(Icons.location_on, color: AppColors.neutral400),
                 ),
-                title: const Text('Lugar'),
+                title: Text(widget.placeName),
                 subtitle: const Text('Reseña'),
               ),
             ),
@@ -210,18 +212,17 @@ class _CreateReviewScreenState extends ConsumerState<CreateReviewScreen> {
               },
               child: InputDecorator(
                 decoration: InputDecoration(
-                  hintText: _visitDate != null
-                      ? '${_visitDate!.day}/${_visitDate!.month}/${_visitDate!.year}'
-                      : 'Seleccionar fecha',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Seleccionar fecha'),
-                    Icon(Icons.calendar_today),
+                    Text(_visitDate != null
+                        ? '${_visitDate!.day}/${_visitDate!.month}/${_visitDate!.year}'
+                        : 'Seleccionar fecha'),
+                    const Icon(Icons.calendar_today),
                   ],
                 ),
               ),
@@ -263,6 +264,9 @@ class _CreateReviewScreenState extends ConsumerState<CreateReviewScreen> {
       );
 
       if (mounted) {
+        // Invalidar el provider del detalle del lugar para que se recargue
+        ref.invalidate(placeDetailProvider(widget.placeId));
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Reseña publicada exitosamente'),

@@ -26,7 +26,8 @@ model User {
   points        Int      @default(0)
 
   places              Place[]
-  reviews             Review[]
+  reviews             Review[]          @relation("ReviewAuthor")
+  reviewsModerated    Review[]          @relation("ReviewModerator")
   favorites           Favorite[]
   replies             ReviewReply[]
   searchHistory       SearchHistory[]
@@ -130,24 +131,28 @@ model PlaceHour {
 }
 
 model Review {
-  id         String   @id @default(cuid())
-  userId     String   @map("user_id")
-  placeId    String   @map("place_id")
-  rating     Int
-  comment    String?
-  photos     String   @default("[]")
-  visitDate  String?  @map("visit_date")
-  isApproved Boolean  @default(false) @map("is_approved")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id             String       @id @default(cuid())
+  userId         String       @map("user_id")
+  placeId        String       @map("place_id")
+  rating         Int
+  comment        String?
+  photos         String       @default("[]")
+  visitDate      String?      @map("visit_date")
+  status         String       @default("PUBLISHED")
+  moderatedAt    DateTime?    @map("moderated_at")
+  moderatedById  String?      @map("moderated_by_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
-  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  place   Place         @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  replies ReviewReply[]
+  user         User          @relation("ReviewAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  place        Place         @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  moderatedBy  User?         @relation("ReviewModerator", fields: [moderatedById], references: [id])
+  replies      ReviewReply[]
 
   @@unique([userId, placeId])
   @@index([placeId])
   @@index([userId])
+  @@index([status])
   @@map("reviews")
 }
 

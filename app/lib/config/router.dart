@@ -123,6 +123,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/places/:id/review',
         builder: (context, state) => CreateReviewScreen(
           placeId: state.pathParameters['id']!,
+          placeName: state.extra as String? ?? '',
         ),
       ),
       GoRoute(

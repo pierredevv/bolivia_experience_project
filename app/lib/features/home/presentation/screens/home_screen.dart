@@ -446,7 +446,7 @@ class _PlaceCard extends StatelessWidget {
                       children: [
                         const Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
-                        Text('$averageRating', style: Theme.of(context).textTheme.bodySmall),
+                        Text('${averageRating is double ? averageRating.toStringAsFixed(1) : averageRating}', style: Theme.of(context).textTheme.bodySmall),
                       ],
                     ),
                   ],

@@ -146,7 +146,7 @@ class PlaceDetailScreen extends ConsumerWidget {
                     const SizedBox(width: 8),
                     const Icon(Icons.star, size: 16, color: AppColors.secondary500),
                     const SizedBox(width: 4),
-                    Text('$averageRating ($ratingCount reseñas)'),
+                    Text('${averageRating is double ? averageRating.toStringAsFixed(1) : averageRating} ($ratingCount reseñas)'),
                   ],
                 ),
 
@@ -259,7 +259,7 @@ class PlaceDetailScreen extends ConsumerWidget {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     TextButton(
-                      onPressed: () => context.push('/places/$placeId/review'),
+                      onPressed: () => context.push('/places/$placeId/review', extra: place.name),
                       child: const Text('Escribir reseña'),
                     ),
                   ],
@@ -274,7 +274,7 @@ class PlaceDetailScreen extends ConsumerWidget {
                         Column(
                           children: [
                             Text(
-                              '$averageRating',
+                              '${averageRating is double ? averageRating.toStringAsFixed(1) : averageRating}',
                               style: Theme.of(context).textTheme.displayLarge?.copyWith(
                                 color: AppColors.primary700,
                               ),

@@ -141,13 +141,13 @@ export class PlacesService {
         photos: { orderBy: { displayOrder: 'asc' } },
         hours: { orderBy: { dayOfWeek: 'asc' } },
         reviews: {
-          where: { isApproved: true },
+          where: { status: 'PUBLISHED' },
           include: { user: { select: { id: true, name: true, photoUrl: true } } },
           orderBy: { createdAt: 'desc' },
           take: 5,
         },
         _count: {
-          select: { reviews: { where: { isApproved: true } }, favorites: true },
+          select: { reviews: { where: { status: 'PUBLISHED' } }, favorites: true },
         },
       },
     });

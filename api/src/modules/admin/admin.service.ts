@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdminUsersDto, AdminReviewsDto } from './dto';
 import { PaginatedResponse } from '../../common/dto/pagination.dto';
+import { ReviewStatus } from '../../common/constants/review-status';
 
 @Injectable()
 export class AdminService {
@@ -56,9 +57,13 @@ export class AdminService {
     const skip = (page - 1) * limit;
 
     if (dto.status === 'pending') {
-      where.isApproved = false;
+      where.status = ReviewStatus.UNDER_REVIEW;
     } else if (dto.status === 'approved') {
-      where.isApproved = true;
+      where.status = ReviewStatus.PUBLISHED;
+    } else if (dto.status === 'hidden') {
+      where.status = ReviewStatus.HIDDEN;
+    } else if (dto.status === 'deleted') {
+      where.status = ReviewStatus.DELETED;
     }
 
     const [reviews, total] = await Promise.all([
@@ -96,7 +101,7 @@ export class AdminService {
       this.prisma.place.count({ where: { isActive: true } }),
       this.prisma.review.count(),
       this.prisma.event.count({ where: { isActive: true } }),
-      this.prisma.review.count({ where: { isApproved: false } }),
+      this.prisma.review.count({ where: { status: ReviewStatus.UNDER_REVIEW } }),
       this.prisma.review.findMany({
         take: 5,
         orderBy: { createdAt: 'desc' },

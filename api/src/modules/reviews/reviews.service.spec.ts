@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReviewsService } from './reviews.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
+import { ReviewStatus } from '../../common/constants/review-status';
 
 describe('ReviewsService', () => {
   let service: ReviewsService;
@@ -15,10 +16,15 @@ describe('ReviewsService', () => {
       update: jest.fn(),
       delete: jest.fn(),
       count: jest.fn(),
+      aggregate: jest.fn(),
     },
     reviewReply: {
       create: jest.fn(),
     },
+    place: {
+      update: jest.fn(),
+    },
+    $transaction: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -40,13 +46,14 @@ describe('ReviewsService', () => {
   });
 
   describe('findByPlace', () => {
-    it('should return approved reviews for a place', async () => {
+    it('should return published reviews for a place', async () => {
       const mockReviews = [
         {
           id: 'review-1',
           placeId: 'place-1',
           rating: 5,
           comment: 'Great place!',
+          status: ReviewStatus.PUBLISHED,
           user: { id: 'user-1', name: 'Test User', photoUrl: null },
           replies: [],
         },
@@ -61,12 +68,12 @@ describe('ReviewsService', () => {
       expect(result.meta.total).toBe(1);
       expect(mockPrisma.review.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ placeId: 'place-1', isApproved: true }),
+          where: expect.objectContaining({ placeId: 'place-1', status: ReviewStatus.PUBLISHED }),
         })
       );
     });
 
-    it('should only return approved reviews (not pending)', async () => {
+    it('should only return published reviews', async () => {
       mockPrisma.review.findMany.mockResolvedValue([]);
       mockPrisma.review.count.mockResolvedValue(0);
 
@@ -74,34 +81,44 @@ describe('ReviewsService', () => {
 
       expect(mockPrisma.review.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ isApproved: true }),
+          where: expect.objectContaining({ status: ReviewStatus.PUBLISHED }),
         })
       );
     });
   });
 
   describe('create', () => {
-    it('should create review for authenticated user', async () => {
+    it('should create review with PUBLISHED status', async () => {
       const createDto = {
         rating: 5,
         comment: 'Excellent service!',
         photos: ['https://example.com/photo1.jpg'],
       };
 
-      mockPrisma.review.findUnique.mockResolvedValue(null);
-      mockPrisma.review.create.mockResolvedValue({
+      const mockReview = {
         id: 'review-new',
         userId: 'user-1',
         placeId: 'place-1',
         ...createDto,
+        status: ReviewStatus.PUBLISHED,
         user: { id: 'user-1', name: 'Test User', photoUrl: null },
+      };
+
+      mockPrisma.review.findUnique.mockResolvedValue(null);
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          review: {
+            create: jest.fn().mockResolvedValue(mockReview),
+            aggregate: jest.fn().mockResolvedValue({ _avg: { rating: 5 }, _count: { rating: 1 } }),
+          },
+          place: { update: jest.fn() },
+        };
+        return fn(tx);
       });
 
       const result = await service.create('user-1', 'place-1', createDto);
 
-      expect(result.userId).toBe('user-1');
-      expect(result.placeId).toBe('place-1');
-      expect(result.rating).toBe(5);
+      expect(result.status).toBe(ReviewStatus.PUBLISHED);
     });
 
     it('should throw ConflictException if user already reviewed place', async () => {
@@ -123,7 +140,7 @@ describe('ReviewsService', () => {
   });
 
   describe('update', () => {
-    it('should update own review', async () => {
+    it('should update own published review', async () => {
       const updateDto = {
         rating: 4,
         comment: 'Updated comment',
@@ -133,13 +150,19 @@ describe('ReviewsService', () => {
         id: 'review-1',
         userId: 'user-1',
         placeId: 'place-1',
+        rating: 5,
+        status: ReviewStatus.PUBLISHED,
       });
 
-      mockPrisma.review.update.mockResolvedValue({
-        id: 'review-1',
-        userId: 'user-1',
-        placeId: 'place-1',
-        ...updateDto,
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          review: {
+            update: jest.fn().mockResolvedValue({ id: 'review-1', ...updateDto }),
+            aggregate: jest.fn().mockResolvedValue({ _avg: { rating: 4 }, _count: { rating: 1 } }),
+          },
+          place: { update: jest.fn() },
+        };
+        return fn(tx);
       });
 
       const result = await service.update('user-1', 'review-1', updateDto);
@@ -153,11 +176,25 @@ describe('ReviewsService', () => {
         id: 'review-1',
         userId: 'other-user',
         placeId: 'place-1',
+        status: ReviewStatus.PUBLISHED,
       });
 
       await expect(
         service.update('user-1', 'review-1', { comment: 'Hacked' })
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw BadRequestException when editing HIDDEN review', async () => {
+      mockPrisma.review.findUnique.mockResolvedValue({
+        id: 'review-1',
+        userId: 'user-1',
+        placeId: 'place-1',
+        status: ReviewStatus.HIDDEN,
+      });
+
+      await expect(
+        service.update('user-1', 'review-1', { comment: 'Test' })
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException for invalid review id', async () => {
@@ -169,20 +206,52 @@ describe('ReviewsService', () => {
     });
   });
 
-  describe('approve', () => {
-    it('should set isApproved to true', async () => {
-      mockPrisma.review.update.mockResolvedValue({
+  describe('updateStatus', () => {
+    it('should update review status with audit fields', async () => {
+      mockPrisma.review.findUnique.mockResolvedValue({
         id: 'review-1',
-        isApproved: true,
+        status: ReviewStatus.PUBLISHED,
+        placeId: 'place-1',
       });
 
-      const result = await service.approve('review-1');
-
-      expect(result.isApproved).toBe(true);
-      expect(mockPrisma.review.update).toHaveBeenCalledWith({
-        where: { id: 'review-1' },
-        data: { isApproved: true },
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          review: {
+            update: jest.fn().mockResolvedValue({ id: 'review-1', status: ReviewStatus.HIDDEN }),
+            aggregate: jest.fn().mockResolvedValue({ _avg: { rating: 5 }, _count: { rating: 1 } }),
+          },
+          place: { update: jest.fn() },
+        };
+        return fn(tx);
       });
+
+      const result = await service.updateStatus('review-1', ReviewStatus.HIDDEN, 'admin-1');
+
+      expect(result.status).toBe(ReviewStatus.HIDDEN);
+    });
+
+    it('should return same review if status unchanged', async () => {
+      const existingReview = {
+        id: 'review-1',
+        status: ReviewStatus.PUBLISHED,
+      };
+
+      mockPrisma.review.findUnique.mockResolvedValue(existingReview);
+
+      const result = await service.updateStatus('review-1', ReviewStatus.PUBLISHED, 'admin-1');
+
+      expect(result).toEqual(existingReview);
+    });
+
+    it('should throw BadRequestException when restoring DELETED review', async () => {
+      mockPrisma.review.findUnique.mockResolvedValue({
+        id: 'review-1',
+        status: ReviewStatus.DELETED,
+      });
+
+      await expect(
+        service.updateStatus('review-1', ReviewStatus.PUBLISHED, 'admin-1')
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -196,6 +265,7 @@ describe('ReviewsService', () => {
         createdAt: new Date(),
       };
 
+      mockPrisma.review.findUnique.mockResolvedValue({ id: 'review-1' });
       mockPrisma.reviewReply.create.mockResolvedValue(mockReply);
 
       const result = await service.respond('user-1', 'review-1', 'Thank you for your feedback!');
@@ -212,20 +282,29 @@ describe('ReviewsService', () => {
   });
 
   describe('remove', () => {
-    it('should delete own review', async () => {
+    it('should soft delete own review', async () => {
       const mockReview = {
         id: 'review-1',
         userId: 'user-1',
         placeId: 'place-1',
+        status: ReviewStatus.PUBLISHED,
       };
 
       mockPrisma.review.findUnique.mockResolvedValue(mockReview);
-      mockPrisma.review.delete.mockResolvedValue(mockReview);
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          review: {
+            update: jest.fn().mockResolvedValue({ ...mockReview, status: ReviewStatus.DELETED }),
+            aggregate: jest.fn().mockResolvedValue({ _avg: { rating: 5 }, _count: { rating: 1 } }),
+          },
+          place: { update: jest.fn() },
+        };
+        return fn(tx);
+      });
 
       const result = await service.remove('user-1', 'review-1', false);
 
-      expect(result).toEqual(mockReview);
-      expect(mockPrisma.review.delete).toHaveBeenCalledWith({ where: { id: 'review-1' } });
+      expect(result.message).toBe('Review deleted');
     });
 
     it('should allow admin to delete any review', async () => {
@@ -233,14 +312,24 @@ describe('ReviewsService', () => {
         id: 'review-1',
         userId: 'other-user',
         placeId: 'place-1',
+        status: ReviewStatus.PUBLISHED,
       };
 
       mockPrisma.review.findUnique.mockResolvedValue(mockReview);
-      mockPrisma.review.delete.mockResolvedValue(mockReview);
+      mockPrisma.$transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          review: {
+            update: jest.fn(),
+            aggregate: jest.fn().mockResolvedValue({ _avg: { rating: 5 }, _count: { rating: 1 } }),
+          },
+          place: { update: jest.fn() },
+        };
+        return fn(tx);
+      });
 
       const result = await service.remove('admin-user', 'review-1', true);
 
-      expect(result).toEqual(mockReview);
+      expect(result.message).toBe('Review deleted');
     });
 
     it('should throw ForbiddenException when deleting others review as non-admin', async () => {
@@ -248,10 +337,24 @@ describe('ReviewsService', () => {
         id: 'review-1',
         userId: 'other-user',
         placeId: 'place-1',
+        status: ReviewStatus.PUBLISHED,
       });
 
       await expect(service.remove('user-1', 'review-1', false)).rejects.toThrow(
         ForbiddenException
+      );
+    });
+
+    it('should throw BadRequestException when deleting already deleted review', async () => {
+      mockPrisma.review.findUnique.mockResolvedValue({
+        id: 'review-1',
+        userId: 'user-1',
+        placeId: 'place-1',
+        status: ReviewStatus.DELETED,
+      });
+
+      await expect(service.remove('user-1', 'review-1', false)).rejects.toThrow(
+        BadRequestException
       );
     });
   });
