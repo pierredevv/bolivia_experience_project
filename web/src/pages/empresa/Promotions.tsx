@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, Tag, Calendar, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Tag, Calendar, Loader2, Sparkles, Clock, CheckCircle2, XCircle } from 'lucide-react'
 import { usePromotions, useCreatePromotion, useUpdatePromotion, useDeletePromotion } from '../../hooks/usePromotions'
 import { useEmpresaPlace } from '../../hooks/useEmpresa'
 import Modal from '../../components/ui/Modal'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import Input from '../../components/ui/Input'
 import Textarea from '../../components/ui/Textarea'
-import EmptyState from '../../components/ui/EmptyState'
 import { toast } from 'sonner'
 
 interface PromotionForm {
@@ -29,6 +28,15 @@ const defaultForm: PromotionForm = {
   discountPercentage: '',
   startDate: '',
   endDate: '',
+}
+
+function getPromoStatus(startDate: string, endDate: string): { label: string; color: string } {
+  const now = new Date()
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  if (now < start) return { label: 'Próxima', color: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' }
+  if (now > end) return { label: 'Expirada', color: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
+  return { label: 'Activa', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' }
 }
 
 export default function EmpresaPromotions() {
@@ -102,69 +110,127 @@ export default function EmpresaPromotions() {
     }
   }
 
-  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('es-BO')
+  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' })
+
+  const openCreate = () => { setEditingId(null); setForm(defaultForm); setIsModalOpen(true) }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Promociones</h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Crea ofertas para atraer clientes</p>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Promociones</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Crea ofertas para atraer más clientes</p>
         </div>
         <button
-          onClick={() => { setEditingId(null); setForm(defaultForm); setIsModalOpen(true) }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-secondary-700 text-white rounded-lg font-medium hover:bg-secondary-800 transition-colors"
+          onClick={openCreate}
+          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 active:scale-95 transition-all shadow-sm shadow-emerald-600/20"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
           Nueva Promoción
         </button>
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-secondary-700" />
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
         </div>
       ) : promotions.length === 0 ? (
-        <EmptyState
-          icon={Tag}
-          title="No hay promociones"
-          description="Crea ofertas para atraer más clientes a tu negocio."
-          action={{ label: 'Crear Promoción', onClick: () => { setEditingId(null); setForm(defaultForm); setIsModalOpen(true) } }}
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {promotions.map((promo: any) => (
-            <div key={promo.id} className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm overflow-hidden">
-              <div className="p-4 bg-gradient-to-r from-secondary-500 to-secondary-600">
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-bold text-white">
-                    {promo.discountPercentage ? `-${promo.discountPercentage}%` : 'Oferta'}
-                  </span>
-                  <Tag className="h-8 w-8 text-white/50" />
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{promo.title}</h3>
-                {promo.description && <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1 line-clamp-2">{promo.description}</p>}
-                <div className="flex items-center gap-2 mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-                  <Calendar className="h-4 w-4" />
-                  {formatDate(promo.startDate)} - {formatDate(promo.endDate)}
-                </div>
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                  <button onClick={() => handleEdit(promo)} className="flex-1 py-2 text-sm font-medium text-secondary-700 dark:text-secondary-400 hover:bg-secondary-50 dark:hover:bg-secondary-900/20 rounded-lg transition-colors flex items-center justify-center gap-1">
-                    <Pencil className="h-4 w-4" /> Editar
-                  </button>
-                  <button
-                    onClick={() => setDeleteId(promo.id)}
-                    disabled={deletePromotion.isPending}
-                    className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-neutral-500 dark:text-neutral-400 hover:text-red-600 disabled:opacity-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+        /* ── Premium Empty State ── */
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="relative mb-5">
+            <div className="h-20 w-20 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center">
+              <Tag className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
             </div>
-          ))}
+            <div className="absolute -top-1 -right-1 h-6 w-6 bg-amber-400 rounded-full flex items-center justify-center">
+              <Sparkles className="h-3.5 w-3.5 text-white" />
+            </div>
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Sin promociones activas</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1.5 max-w-xs">
+            Crea tu primera oferta para destacar tu negocio y atraer más visitantes.
+          </p>
+          <button
+            onClick={openCreate}
+            className="mt-6 flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-600/20"
+          >
+            <Plus className="h-4 w-4" />
+            Crear primera promoción
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {promotions.map((promo: any) => {
+            const status = getPromoStatus(promo.startDate, promo.endDate)
+            const isExpired = status.label === 'Expirada'
+            return (
+              <div
+                key={promo.id}
+                className={`group relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col ${isExpired ? 'opacity-70' : ''}`}
+              >
+                {/* Hover glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/4 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl pointer-events-none" />
+
+                {/* Card Top: Discount + Status */}
+                <div className="relative flex items-start justify-between p-5 pb-4">
+                  {/* Discount badge */}
+                  <div className="flex items-center gap-3">
+                    <div className="bg-emerald-50 dark:bg-emerald-900/30 p-2.5 rounded-xl">
+                      <Tag className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    {promo.discountPercentage && (
+                      <div>
+                        <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                          -{promo.discountPercentage}%
+                        </span>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 leading-none mt-0.5">descuento</p>
+                      </div>
+                    )}
+                  </div>
+                  {/* Status badge */}
+                  <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${status.color}`}>
+                    {status.label === 'Activa' && <CheckCircle2 className="h-3 w-3" />}
+                    {status.label === 'Expirada' && <XCircle className="h-3 w-3" />}
+                    {status.label === 'Próxima' && <Clock className="h-3 w-3" />}
+                    {status.label}
+                  </span>
+                </div>
+
+                {/* Card Body */}
+                <div className="px-5 pb-5 flex flex-col flex-1">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 leading-snug">{promo.title}</h3>
+                  {promo.description && (
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">{promo.description}</p>
+                  )}
+
+                  {/* Date range */}
+                  <div className="flex items-center gap-2 mt-3 text-xs text-slate-400 dark:text-slate-500">
+                    <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>{formatDate(promo.startDate)} — {formatDate(promo.endDate)}</span>
+                  </div>
+
+                  {/* Divider + Actions */}
+                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button
+                      onClick={() => handleEdit(promo)}
+                      className="flex-1 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => setDeleteId(promo.id)}
+                      disabled={deletePromotion.isPending}
+                      className="p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+                      aria-label="Eliminar promoción"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -185,12 +251,20 @@ export default function EmpresaPromotions() {
             <Input label="Fecha fin" type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} required />
           </div>
           <Input label="URL Foto" value={form.photoUrl} onChange={(e) => setForm({ ...form, photoUrl: e.target.value })} />
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-            <button type="button" onClick={() => { setIsModalOpen(false); setEditingId(null) }} className="px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+            <button
+              type="button"
+              onClick={() => { setIsModalOpen(false); setEditingId(null) }}
+              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
+            >
               Cancelar
             </button>
-            <button type="submit" disabled={createPromotion.isPending || updatePromotion.isPending} className="px-4 py-2 rounded-lg bg-secondary-700 text-white text-sm font-medium hover:bg-secondary-800 disabled:opacity-50">
-              {createPromotion.isPending || updatePromotion.isPending ? 'Guardando...' : editingId ? 'Actualizar' : 'Crear'}
+            <button
+              type="submit"
+              disabled={createPromotion.isPending || updatePromotion.isPending}
+              className="px-5 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+            >
+              {createPromotion.isPending || updatePromotion.isPending ? 'Guardando...' : editingId ? 'Actualizar' : 'Crear Promoción'}
             </button>
           </div>
         </form>
@@ -201,7 +275,7 @@ export default function EmpresaPromotions() {
         onClose={() => setDeleteId(null)}
         onConfirm={handleDelete}
         title="Eliminar Promoción"
-        message="¿Estás seguro de que deseas eliminar esta promoción?"
+        message="¿Estás seguro de que deseas eliminar esta promoción? Esta acción no se puede deshacer."
         confirmLabel="Eliminar"
         variant="danger"
         isLoading={deletePromotion.isPending}
