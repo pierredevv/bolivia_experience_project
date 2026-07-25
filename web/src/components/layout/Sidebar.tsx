@@ -17,10 +17,9 @@ interface SidebarProps {
 
 export default function Sidebar({ navigation, basePath, isOpen, onClose, onLogout }: SidebarProps) {
   const getLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-      isActive
-        ? 'border-l-4 border-[#38A169] bg-emerald-500/10 text-emerald-400 font-medium'
-        : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border-l-4 border-transparent'
+    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${isActive
+      ? 'border-l-4 border-[#38A169] bg-emerald-500/10 text-emerald-400 font-medium'
+      : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border-l-4 border-transparent'
     }`
 
   return (
@@ -30,10 +29,10 @@ export default function Sidebar({ navigation, basePath, isOpen, onClose, onLogou
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
         <div className="fixed inset-y-0 left-0 w-64 bg-[#0F172A] border-r border-slate-800 shadow-2xl flex flex-col justify-between">
           <div>
-            <div className="w-full flex items-center justify-between p-4 border-b border-slate-800 relative">
+            <div className="w-full flex items-center justify-between pl-2 pr-12 py-3 border-b border-slate-800 relative">
               <img
-                src="/LogoBoliviaExperience.png"
-                className="h-12 w-auto object-contain block mx-auto"
+                src="/BoliviaExperience.png"
+                className="h-14 w-full object-contain block mx-auto scale-110"
                 alt="Bolivia Experience"
               />
               <button
@@ -76,10 +75,10 @@ export default function Sidebar({ navigation, basePath, isOpen, onClose, onLogou
       {/* Desktop Sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-1 bg-[#0F172A] border-r border-slate-800 text-white">
-          <div className="w-full flex items-center justify-center p-4 border-b border-slate-800">
+          <div className="w-full flex items-center justify-center px-2 py-3 border-b border-slate-800">
             <img
-              src="/LogoBoliviaExperience.png"
-              className="h-14 w-auto object-contain block mx-auto"
+              src="/BoliviaExperience.png"
+              className="h-16 w-full object-contain block mx-auto scale-110"
               alt="Bolivia Experience"
             />
           </div>
