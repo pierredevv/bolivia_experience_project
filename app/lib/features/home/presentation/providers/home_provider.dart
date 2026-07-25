@@ -35,7 +35,7 @@ class HomeState {
       categories: categories ?? this.categories,
       todayEvents: todayEvents ?? this.todayEvents,
       promotions: promotions ?? this.promotions,
-      errorMessage: errorMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }
@@ -45,7 +45,7 @@ final homeServiceProvider = Provider<HomeService>((ref) {
   return HomeService(dio);
 });
 
-final homeProvider = StateNotifierProvider<HomeNotifier, HomeState>((ref) {
+final homeProvider = StateNotifierProvider.autoDispose<HomeNotifier, HomeState>((ref) {
   return HomeNotifier(ref.read(homeServiceProvider));
 });
 
@@ -59,19 +59,42 @@ class HomeNotifier extends StateNotifier<HomeState> {
   Future<void> loadHomeData() async {
     state = state.copyWith(status: HomeStatus.loading, errorMessage: null);
     try {
-      final results = await Future.wait([
-        _homeService.getFeaturedPlaces().catchError((_) => <dynamic>[]),
-        _homeService.getCategories().catchError((_) => <dynamic>[]),
-        _homeService.getTodayEvents().catchError((_) => <dynamic>[]),
-        _homeService.getPromotions().catchError((_) => <dynamic>[]),
-      ]);
+      // Load each section individually so one failure doesn't break everything
+      List<dynamic> featured = [];
+      List<dynamic> cats = [];
+      List<dynamic> events = [];
+      List<dynamic> promos = [];
+
+      try {
+        featured = await _homeService.getFeaturedPlaces();
+      } catch (e) {
+        // Featured places failed, continue with empty list
+      }
+
+      try {
+        cats = await _homeService.getCategories();
+      } catch (e) {
+        // Categories failed, continue with empty list
+      }
+
+      try {
+        events = await _homeService.getTodayEvents();
+      } catch (e) {
+        // Events failed, continue with empty list
+      }
+
+      try {
+        promos = await _homeService.getPromotions();
+      } catch (e) {
+        // Promotions failed, continue with empty list
+      }
 
       state = state.copyWith(
         status: HomeStatus.loaded,
-        featuredPlaces: results[0],
-        categories: results[1],
-        todayEvents: results[2],
-        promotions: results[3],
+        featuredPlaces: featured,
+        categories: cats,
+        todayEvents: events,
+        promotions: promos,
       );
     } catch (e) {
       state = state.copyWith(

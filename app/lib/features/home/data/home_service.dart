@@ -36,8 +36,16 @@ class HomeService {
   Future<List<dynamic>> getPromotions() async {
     final response = await _dio.get(ApiConstants.promotions);
     final data = response.data;
-    if (data is Map<String, dynamic> && data['data'] is List) {
-      return data['data'] as List<dynamic>;
+    if (data is Map<String, dynamic>) {
+      final inner = data['data'];
+      // Backend wraps in PaginatedResponse: { data: [...], meta: {...} }
+      if (inner is Map<String, dynamic> && inner['data'] is List) {
+        return inner['data'] as List<dynamic>;
+      }
+      // Fallback: direct list
+      if (inner is List) {
+        return inner;
+      }
     }
     return [];
   }

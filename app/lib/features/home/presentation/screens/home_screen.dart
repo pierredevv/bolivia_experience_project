@@ -189,7 +189,8 @@ class HomeScreen extends ConsumerWidget {
                       icon: _getCategoryIcon(category['icon']),
                       onTap: () {
                         final slug = category['slug'] ?? '';
-                        context.go('/explore?category=$slug');
+                        final name = category['name'] ?? '';
+                        context.push('/places/category/$slug?name=$name');
                       },
                     );
                   },
@@ -385,10 +386,12 @@ class _PlaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final photos = place['photos'] as List<dynamic>? ?? [];
-    final photoUrl = photos.isNotEmpty ? photos[0]['url'] : null;
+    final photos = place['photos'];
+    final photoUrl = (photos is List && photos.isNotEmpty && photos[0] is Map)
+        ? photos[0]['url']?.toString()
+        : null;
     final averageRating = place['ratingAvg'] ?? 0;
-    final category = place['category'] as Map<String, dynamic>? ?? {};
+    final category = place['category'];
 
     return GestureDetector(
       onTap: onTap,
@@ -435,7 +438,7 @@ class _PlaceCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      category['name'] ?? '',
+                      (category is Map) ? (category['name'] ?? '') : '',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 4),

@@ -25,8 +25,11 @@ import '../features/trips/presentation/screens/trips_list_screen.dart';
 import '../features/trips/presentation/screens/trip_detail_screen.dart';
 import '../features/trips/presentation/screens/create_trip_screen.dart';
 
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     redirect: (context, state) {
       final isAuthenticated = TokenManager.hasToken;
@@ -101,7 +104,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/places/category/:slug',
         builder: (context, state) => PlacesListScreen(
           categorySlug: state.pathParameters['slug']!,
-          categoryName: state.extra as String? ?? '',
+          categoryName: state.uri.queryParameters['name'] ?? state.extra as String? ?? '',
         ),
       ),
       GoRoute(

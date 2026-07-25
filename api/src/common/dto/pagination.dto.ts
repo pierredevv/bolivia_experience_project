@@ -30,15 +30,20 @@ export class PaginatedResponse<T> {
     page: number;
     limit: number;
     totalPages: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
   };
 
   constructor(data: T[], total: number, page: number, limit: number) {
+    const totalPages = Math.ceil(total / limit);
     this.data = data;
     this.meta = {
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrevious: page > 1,
     };
   }
 }

@@ -26,15 +26,15 @@ class Review {
 
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
-      id: json['id'] ?? '',
-      userId: json['user_id'] ?? '',
+      id: json['id']?.toString() ?? '',
+      userId: json['userId']?.toString() ?? '',
       userName: json['user']?['name'],
-      userPhoto: json['user']?['photo'],
-      placeId: json['place_id'] ?? '',
+      userPhoto: json['user']?['photoUrl'],
+      placeId: json['placeId']?.toString() ?? '',
       rating: json['rating'] ?? 0,
       comment: json['comment'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
+      createdAt: json['createdAt'],
+      updatedAt: json['updatedAt'],
     );
   }
 }
@@ -47,7 +47,11 @@ class ReviewsService {
   Future<List<Review>> getPlaceReviews(String placeId) async {
     final response = await _dio.get(ApiConstants.placeReviews(placeId));
     final data = response.data;
-    final List items = data['data'] ?? [];
+    // Backend wraps in PaginatedResponse: { success, data: { data: [...], meta: {...} }, timestamp }
+    final inner = data is Map<String, dynamic> ? data['data'] : data;
+    final List items = (inner is Map<String, dynamic> && inner['data'] is List)
+        ? inner['data']
+        : (inner is List ? inner : []);
     return items.map((json) => Review.fromJson(json)).toList();
   }
 

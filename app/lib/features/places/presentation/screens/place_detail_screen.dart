@@ -1,12 +1,10 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../config/api_constants.dart';
 import '../../../../config/colors.dart';
-import '../../../../core/auth/token_manager.dart';
+import '../../../../core/network/dio_provider.dart';
 import '../../../trips/data/trips_service.dart';
 import '../providers/place_detail_provider.dart';
 
@@ -200,7 +198,7 @@ class PlaceDetailScreen extends ConsumerWidget {
                       icon: Icons.map_outlined,
                       label: 'Agregar a viaje',
                       color: AppColors.primary500,
-                      onTap: () => _showAddToTripSheet(context, place),
+                      onTap: () => _showAddToTripSheet(context, ref, place),
                     ),
                   ],
                 ),
@@ -283,10 +281,18 @@ class PlaceDetailScreen extends ConsumerWidget {
                             ),
                             Row(
                               children: List.generate(5, (index) {
+                                final rating = double.tryParse(averageRating.toString()) ?? 0;
+                                final roundedRating = rating.round();
+                                IconData icon;
+                                if (index < roundedRating) {
+                                  icon = Icons.star;
+                                } else if (index < rating.ceil() && index >= roundedRating) {
+                                  icon = Icons.star_half;
+                                } else {
+                                  icon = Icons.star_outline;
+                                }
                                 return Icon(
-                                   index < (double.tryParse(averageRating.toString()) ?? 0).round()
-                                      ? Icons.star
-                                      : Icons.star_half,
+                                  icon,
                                   color: AppColors.secondary500,
                                   size: 20,
                                 );
@@ -296,15 +302,15 @@ class PlaceDetailScreen extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(width: 24),
-                        const Expanded(
+                        Expanded(
                           child: Column(
-                            children: [
-                              _RatingBar(label: '5', value: 0.7),
-                              _RatingBar(label: '4', value: 0.2),
-                              _RatingBar(label: '3', value: 0.05),
-                              _RatingBar(label: '2', value: 0.03),
-                              _RatingBar(label: '1', value: 0.02),
-                            ],
+                            children: List.generate(5, (index) {
+                              final starValue = 5 - index;
+                              final count = reviews.where((r) => (r['rating'] ?? 0) == starValue).length;
+                              final total = reviews.length;
+                              final value = total > 0 ? count / total : 0.0;
+                              return _RatingBar(label: '$starValue', value: value);
+                            }),
                           ),
                         ),
                       ],
@@ -332,16 +338,8 @@ class PlaceDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _showAddToTripSheet(BuildContext context, dynamic place) {
-    final dio = Dio(BaseOptions(
-      baseUrl: ApiConstants.baseUrl,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        if (TokenManager.token != null)
-          'Authorization': 'Bearer ${TokenManager.token}',
-      },
-    ));
+  void _showAddToTripSheet(BuildContext context, WidgetRef ref, dynamic place) {
+    final dio = ref.read(dioProvider);
     final tripsService = TripsService(dio);
 
     showModalBottomSheet(

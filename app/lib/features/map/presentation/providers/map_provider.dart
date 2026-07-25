@@ -116,7 +116,7 @@ class MapNotifier extends StateNotifier<MapState> {
       if (!mounted) return;
       state = state.copyWith(
         status: MapStatus.error,
-        errorMessage: 'Error inesperado',
+        errorMessage: 'Error al cargar lugares: ${e.toString()}',
       );
     }
   }

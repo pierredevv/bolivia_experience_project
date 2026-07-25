@@ -86,7 +86,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           GoogleMap(
             initialCameraPosition: _santaCruz,
             markers: mapState.markers,
-            myLocationEnabled: true,
+            myLocationEnabled: false,
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
             onMapCreated: (controller) {

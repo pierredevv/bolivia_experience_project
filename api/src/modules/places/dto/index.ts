@@ -93,6 +93,11 @@ export class QueryPlacesDto extends PaginationDto {
   @IsString()
   categoryId?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by category slug (resolved to categoryId internally)' })
+  @IsOptional()
+  @IsString()
+  categorySlug?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

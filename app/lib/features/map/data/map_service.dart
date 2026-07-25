@@ -24,19 +24,49 @@ class MapPlace {
     this.primaryPhoto,
   });
 
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  static Map<String, dynamic>? _parseCategory(Map<String, dynamic> json) {
+    // Full category object from Prisma include
+    if (json['category'] is Map) return json['category'] as Map<String, dynamic>;
+    // Snake_case fields from GeoRepository
+    if (json['category_name'] != null) {
+      return {
+        'id': json['category_id'] ?? '',
+        'name': json['category_name'],
+        'icon': json['category_icon'] ?? 'place',
+      };
+    }
+    return null;
+  }
+
+  static String? _parsePrimaryPhoto(Map<String, dynamic> json) {
+    // Direct string from GeoRepository
+    if (json['primary_photo'] is String) return json['primary_photo'];
+    // photos array from Prisma include
+    final photos = json['photos'];
+    if (photos is List && photos.isNotEmpty && photos[0] is Map) {
+      return photos[0]['url']?.toString();
+    }
+    return null;
+  }
+
   factory MapPlace.fromJson(Map<String, dynamic> json) {
     return MapPlace(
-      id: json['id'] ?? '',
+      id: (json['id'] ?? '').toString(),
       name: json['name'] ?? '',
       address: json['address'],
-      latitude: double.parse(json['latitude'].toString()),
-      longitude: double.parse(json['longitude'].toString()),
-      ratingAvg: json['ratingAvg'],
-      ratingCount: json['ratingCount'] ?? 0,
-      category: json['category'] is Map ? json['category'] : null,
-      primaryPhoto: json['photos'] is List && (json['photos'] as List).isNotEmpty
-          ? json['photos'][0]['url']
-          : null,
+      latitude: _parseDouble(json['latitude'] ?? json['lat']),
+      longitude: _parseDouble(json['longitude'] ?? json['lng']),
+      ratingAvg: json['ratingAvg'] ?? json['rating_avg'] ?? 0,
+      ratingCount: json['ratingCount'] ?? json['rating_count'] ?? 0,
+      category: _parseCategory(json),
+      primaryPhoto: _parsePrimaryPhoto(json),
     );
   }
 
@@ -74,8 +104,13 @@ class MapService {
     );
 
     final data = response.data;
-    final List items = data['data'] ?? [];
-    return items.map((json) => MapPlace.fromJson(json)).toList();
+    // Backend response: { success, data: [...], timestamp }
+    final inner = data is Map<String, dynamic> ? data['data'] : data;
+    final List items = (inner is List) ? inner : [];
+    return items
+        .whereType<Map<String, dynamic>>()
+        .map((json) => MapPlace.fromJson(json))
+        .toList();
   }
 
   Future<List<MapPlace>> getNearbyPlaces({
@@ -97,7 +132,12 @@ class MapService {
     );
 
     final data = response.data;
-    final List items = data['data'] ?? [];
-    return items.map((json) => MapPlace.fromJson(json)).toList();
+    // Backend response: { success, data: [...], timestamp }
+    final inner = data is Map<String, dynamic> ? data['data'] : data;
+    final List items = (inner is List) ? inner : [];
+    return items
+        .whereType<Map<String, dynamic>>()
+        .map((json) => MapPlace.fromJson(json))
+        .toList();
   }
 }

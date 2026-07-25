@@ -50,14 +50,19 @@ final placesServiceProvider = Provider<PlacesService>((ref) {
   return PlacesService(dio);
 });
 
-final placesProvider = StateNotifierProvider<PlacesNotifier, PlacesState>((ref) {
-  return PlacesNotifier(ref.read(placesServiceProvider));
+final placesProvider = StateNotifierProvider.family.autoDispose<PlacesNotifier, PlacesState, String>((ref, categorySlug) {
+  final notifier = PlacesNotifier(ref.read(placesServiceProvider), categorySlug);
+  return notifier;
 });
 
 class PlacesNotifier extends StateNotifier<PlacesState> {
   final PlacesService _placesService;
+  final String _categorySlug;
 
-  PlacesNotifier(this._placesService) : super(const PlacesState());
+  PlacesNotifier(this._placesService, this._categorySlug) : super(const PlacesState()) {
+    // Auto-load when provider is created
+    loadPlacesByCategory(_categorySlug);
+  }
 
   Future<void> loadPlacesByCategory(String categorySlug) async {
     if (!mounted) return;

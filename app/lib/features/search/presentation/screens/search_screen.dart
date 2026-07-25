@@ -75,7 +75,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             onPressed: () {
               _searchController.clear();
               ref.read(searchProvider.notifier).clearSearch();
-              Navigator.pop(context);
+              context.go('/map');
             },
             child: const Text('Cancelar'),
           ),
