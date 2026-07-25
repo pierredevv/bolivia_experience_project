@@ -5,13 +5,13 @@ import '../../config/colors.dart';
 class SkeletonLoader extends StatelessWidget {
   final double width;
   final double height;
-  final BorderRadius? borderRadius;
+  final double borderRadius;
 
   const SkeletonLoader({
     super.key,
     required this.width,
     required this.height,
-    this.borderRadius,
+    this.borderRadius = 8,
   });
 
   @override
@@ -24,43 +24,81 @@ class SkeletonLoader extends StatelessWidget {
         height: height,
         decoration: BoxDecoration(
           color: AppColors.neutral200,
-          borderRadius: borderRadius ?? BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),
     );
   }
 }
 
-class PlaceCardSkeleton extends StatelessWidget {
-  const PlaceCardSkeleton({super.key});
+class SkeletonPlaceCard extends StatelessWidget {
+  const SkeletonPlaceCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return const Card(
+      margin: EdgeInsets.only(right: 12),
+      child: SizedBox(
+        width: 160,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SkeletonLoader(
+              width: 160,
+              height: 100,
+              borderRadius: 12,
+            ),
+            Padding(
+              padding: EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonLoader(
+                    width: 120,
+                    height: 16,
+                  ),
+                  SizedBox(height: 4),
+                  SkeletonLoader(
+                    width: 80,
+                    height: 12,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class SkeletonListTile extends StatelessWidget {
+  const SkeletonListTile({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
         children: [
-          const SkeletonLoader(
-            width: double.infinity,
-            height: 180,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+          SkeletonLoader(
+            width: 48,
+            height: 48,
+            borderRadius: 24,
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
+          SizedBox(width: 12),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SkeletonLoader(width: 200, height: 16),
-                const SizedBox(height: 8),
-                SkeletonLoader(width: 150, height: 12),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    SkeletonLoader(width: 60, height: 12),
-                    const SizedBox(width: 8),
-                    SkeletonLoader(width: 80, height: 12),
-                  ],
+                SkeletonLoader(
+                  width: double.infinity,
+                  height: 16,
+                ),
+                SizedBox(height: 4),
+                SkeletonLoader(
+                  width: 150,
+                  height: 12,
                 ),
               ],
             ),

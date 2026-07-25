@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { useTheme } from '../../contexts/ThemeContext'
+import Sidebar from './Sidebar'
+import Header from './Header'
 import {
   LayoutDashboard,
   MapPin,
@@ -9,6 +10,7 @@ import {
   Tag,
   BarChart3,
   Image,
+<<<<<<< HEAD
   Menu,
   X,
   LogOut,
@@ -17,15 +19,17 @@ import {
   Sun,
   Moon,
   Building2,
+=======
+>>>>>>> develop
 } from 'lucide-react'
 
 const navigation = [
-  { name: 'Dashboard', href: '/empresa', icon: LayoutDashboard },
-  { name: 'Mi Lugar', href: '/empresa/place', icon: MapPin },
-  { name: 'Reseñas', href: '/empresa/reviews', icon: Star },
-  { name: 'Promociones', href: '/empresa/promotions', icon: Tag },
-  { name: 'Estadísticas', href: '/empresa/stats', icon: BarChart3 },
-  { name: 'Fotos', href: '/empresa/photos', icon: Image },
+  { name: 'Dashboard', href: '/business', icon: LayoutDashboard },
+  { name: 'Mi Lugar', href: '/business/place', icon: MapPin },
+  { name: 'Reseñas', href: '/business/reviews', icon: Star },
+  { name: 'Promociones', href: '/business/promotions', icon: Tag },
+  { name: 'Estadísticas', href: '/business/stats', icon: BarChart3 },
+  { name: 'Fotos', href: '/business/photos', icon: Image },
 ]
 
 function SidebarContent({
@@ -113,19 +117,16 @@ function SidebarContent({
 
 export default function EmpresaLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
-  const { resolvedTheme, setTheme } = useTheme()
+  const { logout } = useAuth()
 
   const handleLogout = () => {
     logout()
-    navigate('/login')
+    navigate('/business/login')
   }
 
-  const userInitial = user?.name?.[0]?.toUpperCase() || 'E'
-
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-slate-50 transition-colors">
       {/* Mobile Drawer */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
@@ -223,6 +224,24 @@ export default function EmpresaLayout() {
           </div>
         </header>
         <main className="flex-1 p-6 lg:p-8">
+=======
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-900 transition-colors">
+      <Sidebar
+        navigation={navigation}
+        basePath="/business"
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onLogout={handleLogout}
+      />
+
+      <div className="lg:pl-64 flex flex-col min-h-screen">
+        <Header
+          onOpenSidebar={() => setSidebarOpen(true)}
+          onLogout={handleLogout}
+        />
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+>>>>>>> develop
           <Outlet />
         </main>
       </div>

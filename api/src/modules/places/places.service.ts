@@ -22,16 +22,58 @@ export class PlacesService {
       where.isActive = true;
     }
 
-    if (query.categoryId) {
+    // Support filtering by categorySlug (resolve to categoryId)
+    if (query.categorySlug) {
+      const category = await this.prisma.category.findUnique({
+        where: { slug: query.categorySlug },
+        select: { id: true },
+      });
+      if (category) {
+        where.categoryId = category.id;
+      } else {
+        // Category not found, return empty results
+        return new PaginatedResponse([], 0, page, limit);
+      }
+    } else if (query.categoryId) {
       where.categoryId = query.categoryId;
     }
 
     if (query.search) {
       where.OR = [
         { name: { contains: query.search } },
-        { description: { contains: query.search } },
         { address: { contains: query.search } },
       ];
+    }
+
+    // City filter
+    if (query.city) {
+      where.city = query.city;
+    }
+
+    // Advanced filters
+    if (query.minRating) {
+      where.ratingAvg = { gte: query.minRating };
+    }
+
+    if (query.isOpenNow) {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      where.hours = {
+        some: {
+          dayOfWeek,
+          openTime: { lte: currentTime },
+          closeTime: { gte: currentTime },
+        },
+      };
+    }
+
+    // Sorting
+    let orderBy: any = { ratingAvg: 'desc' };
+    if (query.sortBy === 'name') {
+      orderBy = { name: 'asc' };
+    } else if (query.sortBy === 'newest') {
+      orderBy = { createdAt: 'desc' };
     }
 
     const [places, total] = await Promise.all([
@@ -41,14 +83,41 @@ export class PlacesService {
           category: { select: { id: true, name: true, icon: true } },
           photos: { take: 1, orderBy: { displayOrder: 'asc' } },
         },
-        orderBy: { ratingAvg: 'desc' },
+        orderBy,
         skip,
         take: limit,
       }),
       this.prisma.place.count({ where }),
     ]);
 
-    return new PaginatedResponse(places, total, page, limit);
+    // Filter by distance if coordinates provided
+    let filteredPlaces = places;
+    if (query.maxDistance && query.latitude && query.longitude) {
+      filteredPlaces = places.filter((place) => {
+        if (!place.latitude || !place.longitude) return false;
+        const distance = this.calculateDistance(
+          query.latitude!, query.longitude!,
+          place.latitude, place.longitude
+        );
+        (place as any).distance = Math.round(distance);
+        return distance <= query.maxDistance!;
+      });
+      filteredPlaces.sort((a: any, b: any) => a.distance - b.distance);
+    }
+
+    return new PaginatedResponse(filteredPlaces, filteredPlaces.length, page, limit);
+  }
+
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371e3;
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   }
 
   async findFeatured() {
@@ -72,13 +141,13 @@ export class PlacesService {
         photos: { orderBy: { displayOrder: 'asc' } },
         hours: { orderBy: { dayOfWeek: 'asc' } },
         reviews: {
-          where: { isApproved: true },
+          where: { status: 'PUBLISHED' },
           include: { user: { select: { id: true, name: true, photoUrl: true } } },
           orderBy: { createdAt: 'desc' },
           take: 5,
         },
         _count: {
-          select: { reviews: { where: { isApproved: true } }, favorites: true },
+          select: { reviews: { where: { status: 'PUBLISHED' } }, favorites: true },
         },
       },
     });

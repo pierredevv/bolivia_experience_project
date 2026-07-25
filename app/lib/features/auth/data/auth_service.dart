@@ -16,7 +16,15 @@ class AuthService {
   final Dio _dio;
 
   AuthService({Dio? dio})
-      : _dio = dio ?? Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
+      : _dio = dio ??
+            Dio(
+              BaseOptions(
+                baseUrl: ApiConstants.baseUrl,
+                connectTimeout: const Duration(seconds: 15),
+                receiveTimeout: const Duration(seconds: 15),
+                sendTimeout: const Duration(seconds: 15),
+              ),
+            );
 
   Future<Map<String, dynamic>> login({
     required String email,
@@ -42,6 +50,18 @@ class AuthService {
       final response = await _dio.post(
         ApiConstants.register,
         data: {'name': name, 'email': email, 'password': password},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
+    try {
+      final response = await _dio.post(
+        '/auth/google',
+        data: {'idToken': idToken},
       );
       return response.data;
     } on DioException catch (e) {

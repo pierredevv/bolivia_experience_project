@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { GuardsModule } from './common/guards/guards.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -15,6 +17,14 @@ import { PromotionsModule } from './modules/promotions/promotions.module';
 import { WeatherModule } from './modules/weather/weather.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { EmpresaModule } from './modules/empresa/empresa.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ReservationsModule } from './modules/reservations/reservations.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
+import { RecommendationsModule } from './modules/recommendations/recommendations.module';
+import { ChatbotModule } from './modules/chatbot/chatbot.module';
+import { TripsModule } from './modules/trips/trips.module';
+import { HealthController } from './common/controllers/health.controller';
 import configuration from './config/configuration';
 
 @Module({
@@ -22,6 +32,18 @@ import configuration from './config/configuration';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+    }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const isProd = config.get('NODE_ENV') === 'production';
+        const isTest = config.get('NODE_ENV') === 'test';
+        return [{
+          ttl: isTest ? 0 : 60000,
+          limit: isTest ? 999999 : (isProd ? 100 : 999999),
+        }];
+      },
     }),
     PrismaModule,
     GuardsModule,
@@ -38,6 +60,20 @@ import configuration from './config/configuration';
     WeatherModule,
     AdminModule,
     EmpresaModule,
+    NotificationsModule,
+    ReservationsModule,
+    PaymentsModule,
+    ReferralsModule,
+    RecommendationsModule,
+    ChatbotModule,
+    TripsModule,
+  ],
+  controllers: [HealthController],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

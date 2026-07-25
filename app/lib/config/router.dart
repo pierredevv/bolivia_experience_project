@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 
+import '../core/auth/token_manager.dart';
 import '../features/auth/presentation/screens/splash_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/register_screen.dart';
+import '../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
 import '../features/map/presentation/screens/map_screen.dart';
 import '../features/search/presentation/screens/explore_screen.dart';
@@ -19,14 +21,47 @@ import '../features/reviews/presentation/screens/create_review_screen.dart';
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/profile/presentation/screens/settings_screen.dart';
 import '../features/home/presentation/screens/main_shell.dart';
+import '../features/trips/presentation/screens/trips_list_screen.dart';
+import '../features/trips/presentation/screens/trip_detail_screen.dart';
+import '../features/trips/presentation/screens/create_trip_screen.dart';
+
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
+    redirect: (context, state) {
+      final isAuthenticated = TokenManager.hasToken;
+      final isAuthRoute = state.matchedLocation == '/login' ||
+          state.matchedLocation == '/register' ||
+          state.matchedLocation == '/splash' ||
+          state.matchedLocation == '/onboarding';
+
+      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/settings'];
+      final isProtectedRoute = protectedRoutes.any((r) => state.matchedLocation.startsWith(r));
+      final isReviewRoute = state.matchedLocation.contains('/review');
+
+      // If not authenticated and trying to access protected route, redirect to login
+      if (!isAuthenticated && (isProtectedRoute || isReviewRoute)) {
+        return '/login';
+      }
+
+      // If authenticated and on auth routes, redirect to home
+      if (isAuthenticated && isAuthRoute && state.matchedLocation != '/splash') {
+        return '/';
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/splash',
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
         path: '/login',
@@ -69,7 +104,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/places/category/:slug',
         builder: (context, state) => PlacesListScreen(
           categorySlug: state.pathParameters['slug']!,
-          categoryName: state.extra as String? ?? '',
+          categoryName: state.uri.queryParameters['name'] ?? state.extra as String? ?? '',
         ),
       ),
       GoRoute(
@@ -88,6 +123,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/places/:id/review',
         builder: (context, state) => CreateReviewScreen(
           placeId: state.pathParameters['id']!,
+          placeName: state.extra as String? ?? '',
         ),
       ),
       GoRoute(
@@ -97,6 +133,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/trips',
+        builder: (context, state) => const TripsListScreen(),
+      ),
+      GoRoute(
+        path: '/trips/create',
+        builder: (context, state) => const CreateTripScreen(),
+      ),
+      GoRoute(
+        path: '/trips/:id',
+        builder: (context, state) => TripDetailScreen(
+          tripId: state.pathParameters['id']!,
+        ),
       ),
     ],
   );

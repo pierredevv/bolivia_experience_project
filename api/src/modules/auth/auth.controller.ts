@@ -31,7 +31,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Token refreshed' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refreshToken(@Body() dto: RefreshTokenDto) {
-    return this.authService.refreshToken(dto.userId);
+    return this.authService.refreshToken(dto.userId, dto.refreshToken);
   }
 
   @Post('register-business')

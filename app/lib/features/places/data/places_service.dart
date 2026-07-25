@@ -36,7 +36,7 @@ class Place {
 
   factory Place.fromJson(Map<String, dynamic> json) {
     return Place(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       description: json['description'],
       address: json['address'],
@@ -87,24 +87,28 @@ class PlacesService {
     final response = await _dio.get(
       ApiConstants.places,
       queryParameters: {
-        'category': categorySlug,
+        'categorySlug': categorySlug,
         'page': page,
         'limit': limit,
       },
     );
 
     final data = response.data;
-    final List items = data['data'] ?? [];
-    final pagination = data['pagination'] ?? {};
+    // Backend response: { success, data: { data: [...], meta: {...} }, timestamp }
+    final inner = data is Map<String, dynamic> ? data['data'] : data;
+    final List items = (inner is Map<String, dynamic> && inner['data'] is List)
+        ? inner['data']
+        : (inner is List ? inner : []);
+    final meta = (inner is Map<String, dynamic> ? inner['meta'] : null) ?? {};
 
     return PaginatedResponse(
       data: items.map((json) => Place.fromJson(json)).toList(),
-      total: pagination['total'] ?? 0,
-      page: pagination['page'] ?? page,
-      perPage: pagination['per_page'] ?? limit,
-      totalPages: pagination['total_pages'] ?? 1,
-      hasNext: pagination['has_next'] ?? false,
-      hasPrevious: pagination['has_previous'] ?? false,
+      total: meta['total'] ?? 0,
+      page: meta['page'] ?? page,
+      perPage: meta['limit'] ?? limit,
+      totalPages: meta['totalPages'] ?? 1,
+      hasNext: meta['hasNext'] ?? (page < (meta['totalPages'] ?? 1)),
+      hasPrevious: meta['hasPrevious'] ?? (page > 1),
     );
   }
 
@@ -117,12 +121,28 @@ class PlacesService {
   Future<List<dynamic>> getPlacePhotos(String placeId) async {
     final response = await _dio.get('${ApiConstants.places}/$placeId/photos');
     final data = response.data;
-    return data['data'] ?? [];
+    if (data is Map<String, dynamic>) {
+      final inner = data['data'];
+      if (inner is List) {
+        return inner;
+      }
+    }
+    return [];
   }
 
   Future<List<dynamic>> getPlaceReviews(String placeId) async {
     final response = await _dio.get(ApiConstants.placeReviews(placeId));
     final data = response.data;
-    return data['data'] ?? [];
+    if (data is Map<String, dynamic>) {
+      final inner = data['data'];
+      // Backend wraps in PaginatedResponse: { data: [...], meta: {...} }
+      if (inner is Map<String, dynamic> && inner['data'] is List) {
+        return inner['data'] as List<dynamic>;
+      }
+      if (inner is List) {
+        return inner;
+      }
+    }
+    return [];
   }
 }

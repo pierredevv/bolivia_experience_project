@@ -28,7 +28,7 @@ class Event {
 
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       description: json['description'],
       dateStart: json['dateStart'],
@@ -50,14 +50,20 @@ class EventsService {
   Future<List<Event>> getEvents() async {
     final response = await _dio.get(ApiConstants.events);
     final data = response.data;
-    final List items = data['data'] ?? [];
+    // Backend wraps in PaginatedResponse: { success, data: { data: [...], meta: {...} }, timestamp }
+    final inner = data is Map<String, dynamic> ? data['data'] : data;
+    final List items = (inner is Map<String, dynamic> && inner['data'] is List)
+        ? inner['data']
+        : (inner is List ? inner : []);
     return items.map((json) => Event.fromJson(json)).toList();
   }
 
   Future<List<Event>> getTodayEvents() async {
     final response = await _dio.get(ApiConstants.todayEvents);
     final data = response.data;
-    final List items = data['data'] ?? [];
+    final List items = (data is Map<String, dynamic> && data['data'] is List)
+        ? data['data']
+        : (data is List ? data : []);
     return items.map((json) => Event.fromJson(json)).toList();
   }
 

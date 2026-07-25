@@ -6,7 +6,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme.light(
+      colorScheme: const ColorScheme.light(
         primary: AppColors.primary700,
         onPrimary: Colors.white,
         primaryContainer: AppColors.primary100,
@@ -17,13 +17,11 @@ class AppTheme {
         onSecondaryContainer: AppColors.secondary900,
         surface: Colors.white,
         onSurface: AppColors.neutral900,
-        background: AppColors.neutral50,
-        onBackground: AppColors.neutral900,
         error: AppColors.error700,
         onError: Colors.white,
       ),
       scaffoldBackgroundColor: AppColors.neutral50,
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.neutral900,
         elevation: 0,
@@ -34,7 +32,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
         ),
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
         selectedItemColor: AppColors.primary700,
         unselectedItemColor: AppColors.neutral500,
@@ -57,11 +55,11 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.neutral300),
+          borderSide: const BorderSide(color: AppColors.neutral300),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primary700, width: 2),
+          borderSide: const BorderSide(color: AppColors.primary700, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
@@ -87,12 +85,12 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.neutral100,
         selectedColor: AppColors.primary100,
-        labelStyle: TextStyle(color: AppColors.neutral800),
+        labelStyle: const TextStyle(color: AppColors.neutral800),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
       ),
-      textTheme: TextTheme(
+      textTheme: const TextTheme(
         displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.neutral900),
         displayMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.neutral900),
         headlineLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.neutral900),
@@ -111,7 +109,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: AppColors.primary400,
         onPrimary: AppColors.primary900,
         primaryContainer: AppColors.primary800,
@@ -122,19 +120,17 @@ class AppTheme {
         onSecondaryContainer: AppColors.secondary100,
         surface: AppColors.neutral900,
         onSurface: AppColors.neutral100,
-        background: AppColors.neutral950,
-        onBackground: AppColors.neutral100,
         error: AppColors.error300,
         onError: AppColors.error900,
       ),
       scaffoldBackgroundColor: AppColors.neutral950,
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.neutral900,
         foregroundColor: AppColors.neutral100,
         elevation: 0,
         centerTitle: true,
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.neutral900,
         selectedItemColor: AppColors.primary400,
         unselectedItemColor: AppColors.neutral500,
@@ -157,11 +153,11 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.neutral700),
+          borderSide: const BorderSide(color: AppColors.neutral700),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primary400, width: 2),
+          borderSide: const BorderSide(color: AppColors.primary400, width: 2),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(

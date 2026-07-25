@@ -51,6 +51,7 @@ export default function AdminBusinesses() {
         </p>
       </div>
 
+<<<<<<< HEAD
       {/* ── Filters Card ── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] shadow-sm p-5 flex flex-wrap gap-4">
         <div className="flex-1 min-w-[200px] relative">
@@ -60,13 +61,30 @@ export default function AdminBusinesses() {
             placeholder="Buscar por nombre o email..."
             className={`${inputCls} w-full pl-11`}
           />
+=======
+      {/* Filters */}
+      <div className="bg-white dark:bg-neutral-800 p-4 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-700 flex flex-wrap gap-4">
+        <div className="flex-1 min-w-[200px]">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o email..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+            />
+          </div>
+>>>>>>> develop
         </div>
         <div className="flex items-center gap-3">
           <Filter className="h-5 w-5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
+<<<<<<< HEAD
             className={inputCls}
+=======
+            className="px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none cursor-pointer"
+>>>>>>> develop
           >
             <option value="all">Todos los estados</option>
             <option value="pending">Pendientes</option>
@@ -76,12 +94,20 @@ export default function AdminBusinesses() {
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* ── Content Table Card ── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="p-16 flex flex-col items-center justify-center gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-emerald-600" />
             <p className="text-sm font-bold text-slate-400 dark:text-slate-500">Cargando empresas...</p>
+=======
+      {/* Content */}
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 flex justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary-700" />
+>>>>>>> develop
           </div>
         ) : businesses?.length === 0 ? (
           <div className="p-16 text-center">

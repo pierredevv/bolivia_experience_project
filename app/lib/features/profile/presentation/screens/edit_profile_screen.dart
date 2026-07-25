@@ -45,7 +45,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Center(
               child: Stack(
                 children: [
-                  CircleAvatar(
+                  const CircleAvatar(
                     radius: 60,
                     backgroundColor: AppColors.primary100,
                     child: Icon(
@@ -59,11 +59,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.primary700,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.camera_alt,
                         size: 20,
                         color: Colors.white,
@@ -79,19 +79,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             // Name
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Nombre',
-                prefixIcon: const Icon(Icons.person_outline),
+                prefixIcon: Icon(Icons.person_outline),
               ),
             ),
 
             const SizedBox(height: 16),
 
             // Email (read-only)
-            TextField(
+            const TextField(
               decoration: InputDecoration(
                 labelText: 'Email',
-                prefixIcon: const Icon(Icons.email_outlined),
+                prefixIcon: Icon(Icons.email_outlined),
               ),
               enabled: false,
             ),
@@ -101,9 +101,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             // Country
             TextField(
               controller: _countryController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'País',
-                prefixIcon: const Icon(Icons.flag_outlined),
+                prefixIcon: Icon(Icons.flag_outlined),
               ),
             ),
 
@@ -111,12 +111,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
             // Language
             DropdownButtonFormField<String>(
-              value: _selectedLanguage,
-              decoration: InputDecoration(
+              initialValue: _selectedLanguage,
+              decoration: const InputDecoration(
                 labelText: 'Idioma',
-                prefixIcon: const Icon(Icons.language),
+                prefixIcon: Icon(Icons.language),
               ),
-              items: [
+              items: const [
                 DropdownMenuItem(value: 'es', child: Text('Español')),
                 DropdownMenuItem(value: 'en', child: Text('English')),
                 DropdownMenuItem(value: 'pt', child: Text('Português')),

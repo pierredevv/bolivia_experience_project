@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { useTheme } from '../../contexts/ThemeContext'
+import Sidebar from './Sidebar'
+import Header from './Header'
 import {
   LayoutDashboard,
   Users,
@@ -11,6 +12,7 @@ import {
   Tag,
   FolderOpen,
   Settings,
+<<<<<<< HEAD
   Building,
   Menu,
   X,
@@ -19,11 +21,18 @@ import {
   ChevronDown,
   Sun,
   Moon,
+=======
+  Store,
+>>>>>>> develop
 } from 'lucide-react'
 
 const navigation = [
   { name: 'Dashboard', href: '/admin-panel', icon: LayoutDashboard },
+<<<<<<< HEAD
   { name: 'Empresas', href: '/admin-panel/businesses', icon: Building },
+=======
+  { name: 'Empresas', href: '/admin-panel/businesses', icon: Store },
+>>>>>>> develop
   { name: 'Usuarios', href: '/admin-panel/users', icon: Users },
   { name: 'Lugares', href: '/admin-panel/places', icon: MapPin },
   { name: 'Reseñas', href: '/admin-panel/reviews', icon: Star },
@@ -139,19 +148,16 @@ function SidebarContent({
 // ─── Main Layout ──────────────────────────────────────────────────────────────
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
-  const { resolvedTheme, setTheme } = useTheme()
+  const { logout } = useAuth()
 
   const handleLogout = () => {
     logout()
     navigate('/admin-panel/login')
   }
 
-  const userInitial = user?.name?.[0]?.toUpperCase() || 'A'
-
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300 antialiased">
 
       {/* ══ Mobile Sidebar Drawer ══ */}
@@ -286,6 +292,24 @@ export default function AdminLayout() {
 
         {/* ── Page Content ── */}
         <main className="flex-1 p-6 lg:p-10">
+=======
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-900 transition-colors">
+      <Sidebar
+        navigation={navigation}
+        basePath="/admin-panel"
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onLogout={handleLogout}
+      />
+
+      <div className="lg:pl-64 flex flex-col min-h-screen">
+        <Header
+          onOpenSidebar={() => setSidebarOpen(true)}
+          onLogout={handleLogout}
+        />
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+>>>>>>> develop
           <Outlet />
         </main>
       </div>

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { useTheme } from '../../contexts/ThemeContext'
+import Sidebar from './Sidebar'
+import Header from './Header'
 import {
   LayoutDashboard,
   MapPin,
@@ -9,13 +10,6 @@ import {
   Tag,
   BarChart3,
   Image,
-  Menu,
-  X,
-  LogOut,
-  Bell,
-  ChevronDown,
-  Sun,
-  Moon,
 } from 'lucide-react'
 
 const navigation = [
@@ -121,19 +115,16 @@ function SidebarContent({
 // ─── Main Layout ──────────────────────────────────────────────────────────────
 export default function BusinessLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
-  const { resolvedTheme, setTheme } = useTheme()
+  const { logout } = useAuth()
 
   const handleLogout = () => {
     logout()
     navigate('/business/login')
   }
 
-  const userInitial = user?.name?.[0]?.toUpperCase() || 'E'
-
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300 antialiased">
 
       {/* ══ Mobile Sidebar Drawer ══ */}
@@ -266,6 +257,24 @@ export default function BusinessLayout() {
 
         {/* ── Page Nested Workspace Canvas ── */}
         <main className="flex-1 p-6 lg:p-10">
+=======
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-900 transition-colors">
+      <Sidebar
+        navigation={navigation}
+        basePath="/business"
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onLogout={handleLogout}
+      />
+
+      <div className="lg:pl-64 flex flex-col min-h-screen">
+        <Header
+          onOpenSidebar={() => setSidebarOpen(true)}
+          onLogout={handleLogout}
+        />
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+>>>>>>> develop
           <Outlet />
         </main>
       </div>

@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
-import { CreateReviewDto, UpdateReviewDto } from './dto';
+import { CreateReviewDto, UpdateReviewDto, UpdateReviewStatusDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -71,13 +71,18 @@ export class ReviewsController {
     return this.reviewsService.remove(userId, reviewId, role === 'admin');
   }
 
-  @Patch('reviews/:id/approve')
+  @Patch('reviews/:id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Approve a review (Admin only)' })
-  async approve(@Param('id') reviewId: string) {
-    return this.reviewsService.approve(reviewId);
+  @ApiOperation({ summary: 'Update review status (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Review status updated' })
+  async updateStatus(
+    @CurrentUser('id') userId: string,
+    @Param('id') reviewId: string,
+    @Body() dto: UpdateReviewStatusDto,
+  ) {
+    return this.reviewsService.updateStatus(reviewId, dto.status, userId);
   }
 
   @Post('reviews/:id/respond')

@@ -93,6 +93,11 @@ export class QueryPlacesDto extends PaginationDto {
   @IsString()
   categoryId?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by category slug (resolved to categoryId internally)' })
+  @IsOptional()
+  @IsString()
+  categorySlug?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -126,4 +131,52 @@ export class QueryPlacesDto extends PaginationDto {
   })
   @IsBoolean()
   allStatuses?: boolean;
+
+  @ApiPropertyOptional({ description: 'Minimum rating (1-5)' })
+  @IsOptional()
+  @Transform(({ obj }) => obj.minRating ? Number(obj.minRating) : undefined)
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  minRating?: number;
+
+  @ApiPropertyOptional({ description: 'Maximum distance in meters from user location' })
+  @IsOptional()
+  @Transform(({ obj }) => obj.maxDistance ? Number(obj.maxDistance) : undefined)
+  @IsNumber()
+  maxDistance?: number;
+
+  @ApiPropertyOptional({ description: 'User latitude for distance filter' })
+  @IsOptional()
+  @Transform(({ obj }) => obj.latitude ? Number(obj.latitude) : undefined)
+  @IsNumber()
+  latitude?: number;
+
+  @ApiPropertyOptional({ description: 'User longitude for distance filter' })
+  @IsOptional()
+  @Transform(({ obj }) => obj.longitude ? Number(obj.longitude) : undefined)
+  @IsNumber()
+  longitude?: number;
+
+  @ApiPropertyOptional({ description: 'Filter by open now status' })
+  @IsOptional()
+  @Transform(({ obj }) => {
+    const value = obj.isOpenNow;
+    if (value === undefined || value === null) return undefined;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    return Boolean(value);
+  })
+  @IsBoolean()
+  isOpenNow?: boolean;
+
+  @ApiPropertyOptional({ description: 'Sort by: rating, distance, name' })
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by city: santa-cruz, la-paz, cochabamba' })
+  @IsOptional()
+  @IsString()
+  city?: string;
 }

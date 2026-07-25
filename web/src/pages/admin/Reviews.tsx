@@ -79,6 +79,7 @@ export default function AdminReviews() {
             </div>
           ) : (
             reviews.map((review: any) => (
+<<<<<<< HEAD
               <div
                 key={review.id}
                 className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] shadow-sm hover:shadow-xl dark:hover:shadow-slate-950/40 transition-all duration-300 p-6 lg:p-8"
@@ -87,6 +88,13 @@ export default function AdminReviews() {
                   <div className="flex items-start gap-4 min-w-0">
                     <div className="h-11 w-11 bg-slate-900 dark:bg-slate-700 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
                       <span className="text-sm font-black text-white uppercase">
+=======
+              <div key={review.id} className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="h-10 w-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-medium text-primary-700 dark:text-primary-400">
+>>>>>>> develop
                         {review.user?.name?.[0] || '?'}
                       </span>
                     </div>
@@ -145,10 +153,16 @@ export default function AdminReviews() {
 
           {/* Pagination */}
           {meta && meta.totalPages > 1 && (
+<<<<<<< HEAD
             <div className="flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] shadow-sm p-5">
               <p className="text-sm font-bold text-slate-400 dark:text-slate-500">
                 Página <span className="text-slate-800 dark:text-white">{meta.page}</span> de{' '}
                 <span className="text-slate-800 dark:text-white">{meta.totalPages}</span>
+=======
+            <div className="flex items-center justify-between bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-4">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                Página {meta.page} de {meta.totalPages}
+>>>>>>> develop
               </p>
               <div className="flex items-center gap-2">
                 <button

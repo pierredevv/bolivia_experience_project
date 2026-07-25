@@ -51,8 +51,17 @@ export class AuthService {
       where: { email: dto.email },
     });
 
-    if (!user || !user.isActive) {
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Check approval status before active status — pending businesses get a specific message
+    if (user.approvalStatus === 'pending') {
+      throw new UnauthorizedException('Tu cuenta está pendiente de aprobación. Te notificaremos por correo cuando sea aprobada por nuestro equipo.');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Tu cuenta ha sido desactivada. Contacta al soporte.');
     }
 
     if (!user.password) {
@@ -74,12 +83,26 @@ export class AuthService {
         name: user.name,
         role: user.role,
         photoUrl: user.photoUrl,
+        approvalStatus: user.approvalStatus,
       },
       ...tokens,
     };
   }
 
-  async refreshToken(userId: string) {
+  async refreshToken(userId: string, refreshToken: string) {
+    // Verify the refresh token exists and is not revoked
+    const storedToken = await this.prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+    });
+
+    if (!storedToken || storedToken.revoked) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (storedToken.expiresAt < new Date()) {
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -88,6 +111,13 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
+    // Revoke the old refresh token
+    await this.prisma.refreshToken.update({
+      where: { id: storedToken.id },
+      data: { revoked: true },
+    });
+
+    // Generate new tokens
     const tokens = await this.generateTokens(user.id, user.role);
 
     return tokens;
@@ -148,12 +178,27 @@ export class AuthService {
   private async generateTokens(userId: string, role: string) {
     const payload = { sub: userId, role };
 
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload),
-      this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get('REFRESH_TOKEN_EXPIRATION', '7d'),
-      }),
-    ]);
+    const accessToken = await this.jwtService.signAsync(payload);
+
+    const refreshTokenPayload = { sub: userId, role, type: 'refresh', jti: Date.now().toString() };
+    const refreshToken = await this.jwtService.signAsync(refreshTokenPayload, {
+      expiresIn: this.configService.get('REFRESH_TOKEN_EXPIRATION', '7d'),
+    });
+
+    // Calculate expiration date from REFRESH_TOKEN_EXPIRATION
+    const expirationStr = this.configService.get('REFRESH_TOKEN_EXPIRATION', '7d');
+    const days = parseInt(expirationStr) || 7;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + days);
+
+    // Store refresh token in database
+    await this.prisma.refreshToken.create({
+      data: {
+        userId,
+        token: refreshToken,
+        expiresAt,
+      },
+    });
 
     return { accessToken, refreshToken };
   }

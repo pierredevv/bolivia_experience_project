@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_provider.dart';
+import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../../data/places_service.dart';
 
 enum PlaceDetailStatus { initial, loading, loaded, error }
@@ -36,7 +37,7 @@ class PlaceDetailState {
       photos: photos ?? this.photos,
       reviews: reviews ?? this.reviews,
       isFavorite: isFavorite ?? this.isFavorite,
-      errorMessage: errorMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }
@@ -47,14 +48,15 @@ final placeDetailServiceProvider = Provider<PlacesService>((ref) {
 });
 
 final placeDetailProvider = StateNotifierProvider.family<PlaceDetailNotifier, PlaceDetailState, String>((ref, placeId) {
-  return PlaceDetailNotifier(ref.read(placeDetailServiceProvider), placeId);
+  return PlaceDetailNotifier(ref.read(placeDetailServiceProvider), ref, placeId);
 });
 
 class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
   final PlacesService _placesService;
+  final Ref _ref;
   final String _placeId;
 
-  PlaceDetailNotifier(this._placesService, this._placeId) : super(const PlaceDetailState()) {
+  PlaceDetailNotifier(this._placesService, this._ref, this._placeId) : super(const PlaceDetailState()) {
     loadPlaceDetail();
   }
 
@@ -63,18 +65,41 @@ class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
     state = state.copyWith(status: PlaceDetailStatus.loading, errorMessage: null);
 
     try {
-      final results = await Future.wait([
-        _placesService.getPlaceById(_placeId),
-        _placesService.getPlacePhotos(_placeId),
-        _placesService.getPlaceReviews(_placeId),
-      ]);
+      // Load place data first (critical)
+      final place = await _placesService.getPlaceById(_placeId);
+
+      if (!mounted) return;
+      state = state.copyWith(place: place);
+
+      // Load photos and reviews individually (non-critical, don't break UI)
+      List<dynamic> photos = [];
+      List<dynamic> reviews = [];
+
+      try {
+        photos = await _placesService.getPlacePhotos(_placeId);
+      } catch (_) {
+        // Photos failed, continue without them
+      }
+
+      try {
+        reviews = await _placesService.getPlaceReviews(_placeId);
+      } catch (_) {
+        // Reviews failed, continue without them
+      }
+
+      // Check favorite status (non-critical)
+      bool isFav = false;
+      try {
+        final favService = _ref.read(favoritesServiceProvider);
+        isFav = await favService.checkFavorite(_placeId);
+      } catch (_) {}
 
       if (!mounted) return;
       state = state.copyWith(
         status: PlaceDetailStatus.loaded,
-        place: results[0] as Place,
-        photos: results[1] as List<dynamic>,
-        reviews: results[2] as List<dynamic>,
+        photos: photos,
+        reviews: reviews,
+        isFavorite: isFav,
       );
     } on DioException catch (e) {
       if (!mounted) return;
@@ -103,5 +128,18 @@ class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
         errorMessage: 'Error inesperado. Intentá de nuevo.',
       );
     }
+  }
+
+  Future<void> toggleFavorite() async {
+    try {
+      final favNotifier = _ref.read(favoritesProvider.notifier);
+      if (state.isFavorite) {
+        await favNotifier.removeFavorite(_placeId);
+      } else {
+        await favNotifier.addFavorite(_placeId);
+      }
+      if (!mounted) return;
+      state = state.copyWith(isFavorite: !state.isFavorite);
+    } catch (_) {}
   }
 }

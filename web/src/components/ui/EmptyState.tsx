@@ -1,4 +1,5 @@
 import { type LucideIcon } from 'lucide-react'
+import { cn } from '../../lib/utils'
 
 interface EmptyStateProps {
   icon: LucideIcon
@@ -8,9 +9,14 @@ interface EmptyStateProps {
     label: string
     onClick: () => void
   }
+  accent?: 'primary' | 'secondary'
 }
 
-export default function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
+export default function EmptyState({ icon: Icon, title, description, action, accent = 'primary' }: EmptyStateProps) {
+  const btnColor = accent === 'secondary'
+    ? 'bg-secondary-700 hover:bg-secondary-800'
+    : 'bg-primary-700 hover:bg-primary-800'
+
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="h-16 w-16 bg-neutral-100 dark:bg-neutral-700 rounded-full flex items-center justify-center mb-4">
@@ -21,7 +27,7 @@ export default function EmptyState({ icon: Icon, title, description, action }: E
       {action && (
         <button
           onClick={action.onClick}
-          className="px-4 py-2 bg-primary-700 text-white rounded-lg text-sm font-medium hover:bg-primary-800 transition-colors"
+          className={cn('px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors', btnColor)}
         >
           {action.label}
         </button>

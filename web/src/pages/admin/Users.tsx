@@ -58,8 +58,13 @@ export default function AdminUsers() {
         </p>
       </div>
 
+<<<<<<< HEAD
       {/* ── Filters Card ── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] shadow-sm p-5">
+=======
+      {/* Filters */}
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm p-4 mb-6">
+>>>>>>> develop
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500 pointer-events-none" />
@@ -97,7 +102,11 @@ export default function AdminUsers() {
         />
       ) : (
         <>
+<<<<<<< HEAD
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] shadow-sm overflow-hidden">
+=======
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm overflow-hidden">
+>>>>>>> develop
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>

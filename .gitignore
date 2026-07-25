@@ -7,6 +7,25 @@
 # Node / NestJS
 node_modules/
 dist/
+coverage/
+
+# SQLite dev databases
+api/prisma/*.db
+api/prisma/*.db-journal
+
+# Uploads (user-generated content)
+api/uploads/*
+!api/uploads/.gitkeep
+
+# MiMoCode internal (ignore most, track skills and agents)
+.mimocode/*
+!.mimocode/skills/
+!.mimocode/skills/**
+!.mimocode/agents/
+!.mimocode/agents/**
+
+# Windows artifacts
+nul
 
 # Flutter / Dart
 .dart_tool/
@@ -20,7 +39,6 @@ build/
 *.iws
 .idea/
 .metadata
-coverage/
 
 # Android build
 app/android/.gradle/
@@ -39,6 +57,7 @@ app/ios/Flutter/Generated.xcconfig
 
 # Web
 web/node_modules/
+web/dist/
 
 # OS files
 .DS_Store
@@ -50,3 +69,11 @@ Desktop.ini
 *.swp
 *.swo
 *~
+
+# SSL certificates (never commit)
+nginx/ssl/*.pem
+nginx/ssl/*.key
+
+# Logs
+*.log
+npm-debug.log*

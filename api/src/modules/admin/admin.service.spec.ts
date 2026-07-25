@@ -126,7 +126,7 @@ describe('AdminService', () => {
 
       expect(mockPrisma.review.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ isApproved: false }),
+          where: expect.objectContaining({ status: 'UNDER_REVIEW' }),
         })
       );
     });
@@ -139,7 +139,7 @@ describe('AdminService', () => {
 
       expect(mockPrisma.review.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ isApproved: true }),
+          where: expect.objectContaining({ status: 'PUBLISHED' }),
         })
       );
     });

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
 import '../providers/home_provider.dart';
+import '../../../weather/presentation/widgets/weather_widget.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -49,7 +50,7 @@ class HomeScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: AppColors.error500),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error500),
               const SizedBox(height: 16),
               Text(
                 state.errorMessage ?? 'Error al cargar datos',
@@ -86,10 +87,10 @@ class HomeScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.neutral300),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
                       Icon(Icons.search, color: AppColors.neutral500),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Text(
                         '¿Qué estás buscando?',
                         style: TextStyle(color: AppColors.neutral500),
@@ -99,6 +100,80 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
             ),
+
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: WeatherWidget(),
+            ),
+            const SizedBox(height: 16),
+
+            GestureDetector(
+              onTap: () => context.go('/trips'),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary700, AppColors.primary400],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.map_outlined,
+                      size: 40,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Crea tu itinerario perfecto',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Segun tu presupuesto y preferencias',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white.withAlpha(200),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Empezar',
+                        style: TextStyle(
+                          color: AppColors.primary700,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
 
             if (state.categories.isNotEmpty) ...[
               SizedBox(
@@ -114,7 +189,8 @@ class HomeScreen extends ConsumerWidget {
                       icon: _getCategoryIcon(category['icon']),
                       onTap: () {
                         final slug = category['slug'] ?? '';
-                        context.go('/explore?category=$slug');
+                        final name = category['name'] ?? '';
+                        context.push('/places/category/$slug?name=$name');
                       },
                     );
                   },
@@ -138,7 +214,7 @@ class HomeScreen extends ConsumerWidget {
                     final place = state.featuredPlaces[index];
                     return _PlaceCard(
                       place: place,
-                      onTap: () => context.go('/places/${place['id']}'),
+                      onTap: () => context.push('/places/${place['id']}'),
                     );
                   },
                 ),
@@ -161,7 +237,7 @@ class HomeScreen extends ConsumerWidget {
                     final event = state.todayEvents[index];
                     return _EventCard(
                       event: event,
-                      onTap: () => context.go('/events/${event['id']}'),
+                      onTap: () => context.push('/events/${event['id']}'),
                     );
                   },
                 ),
@@ -200,7 +276,7 @@ class HomeScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.explore_outlined, size: 64, color: AppColors.neutral400),
+                      const Icon(Icons.explore_outlined, size: 64, color: AppColors.neutral400),
                       const SizedBox(height: 16),
                       Text(
                         'No hay contenido disponible',
@@ -269,7 +345,7 @@ class _CategoryChip extends StatelessWidget {
         label: Text(label),
         onPressed: onTap,
         backgroundColor: AppColors.primary50,
-        labelStyle: TextStyle(color: AppColors.primary700),
+        labelStyle: const TextStyle(color: AppColors.primary700),
       ),
     );
   }
@@ -310,10 +386,12 @@ class _PlaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final photos = place['photos'] as List<dynamic>? ?? [];
-    final photoUrl = photos.isNotEmpty ? photos[0]['url'] : null;
+    final photos = place['photos'];
+    final photoUrl = (photos is List && photos.isNotEmpty && photos[0] is Map)
+        ? photos[0]['url']?.toString()
+        : null;
     final averageRating = place['ratingAvg'] ?? 0;
-    final category = place['category'] as Map<String, dynamic>? ?? {};
+    final category = place['category'];
 
     return GestureDetector(
       onTap: onTap,
@@ -326,9 +404,9 @@ class _PlaceCard extends StatelessWidget {
             children: [
               Container(
                 height: 100,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.neutral200,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                 ),
                 child: photoUrl != null
                     ? ClipRRect(
@@ -338,13 +416,13 @@ class _PlaceCard extends StatelessWidget {
                           fit: BoxFit.cover,
                           width: double.infinity,
                           errorBuilder: (context, error, stackTrace) {
-                            return Center(
+                            return const Center(
                               child: Icon(Icons.image, color: AppColors.neutral400),
                             );
                           },
                         ),
                       )
-                    : Center(
+                    : const Center(
                         child: Icon(Icons.image, color: AppColors.neutral400),
                       ),
               ),
@@ -360,15 +438,15 @@ class _PlaceCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      category['name'] ?? '',
+                      (category is Map) ? (category['name'] ?? '') : '',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.star, size: 14, color: AppColors.secondary500),
+                        const Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
-                        Text('$averageRating', style: Theme.of(context).textTheme.bodySmall),
+                        Text('${averageRating is double ? averageRating.toStringAsFixed(1) : averageRating}', style: Theme.of(context).textTheme.bodySmall),
                       ],
                     ),
                   ],
@@ -403,9 +481,9 @@ class _EventCard extends StatelessWidget {
             children: [
               Container(
                 height: 80,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.primary100,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                 ),
                 child: photoUrl != null
                     ? ClipRRect(
@@ -415,13 +493,13 @@ class _EventCard extends StatelessWidget {
                           fit: BoxFit.cover,
                           width: double.infinity,
                           errorBuilder: (context, error, stackTrace) {
-                            return Center(
+                            return const Center(
                               child: Icon(Icons.event, color: AppColors.primary700, size: 32),
                             );
                           },
                         ),
                       )
-                    : Center(
+                    : const Center(
                         child: Icon(Icons.event, color: AppColors.primary700, size: 32),
                       ),
               ),
@@ -438,7 +516,7 @@ class _EventCard extends StatelessWidget {
                     ),
                     Row(
                       children: [
-                        Icon(Icons.access_time, size: 14, color: AppColors.neutral500),
+                        const Icon(Icons.access_time, size: 14, color: AppColors.neutral500),
                         const SizedBox(width: 4),
                         Text(
                           event['dateStart'] ?? '',

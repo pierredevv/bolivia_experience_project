@@ -40,7 +40,7 @@ class ExploreScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline, size: 48, color: AppColors.error500),
+                    const Icon(Icons.error_outline, size: 48, color: AppColors.error500),
                     const SizedBox(height: 16),
                     Text(
                       'Error al cargar categorías',
@@ -66,7 +66,7 @@ class ExploreScreen extends ConsumerWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.category_outlined, size: 48, color: AppColors.neutral400),
+                        const Icon(Icons.category_outlined, size: 48, color: AppColors.neutral400),
                         const SizedBox(height: 16),
                         Text(
                           'No hay categorías disponibles',
@@ -138,14 +138,16 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      clipBehavior: Clip.hardEdge,
       child: InkWell(
         onTap: () {
-          context.push('/places/category/${category.slug}', extra: category.name);
+          context.push('/places/category/${category.slug}?name=${category.name}');
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
@@ -154,14 +156,16 @@ class _CategoryCard extends StatelessWidget {
                 color: AppColors.primary700,
               ),
               const SizedBox(height: 8),
-              Text(
-                category.name,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  category.name,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
               if (category.placeCount > 0) ...[
                 const SizedBox(height: 4),

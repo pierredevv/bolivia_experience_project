@@ -24,8 +24,6 @@ class _PlacesListScreenState extends ConsumerState<PlacesListScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(placesProvider.notifier).loadPlacesByCategory(widget.categorySlug);
-
     _scrollController.addListener(_onScroll);
   }
 
@@ -39,13 +37,13 @@ class _PlacesListScreenState extends ConsumerState<PlacesListScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      ref.read(placesProvider.notifier).loadMorePlaces();
+      ref.read(placesProvider(widget.categorySlug).notifier).loadMorePlaces();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final placesState = ref.watch(placesProvider);
+    final placesState = ref.watch(placesProvider(widget.categorySlug));
 
     return Scaffold(
       appBar: AppBar(
@@ -67,7 +65,7 @@ class _PlacesListScreenState extends ConsumerState<PlacesListScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: AppColors.error500),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error500),
               const SizedBox(height: 16),
               Text(
                 state.errorMessage ?? 'Error al cargar lugares',
@@ -77,7 +75,7 @@ class _PlacesListScreenState extends ConsumerState<PlacesListScreen> {
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () {
-                  ref.read(placesProvider.notifier).loadPlacesByCategory(widget.categorySlug);
+                  ref.read(placesProvider(widget.categorySlug).notifier).loadPlacesByCategory(widget.categorySlug);
                 },
                 icon: const Icon(Icons.refresh),
                 label: const Text('Reintentar'),
@@ -95,7 +93,7 @@ class _PlacesListScreenState extends ConsumerState<PlacesListScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.place_outlined, size: 64, color: AppColors.neutral400),
+              const Icon(Icons.place_outlined, size: 64, color: AppColors.neutral400),
               const SizedBox(height: 16),
               Text(
                 'No se encontraron lugares',
@@ -130,7 +128,7 @@ class _PlacesListScreenState extends ConsumerState<PlacesListScreen> {
         final place = state.places[index];
         return _PlaceListCard(
           place: place,
-          onTap: () => context.go('/places/${place.id}'),
+          onTap: () => context.push('/places/${place.id}'),
         );
       },
     );
@@ -145,11 +143,13 @@ class _PlaceListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final photos = place.photos as List<dynamic>? ?? [];
-    final photoUrl = photos.isNotEmpty ? photos[0]['url'] : null;
+    final photos = place.photos;
+    final photoUrl = (photos != null && photos.isNotEmpty && photos[0] is Map)
+        ? photos[0]['url']?.toString()
+        : null;
     final averageRating = place.ratingAvg ?? 0;
     final ratingCount = place.ratingCount ?? 0;
-    final category = place.category as Map<String, dynamic>? ?? {};
+    final category = place.category;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -175,13 +175,13 @@ class _PlaceListCard extends StatelessWidget {
                           photoUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                            return Center(
+                            return const Center(
                               child: Icon(Icons.image, color: AppColors.neutral400),
                             );
                           },
                         ),
                       )
-                    : Center(
+                    : const Center(
                         child: Icon(Icons.image, color: AppColors.neutral400),
                       ),
               ),
@@ -197,7 +197,7 @@ class _PlaceListCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    if (category.isNotEmpty)
+                    if (category != null && category.isNotEmpty)
                       Text(
                         category['name'] ?? '',
                         style: Theme.of(context).textTheme.bodySmall,
@@ -205,10 +205,10 @@ class _PlaceListCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.star, size: 14, color: AppColors.secondary500),
+                        const Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
                         Text(
-                          '$averageRating ($ratingCount)',
+                          '${averageRating is double ? averageRating.toStringAsFixed(1) : averageRating} ($ratingCount)',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -217,7 +217,7 @@ class _PlaceListCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 14, color: AppColors.neutral500),
+                          const Icon(Icons.location_on, size: 14, color: AppColors.neutral500),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(

@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Patch, Query, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { AdminUsersDto, AdminReviewsDto } from './dto';
@@ -54,5 +54,19 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Business suspended' })
   async suspendBusiness(@Param('id') id: string) {
     return this.adminService.suspendBusiness(id);
+  }
+
+  @Get('settings')
+  @ApiOperation({ summary: 'Get admin settings' })
+  @ApiResponse({ status: 200, description: 'Admin settings' })
+  async getSettings() {
+    return this.adminService.getSettings();
+  }
+
+  @Put('settings')
+  @ApiOperation({ summary: 'Update admin settings' })
+  @ApiResponse({ status: 200, description: 'Settings updated' })
+  async updateSettings(@Body() body: Record<string, any>) {
+    return this.adminService.updateSettings(body);
   }
 }

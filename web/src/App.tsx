@@ -1,12 +1,10 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import AdminLayout from './components/layout/AdminLayout'
-import BusinessLayout from './components/layout/BusinessLayout'
-import ProtectedRoute from './components/ProtectedRoute'
+import { LangProvider } from './contexts/LangContext'
 import LoadingSpinner from './components/ui/LoadingSpinner'
 
-// Public Pages
-const LandingPage = lazy(() => import('./pages/LandingPage'))
+// Landing
+const LandingPage = lazy(() => import('./pages/Landing'))
 
 // Admin Pages
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'))
@@ -23,12 +21,21 @@ const AdminBusinesses = lazy(() => import('./pages/admin/Businesses'))
 // Business Pages
 const BusinessLoginPage = lazy(() => import('./pages/business/BusinessLoginPage'))
 const BusinessRegisterPage = lazy(() => import('./pages/business/BusinessRegisterPage'))
+
+import AdminLayout from './components/layout/AdminLayout'
+import BusinessLayout from './components/layout/BusinessLayout'
+import ProtectedRoute from './components/ProtectedRoute'
+
 const EmpresaDashboard = lazy(() => import('./pages/empresa/Dashboard'))
 const EmpresaPlace = lazy(() => import('./pages/empresa/Place'))
 const EmpresaReviews = lazy(() => import('./pages/empresa/Reviews'))
 const EmpresaPromotions = lazy(() => import('./pages/empresa/Promotions'))
 const EmpresaStats = lazy(() => import('./pages/empresa/Stats'))
 const EmpresaPhotos = lazy(() => import('./pages/empresa/Photos'))
+
+// Legal Pages
+const PrivacyPolicy = lazy(() => import('./pages/legal/PrivacyPolicy'))
+const TermsOfService = lazy(() => import('./pages/legal/TermsOfService'))
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -46,6 +53,7 @@ function SuspenseWrapper({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
+<<<<<<< HEAD
     <SuspenseWrapper>
       <Routes>
         {/* Public Routes */}
@@ -53,40 +61,56 @@ function App() {
         {/* Business Auth Routes */}
         <Route path="/business/login" element={<BusinessLoginPage />} />
         <Route path="/business/register" element={<BusinessRegisterPage />} />
+=======
+    <LangProvider>
+      <SuspenseWrapper>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
+>>>>>>> develop
 
-        {/* Admin Auth Route (Secret URL) */}
-        <Route path="/admin-panel/login" element={<AdminLoginPage />} />
+          {/* Legal Pages */}
+          <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+          <Route path="/legal/terms" element={<TermsOfService />} />
 
-        {/* Admin Routes */}
-        <Route element={<ProtectedRoute roles={['admin']} />}>
-          <Route path="/admin-panel" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="businesses" element={<AdminBusinesses />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="places" element={<AdminPlaces />} />
-            <Route path="reviews" element={<AdminReviews />} />
-            <Route path="events" element={<AdminEvents />} />
-            <Route path="promotions" element={<AdminPromotions />} />
-            <Route path="categories" element={<AdminCategories />} />
-            <Route path="settings" element={<AdminSettings />} />
+          {/* Business Auth Routes */}
+          <Route path="/business/login" element={<BusinessLoginPage />} />
+          <Route path="/business/register" element={<BusinessRegisterPage />} />
+
+          {/* Admin Auth Route (Secret URL) */}
+          <Route path="/admin-panel/login" element={<AdminLoginPage />} />
+
+          {/* Admin Routes */}
+          <Route element={<ProtectedRoute roles={['admin']} />}>
+            <Route path="/admin-panel" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="businesses" element={<AdminBusinesses />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="places" element={<AdminPlaces />} />
+              <Route path="reviews" element={<AdminReviews />} />
+              <Route path="events" element={<AdminEvents />} />
+              <Route path="promotions" element={<AdminPromotions />} />
+              <Route path="categories" element={<AdminCategories />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
           </Route>
-        </Route>
 
-        {/* Business Routes */}
-        <Route element={<ProtectedRoute roles={['empresa']} />}>
-          <Route path="/business" element={<BusinessLayout />}>
-            <Route index element={<EmpresaDashboard />} />
-            <Route path="place" element={<EmpresaPlace />} />
-            <Route path="reviews" element={<EmpresaReviews />} />
-            <Route path="promotions" element={<EmpresaPromotions />} />
-            <Route path="stats" element={<EmpresaStats />} />
-            <Route path="photos" element={<EmpresaPhotos />} />
+          {/* Business Routes */}
+          <Route element={<ProtectedRoute roles={['empresa']} />}>
+            <Route path="/business" element={<BusinessLayout />}>
+              <Route index element={<EmpresaDashboard />} />
+              <Route path="place" element={<EmpresaPlace />} />
+              <Route path="reviews" element={<EmpresaReviews />} />
+              <Route path="promotions" element={<EmpresaPromotions />} />
+              <Route path="stats" element={<EmpresaStats />} />
+              <Route path="photos" element={<EmpresaPhotos />} />
+            </Route>
           </Route>
-        </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </SuspenseWrapper>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </SuspenseWrapper>
+    </LangProvider>
   )
 }
 

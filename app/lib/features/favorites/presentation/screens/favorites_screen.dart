@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/favorites_provider.dart';
 
 class FavoritesScreen extends ConsumerWidget {
@@ -11,16 +12,19 @@ class FavoritesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final favoritesState = ref.watch(favoritesProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favoritos'),
+        title: Text(l10n.favoritesTitle),
       ),
       body: _buildBody(context, ref, favoritesState),
     );
   }
 
   Widget _buildBody(BuildContext context, WidgetRef ref, FavoritesState state) {
+    final l10n = AppLocalizations.of(context)!;
+
     if (state.status == FavoritesStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -32,7 +36,7 @@ class FavoritesScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: AppColors.error500),
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error500),
               const SizedBox(height: 16),
               Text(
                 state.errorMessage ?? 'Error al cargar favoritos',
@@ -43,7 +47,7 @@ class FavoritesScreen extends ConsumerWidget {
               ElevatedButton.icon(
                 onPressed: () => ref.read(favoritesProvider.notifier).loadFavorites(),
                 icon: const Icon(Icons.refresh),
-                label: const Text('Reintentar'),
+                label: Text(l10n.retry),
               ),
             ],
           ),
@@ -54,9 +58,9 @@ class FavoritesScreen extends ConsumerWidget {
     if (state.favorites.isEmpty) {
       return EmptyState(
         icon: Icons.favorite_outline,
-        title: 'Sin favoritos',
-        message: 'Guarda tus lugares favoritos para encontrarlos fácilmente',
-        actionText: 'Explorar lugares',
+        title: l10n.favoritesEmpty,
+        subtitle: l10n.favoritesEmptySubtitle,
+        actionLabel: l10n.exploreTitle,
         onAction: () => context.go('/explore'),
       );
     }
@@ -71,7 +75,7 @@ class FavoritesScreen extends ConsumerWidget {
           final place = favorite['place'] ?? favorite;
           return _FavoritePlaceCard(
             place: place,
-            onTap: () => context.go('/places/${place['id']}'),
+            onTap: () => context.push('/places/${place['id']}'),
             onRemove: () {
               ref.read(favoritesProvider.notifier).removeFavorite(place['id']);
             },
@@ -97,8 +101,7 @@ class _FavoritePlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final photos = place['photos'] as List<dynamic>? ?? [];
     final photoUrl = photos.isNotEmpty ? photos[0]['url'] : null;
-    final rating = place['rating'] as Map<String, dynamic>? ?? {};
-    final averageRating = rating['average'] ?? 0;
+    final averageRating = place['ratingAvg'] ?? 0;
     final category = place['category'] as Map<String, dynamic>? ?? {};
 
     return Card(
@@ -125,13 +128,13 @@ class _FavoritePlaceCard extends StatelessWidget {
                           photoUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                            return Center(
+                            return const Center(
                               child: Icon(Icons.image, color: AppColors.neutral400),
                             );
                           },
                         ),
                       )
-                    : Center(
+                    : const Center(
                         child: Icon(Icons.image, color: AppColors.neutral400),
                       ),
               ),
@@ -155,10 +158,10 @@ class _FavoritePlaceCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.star, size: 14, color: AppColors.secondary500),
+                        const Icon(Icons.star, size: 14, color: AppColors.secondary500),
                         const SizedBox(width: 4),
                         Text(
-                          '$averageRating',
+                          '${averageRating is double ? averageRating.toStringAsFixed(1) : averageRating}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -167,7 +170,7 @@ class _FavoritePlaceCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.favorite, color: AppColors.error500),
+                icon: const Icon(Icons.favorite, color: AppColors.error500),
                 onPressed: onRemove,
               ),
             ],

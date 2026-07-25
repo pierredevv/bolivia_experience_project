@@ -10,7 +10,6 @@ export class SearchService {
       isActive: true,
       OR: [
         { name: { contains: query } },
-        { description: { contains: query } },
         { address: { contains: query } },
       ],
     };

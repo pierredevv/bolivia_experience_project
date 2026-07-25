@@ -1,10 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaginatedResponse } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class PromotionsService {
   constructor(private prisma: PrismaService) {}
+
+  private async verifyPlaceOwnership(userId: string, placeId: string, userRole: string) {
+    if (userRole === 'admin') return true;
+    const place = await this.prisma.place.findUnique({ where: { id: placeId } });
+    if (!place) throw new NotFoundException('Place not found');
+    if (place.ownerId !== userId) throw new ForbiddenException('You can only manage promotions for your own place');
+    return true;
+  }
+
+  private async verifyPromotionOwnership(userId: string, promotionId: string, userRole: string) {
+    if (userRole === 'admin') return true;
+    const promotion = await this.prisma.promotion.findUnique({ where: { id: promotionId } });
+    if (!promotion) throw new NotFoundException('Promotion not found');
+    const place = await this.prisma.place.findUnique({ where: { id: promotion.placeId } });
+    if (!place || place.ownerId !== userId) throw new ForbiddenException('You can only manage your own promotions');
+    return true;
+  }
 
   async findAll(page = 1, limit = 20, placeId?: string) {
     const skip = (page - 1) * limit;
@@ -76,22 +93,23 @@ export class PromotionsService {
     return promotion;
   }
 
-  async create(userId: string, placeId: string, data: any) {
+  async create(userId: string, userRole: string, placeId: string, data: any) {
+    await this.verifyPlaceOwnership(userId, placeId, userRole);
     return this.prisma.promotion.create({
       data: { ...data, placeId },
     });
   }
 
-  async update(userId: string, promotionId: string, data: any) {
-    await this.findById(promotionId);
+  async update(userId: string, userRole: string, promotionId: string, data: any) {
+    await this.verifyPromotionOwnership(userId, promotionId, userRole);
     return this.prisma.promotion.update({
       where: { id: promotionId },
       data,
     });
   }
 
-  async remove(userId: string, promotionId: string) {
-    await this.findById(promotionId);
+  async remove(userId: string, userRole: string, promotionId: string) {
+    await this.verifyPromotionOwnership(userId, promotionId, userRole);
     return this.prisma.promotion.delete({ where: { id: promotionId } });
   }
 }

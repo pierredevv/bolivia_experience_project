@@ -66,7 +66,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Icon(
+                const Icon(
                   Icons.explore,
                   size: 80,
                   color: AppColors.primary700,
@@ -165,6 +165,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     );
                   },
                   child: const Text('¿Olvidaste tu contraseña?'),
+                ),
+                const SizedBox(height: 24),
+                const Row(
+                  children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'O continúa con',
+                        style: TextStyle(color: AppColors.neutral500),
+                      ),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: authState.status == AuthStatus.loading
+                        ? null
+                        : () => ref.read(authProvider.notifier).loginWithGoogle(),
+                    icon: const Icon(Icons.g_mobiledata, size: 20),
+                    label: const Text('Continuar con Google'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(color: AppColors.neutral300),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
