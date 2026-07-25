@@ -1,6 +1,6 @@
 # Handoff de Sesión — BoliviaExperience
 
-**Fecha**: 23 de julio, 2026
+**Fecha**: 24 de julio, 2026
 **Agente**: MiMoCode (build agent)
 **Rama**: develop
 
@@ -8,7 +8,7 @@
 
 ## Resumen de la Sesión
 
-Sesión completa de desarrollo enfocada en: implementación de Trip Planning (feature estrella para demo de inversors), conexión del mapa con API real, búsqueda con autocomplete, integración del widget de clima, y múltiples fixes de bugs críticos.
+Sesión completa de debugging y fixes masivos. Se identificaron y corrigieron **35+ bugs** que afectaban las funciones core de la app: home vacío, categorías sin cargar, mapa sin markers, búsqueda incorrecta, y errores de navegación. Los problemas raíz incluían: parsing de respuestas paginadas incompatibles entre backend y frontend, providers Riverpod con race conditions, parámetros de query rechazados por ValidationPipe, y interfaces de datos incompletas.
 
 ---
 
@@ -16,59 +16,78 @@ Sesión completa de desarrollo enfocada en: implementación de Trip Planning (fe
 
 | Commit | Tipo | Descripción |
 |--------|------|-------------|
-| `0233511` | feat | Trip Planning + Mapa real + Búsqueda autocomplete + Fixes API |
+| `37dad80` | fix | critical bug fixes - home empty, categories loading, map markers, search matching |
 
 ---
 
-## Archivos Modificados/Creados
+## Archivos Modificados
 
-### API (Backend)
-| Archivo | Acción |
+### API (Backend) — 5 archivos
+| Archivo | Cambio |
 |---------|--------|
-| `api/prisma/schema.prisma` | Modificado (modelos Trip, TripDay, TripItem + relación trips en User) |
-| `api/prisma/schema.sqlite.prisma` | Modificado (mismos modelos para SQLite) |
-| `api/prisma/seed.ts` | Modificado (limpieza completa de tablas, places secuenciales, 2 viajes demo) |
-| `api/src/app.module.ts` | Modificado (TripsModule registrado) |
-| `api/src/modules/trips/trips.controller.ts` | Creado (CRUD endpoints) |
-| `api/src/modules/trips/trips.module.ts` | Creado |
-| `api/src/modules/trips/trips.service.ts` | Creado (lógica de negocio con ownership checks) |
+| `api/src/common/dto/pagination.dto.ts` | Agregado `hasNext`/`hasPrevious` calculados al `PaginatedResponse` |
+| `api/src/modules/places/dto/index.ts` | Agregado campo `categorySlug` a `QueryPlacesDto` |
+| `api/src/modules/places/places.service.ts` | Resolución de `categorySlug` → `categoryId` en `findAll()`; removido `description` de búsqueda |
+| `api/src/modules/places/repositories/geo.repository.ts` | Agregado `latitude`/`longitude` a respuestas `findByBoundsSQLite` y `findNearbySQLite`; actualizada interfaz `NearbyPlace` |
+| `api/src/modules/search/search.service.ts` | Removido `description` de la búsqueda (solo name/address) |
 
-### Flutter (Frontend) — Features nuevas
-| Archivo | Acción |
+### Flutter (Frontend) — 18 archivos
+| Archivo | Cambio |
 |---------|--------|
-| `app/lib/features/trips/data/trips_service.dart` | Creado (llamadas API trips) |
-| `app/lib/features/trips/presentation/providers/trips_provider.dart` | Creado (StateNotifier) |
-| `app/lib/features/trips/presentation/screens/trips_list_screen.dart` | Creado (lista de viajes + "Próximos destinos") |
-| `app/lib/features/trips/presentation/screens/trip_detail_screen.dart` | Creado (timeline de días, agregar actividades) |
-| `app/lib/features/trips/presentation/screens/create_trip_screen.dart` | Creado (formulario con destino, presupuesto, fechas) |
-| `app/lib/features/trips/presentation/widgets/trip_day_card.dart` | Creado |
-| `app/lib/features/trips/presentation/widgets/trip_item_tile.dart` | Creado |
-| `app/lib/features/map/data/map_service.dart` | Creado (llamadas API mapa) |
-| `app/lib/features/map/presentation/providers/map_provider.dart` | Creado (StateNotifier con markers) |
-| `app/lib/features/map/presentation/widgets/map_filter_sheet.dart` | Creado (filtros urbano/rural, categoría, distancia) |
+| `app/lib/config/router.dart` | Agregado `rootNavigatorKey`, `navigatorKey` en GoRouter, fallback `categoryName` via query param |
+| `app/lib/core/network/dio_provider.dart` | Agregado redirect a `/login` en 401 con navigator key global |
+| `app/lib/features/events/data/events_service.dart` | Fix `Event.id` toString, parsing de paginated response en `getEvents()` |
+| `app/lib/features/home/data/home_service.dart` | Fix `getPromotions()` para desempaquetar `PaginatedResponse` anidado |
+| `app/lib/features/home/presentation/providers/home_provider.dart` | Fix `copyWith` errorMessage, removido `.catchError` silenciador, cambiado a `autoDispose` |
+| `app/lib/features/home/presentation/screens/home_screen.dart` | Fix category navigation a `/places/category/:slug`, fix photo/category safety checks |
+| `app/lib/features/home/presentation/screens/main_shell.dart` | Fix bottom nav highlight con `startsWith('/explore')` |
+| `app/lib/features/map/data/map_service.dart` | Fix `MapPlace.fromJson` para aceptar snake_case y camelCase; fix response parsing |
+| `app/lib/features/map/presentation/providers/map_provider.dart` | Mejorado error message con detalle del exception |
+| `app/lib/features/map/presentation/screens/map_screen.dart` | `myLocationEnabled: false` (sin permisos) |
+| `app/lib/features/places/data/places_service.dart` | Fix query param `categorySlug`, parsing `meta` vs `pagination`, `Place.id` toString, `getPlaceReviews` unpack |
+| `app/lib/features/places/presentation/providers/place_detail_provider.dart` | Reemplazado `Future.wait` por carga individual con try/catch, fix `copyWith` errorMessage |
+| `app/lib/features/places/presentation/providers/places_provider.dart` | Convertido a `StateNotifierProvider.family.autoDispose` con auto-load |
+| `app/lib/features/places/presentation/screens/place_detail_screen.dart` | Fix star rating logic, rating distribution dinámica, uso de `dioProvider` |
+| `app/lib/features/places/presentation/screens/places_list_screen.dart` | Eliminada carga manual en `initState`, fix photoUrl safety check |
+| `app/lib/features/reviews/data/reviews_service.dart` | Fix field names camelCase, `getPlaceReviews` paginated unpack |
+| `app/lib/features/search/presentation/screens/explore_screen.dart` | Fix `_CategoryCard` overflow con `Flexible`/`mainAxisSize.min`, fix navigation a query param |
+| `app/lib/features/search/presentation/screens/search_screen.dart` | Cancel button: `Navigator.pop` → `context.go('/map')` |
 
-### Flutter (Frontend) — Modificaciones
-| Archivo | Acción |
-|---------|--------|
-| `app/lib/config/router.dart` | Modificado (rutas /trips, /trips/create, /trips/:id) |
-| `app/lib/config/api_constants.dart` | Modificado (constante trips) |
-| `app/lib/features/home/presentation/screens/home_screen.dart` | Modificado (WeatherWidget + card "Planifica tu Viaje" + push navigation) |
-| `app/lib/features/map/presentation/screens/map_screen.dart` | Reescrito (ConsumerStatefulWidget, markers desde API, filtros funcionales) |
-| `app/lib/features/search/presentation/screens/search_screen.dart` | Modificado (autocomplete dropdown, push navigation) |
-| `app/lib/features/search/presentation/providers/search_provider.dart` | Modificado (debounce dividido: 300ms sugerencias, 500ms búsqueda) |
-| `app/lib/features/places/presentation/screens/place_detail_screen.dart` | Modificado (botón "Agregar a viaje" + bottom sheet) |
-| `app/lib/features/events/presentation/screens/events_screen.dart` | Modificado (go→push) |
-| `app/lib/features/favorites/presentation/screens/favorites_screen.dart` | Modificado (go→push) |
-| `app/lib/features/places/presentation/screens/nearby_screen.dart` | Modificado (go→push) |
-| `app/lib/features/places/presentation/screens/places_list_screen.dart` | Modificado (go→push) |
+---
 
-### Flutter (Frontend) — Fixes
-| Archivo | Acción |
-|---------|--------|
-| `app/lib/features/trips/data/trips_service.dart` | Fix response parsing (data['data'] unwrap) |
-| `app/lib/features/trips/presentation/screens/trip_detail_screen.dart` | Fix initialValue + error UI (no más loading infinito) |
-| `app/lib/features/trips/presentation/screens/create_trip_screen.dart` | Fix initialValue |
-| `app/lib/features/search/presentation/screens/search_screen.dart` | Fix const + withValues |
+## Bugs Corregidos (Raíz → Fix)
+
+### Home vacío
+- **Raíz**: `home_provider.dart` tenía `.catchError((_) => [])` que traga TODOS los errores silenciosamente; `getPromotions()` no desempaquetaba el `PaginatedResponse` del backend
+- **Fix**: Removido `.catchError`, cada llamada tiene su propio try/catch; `getPromotions()` ahora lee `data['data']['data']`
+
+### Categorías sin cargar (loop infinito)
+- **Raíz**: Flutter enviaba `?category=slug` pero el backend solo aceptaba `categoryId` (cuid); `forbidNonWhitelisted: true` rechazaba el parámetro con 400; `placesProvider` no era `family` causando race conditions
+- **Fix**: Agregado `categorySlug` al DTO del backend con resolución a `categoryId`; provider convertido a `family.autoDispose`
+
+### Errores al tocar lugares
+- **Raíz**: `Future.wait` en 3 llamadas fallaba si CUALQUIERA fallaba; `getPlaceReviews()` no desempaquetaba paginated response
+- **Fix**: Carga individual con try/catch; `getPlaceReviews()` desempaqueta correctamente
+
+### Mapa sin markers
+- **Raíz**: `GeoRepository` no retornaba `latitude`/`longitude` en la respuesta; todos los markers se colocaban en `(0, 0)`
+- **Fix**: Agregados `latitude`/`longitude` a `findByBoundsSQLite` y `findNearbySQLite`
+
+### Búsqueda incorrecta
+- **Raíz**: Backend buscaba en `name`, `description`, y `address`; "El Palmar" matcheaba "ho" por su descripción
+- **Fix**: Búsqueda limitada a `name` y `address`
+
+### Error al cancelar búsqueda
+- **Raíz**: `Navigator.pop(context)` fallaba porque la ruta fue reemplazada con `context.go('/search')`
+- **Fix**: Cambiado a `context.go('/map')`
+
+### Pixel overflow en Explorar
+- **Raíz**: `_CategoryCard` sin `Flexible`/`mainAxisSize.min`
+- **Fix**: Agregado `Flexible` al Text y `mainAxisSize: MainAxisSize.min` al Column
+
+### 401 sin redirect
+- **Raíz**: Interceptor limpiaba token pero no redirigía a login
+- **Fix**: Agregado redirect a `/login` con `rootNavigatorKey`
 
 ---
 
@@ -84,47 +103,40 @@ Sesión completa de desarrollo enfocada en: implementación de Trip Planning (fe
 | **Usuario** | juan@gmail.com | password123 |
 | **Usuario** | ana@gmail.com | password123 |
 
-### Datos Creados por el Seed
-- 5 usuarios (1 admin, 1 empresa, 3 usuarios)
-- 10 categorías (Restaurantes, Hoteles, Bares, Cafeterías, Atracciones, Parques, Museos, Centros Comerciales, Deportes, Gastronomía)
-- 12 lugares turísticos de Santa Cruz
-- 6 eventos próximos
-- 5 promociones activas
-- 10 reseñas
-- 7 favoritos
-- 5 búsquedas recientes
-- 4 notificaciones
-- **2 viajes demo** (Santa Cruz 3 Días Low Cost + Santa Cruz Premium 4 Días)
-
 ---
 
-## Funcionalidades Implementadas
+## Funcionalidades Corregidas
 
-### Trip Planning (Feature Estrella)
-- **Crear viaje**: Nombre, destino (Santa Cruz habilitado, otros "Próximamente"), fechas, presupuesto (Low Cost / Medio / Premium)
-- **Detalle de viaje**: Timeline vertical de días con actividades
-- **Agregar actividades**: Desde el detalle del viaje o desde el detalle de un lugar
-- **Lista de viajes**: Muestra viajes del usuario con badges de presupuesto
-- **Sección "Próximos destinos"**: Uyuni, La Paz, Sucre, Samaipata (deshabilitados)
+### Home Screen
+- Categorías, lugares destacados, eventos y promociones cargan correctamente
+- Tap en categoría → navega a lista filtrada por categoría
+- Promociones ahora se muestran (antes siempre vacías)
 
-### Mapa con API Real
-- Markers cargados desde `GET /map/bounds`
-- Filtros: Urbano / Rural / Todos + categoría + distancia
-- Colores diferenciados: azul (urbano), verde (rural)
-- Tap en marker → InfoWindow con nombre
+### Categorías (Places List)
+- Loading spinner resolve correctamente (antes loop infinito)
+- Filtrado por categoría funciona via `categorySlug`
+- Scroll infinito funciona (`hasNext`/`hasPrevious` calculados correctamente)
+- Cada categoría tiene su propio provider (no hay contaminación de datos)
 
-### Búsqueda con Autocomplete
-- Dropdown de sugerencias con debounce 300ms
-- Búsqueda completa con debounce 500ms
-- Animación de aparición de sugerencias
+### Mapa
+- Markers se muestran en Santa Cruz (antes en 0,0)
+- Badge de lugares funciona
+- `myLocationEnabled` deshabilitado (sin permisos)
 
-### Weather Widget
-- Integrado en Home screen después del buscador
-- Muestra clima actual de Santa Cruz
+### Búsqueda
+- Búsqueda por nombre funciona correctamente
+- Cancelar vuelve al mapa sin error
+- Resultados más precisos (solo name/address, no description)
 
-### Navegación go→push
-- 10 archivos corregidos para usar `context.push()` en lugar de `context.go()`
-- Preserva historial de navegación (botón atrás funciona correctamente)
+### Detalle de Lugar
+- Carga sin error (antes fallaba si photos/reviews fallaban)
+- Star rating muestra estrellas correctas (star_outline para vacías)
+- Rating distribution calculada desde reviews reales
+
+### Navegación
+- Bottom nav highlight funciona con query params
+- 401 redirige a login automáticamente
+- `categoryName` persiste via query param
 
 ---
 
@@ -140,22 +152,20 @@ Sesión completa de desarrollo enfocada en: implementación de Trip Planning (fe
 ## Próximos Entregables (Sesión Siguiente)
 
 ### UI/UX — Prioridad Alta
-1. **Acceso a "Mis Viajes"**: No hay botón o sección visible en la UI principal para acceder a los viajes creados. Actualmente solo se llega desde el card "Planifica tu Viaje" en Home. Necesita:
-   - Botón en el perfil o bottom nav
-   - Opción en el menú de navegación
-2. **Revisión de vistas existentes**: Muchas pantallas tienen errores menores de UI (estilos, espaciado, colores, estados vacíos)
+1. **Acceso a "Mis Viajes"**: Agregar botón/sección visible en UI principal
+2. **Revisión de vistas existentes**: Errores menores de UI (estilos, espaciado, estados vacíos)
 
 ### Fixes Pendientes
-3. **Profile screen**: Los menús "Mis Reseñas", "Idioma", "Acerca de", "Privacidad" tienen handlers vacíos
-4. **Edit profile**: El botón "Guardar" no funciona (TODO)
-5. **Settings**: Los toggles de notificaciones, sonido, ubicación no funcionan (TODO)
-6. **Weather widget**: Los pending timers en tests (2 tests pendientes)
-7. **Place detail**: El mapa embebido muestra placeholder gris en lugar de mapa real
+3. **Profile screen**: Menús "Mis Reseñas", "Idioma", "Acerca de", "Privacidad" con handlers vacíos
+4. **Edit profile**: Botón "Guardar" no funciona (TODO)
+5. **Settings**: Toggles de notificaciones, sonido, ubicación no funcionan (TODO)
+6. **Weather widget**: Tests pendientes
+7. **Place detail**: Mapa embebido muestra placeholder gris
 
 ### Mejoras
-8. **Seed expandido**: Objetivo 50-80 lugares reales de Santa Cruz
-9. **Fotos de lugares**: Agregar PlacePhotos con URLs de Unsplash para todos los lugares
-10. **Reviews de ejemplo**: Agregar 3-5 reviews para los places más populares
+8. **Seed expandido**: 50-80 lugares reales de Santa Cruz
+9. **Fotos de lugares**: PlacePhotos con URLs de Unsplash
+10. **Reviews de ejemplo**: 3-5 reviews para places populares
 
 ---
 
@@ -172,11 +182,12 @@ cd app && flutter clean && flutter pub get && flutter run
 Email: maria@gmail.com
 Contraseña: password123
 
-# 4. Probar Trip Planning
-- Tocar "Empezar" en card "Planifica tu Viaje"
-- Ver viajes demo
-- Crear nuevo viaje
-- Agregar días y actividades
+# 4. Probar fixes
+- Home: Ver categorías, lugares destacados, eventos, promociones
+- Tap categoría: Debe cargar lugares filtrados
+- Mapa: Debe mostrar markers en Santa Cruz
+- Búsqueda: Buscar "h" → resultados por nombre
+- Cancelar búsqueda: Vuelve al mapa sin error
 ```
 
 ---
@@ -186,11 +197,9 @@ Contraseña: password123
 | Métrica | Valor |
 |---------|-------|
 | Commits realizados | 1 |
-| Archivos modificados/creados | 42 |
-| Líneas agregadas | ~3,655 |
-| Líneas eliminadas | ~307 |
-| Modelos Prisma nuevos | 3 (Trip, TripDay, TripItem) |
-| Archivos Flutter nuevos | 10 |
-| Endpoints API nuevos | 7 |
-| Errores de analyze corregidos | 7 |
-| Navegación go→push corregida | 10 archivos |
+| Archivos modificados | 23 |
+| Líneas agregadas | ~283 |
+| Líneas eliminadas | ~118 |
+| Bugs corregidos | 35+ |
+| Backend archivos modificados | 5 |
+| Flutter archivos modificados | 18 |
