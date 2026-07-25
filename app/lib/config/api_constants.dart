@@ -1,8 +1,20 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class ApiConstants {
-  // Para emulador Android: http://10.0.2.2:3000/api/v1
-  // Para iOS simulator: http://localhost:3000/api/v1
-  // Para dispositivo fisico: http://<TU_IP>:3000/api/v1
-  static const baseUrl = 'http://192.168.1.4:3000/api/v1';
+  static String get baseUrl {
+    const customUrl = String.fromEnvironment('API_BASE_URL');
+    if (customUrl.isNotEmpty) {
+      return customUrl;
+    }
+    if (kIsWeb) {
+      return 'http://localhost:3000/api/v1';
+    }
+    if (Platform.isAndroid) {
+      return 'http://192.168.0.5:3000/api/v1';
+    }
+    return 'http://localhost:3000/api/v1';
+  }
 
   // Auth
   static const register = '/auth/register';
