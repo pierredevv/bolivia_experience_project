@@ -6,7 +6,11 @@ description: >
   roadmap, se necesite priorizar el backlog con RICE/MoSCoW, o se valide si algo es
   crítico para el MVP. Ejemplos: "Define una feature de favoritos con user story",
   "Prioriza este backlog de 10 features", "¿Este widget de clima es crítico para MVP?".
-tools: [Read, Grep, Glob, Write]
+tools:
+  read: true
+  grep: true
+  glob: true
+  write: true
 model: sonnet
 ---
 

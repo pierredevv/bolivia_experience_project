@@ -6,7 +6,12 @@ description: >
   seguridad, se analice performance, o se documente un ADR. Ejemplos: "Revisa la
   arquitectura del módulo de auth", "¿Es seguro el manejo de JWT?", "Evalúa la
   escalabilidad del endpoint de búsqueda".
-tools: [Read, Grep, Glob, Bash, Write]
+tools:
+  read: true
+  grep: true
+  glob: true
+  bash: true
+  write: true
 model: sonnet
 ---
 

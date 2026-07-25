@@ -1,17 +1,22 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../config/colors.dart';
+import '../providers/map_provider.dart';
+import '../widgets/map_filter_sheet.dart';
 
-class MapScreen extends StatefulWidget {
+class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
   @override
-  State<MapScreen> createState() => _MapScreenState();
+  ConsumerState<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends ConsumerState<MapScreen> {
   final Completer<GoogleMapController> _mapController = Completer();
+  LatLngBounds? _lastBounds;
 
   // Santa Cruz de la Sierra center
   static const CameraPosition _santaCruz = CameraPosition(
@@ -19,64 +24,69 @@ class _MapScreenState extends State<MapScreen> {
     zoom: 13,
   );
 
-  final Set<Marker> _markers = {};
-
   @override
   void initState() {
     super.initState();
-    _loadPlaceMarkers();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMarkersForCurrentView();
+    });
   }
 
-  void _loadPlaceMarkers() {
-    // Sample places from seed data
-    final places = [
-      {'name': 'El Palmar', 'lat': -17.7833, 'lng': -63.1821},
-      {'name': 'Cocina Mestiza', 'lat': -17.7754, 'lng': -63.1715},
-      {'name': 'Hotel Buganvilia', 'lat': -17.7801, 'lng': -63.1789},
-      {'name': 'Lomas de Arena', 'lat': -17.8200, 'lng': -63.2200},
-      {'name': 'Museo Noel Kempff', 'lat': -17.7650, 'lng': -63.1500},
-      {'name': 'Café Munaipata', 'lat': -17.7810, 'lng': -63.1850},
-      {'name': 'Blue Velvet Bar', 'lat': -17.7780, 'lng': -63.1760},
-      {'name': 'Churrasquía Don Toto', 'lat': -17.7890, 'lng': -63.1950},
-      {'name': 'CC Ventura', 'lat': -17.7600, 'lng': -63.1300},
-      {'name': 'Cristo Redentor', 'lat': -17.7730, 'lng': -63.1630},
-    ];
+  void _loadMarkersForCurrentView() async {
+    if (_lastBounds == null) return;
+    final notifier = ref.read(mapProvider.notifier);
+    await notifier.loadMarkers(_lastBounds!);
+  }
 
-    setState(() {
-      for (final place in places) {
-        _markers.add(
-          Marker(
-            markerId: MarkerId(place['name'] as String),
-            position: LatLng(place['lat'] as double, place['lng'] as double),
-            infoWindow: InfoWindow(title: place['name'] as String),
-          ),
-        );
-      }
-    });
+  void _onCameraIdle() async {
+    final controller = await _mapController.future;
+    final bounds = await controller.getVisibleRegion();
+    if (mounted) {
+      setState(() => _lastBounds = bounds);
+      final notifier = ref.read(mapProvider.notifier);
+      await notifier.loadMarkers(bounds);
+    }
+  }
+
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const MapFilterSheet(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final mapState = ref.watch(mapProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mapa'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: _showFilterSheet,
+            tooltip: 'Filtros',
+          ),
+          IconButton(
             icon: const Icon(Icons.my_location),
             onPressed: () async {
               final controller = await _mapController.future;
-              controller.animateCamera(CameraUpdate.newCameraPosition(_santaCruz));
+              controller.animateCamera(
+                CameraUpdate.newCameraPosition(_santaCruz),
+              );
             },
           ),
         ],
       ),
       body: Stack(
         children: [
-          // Real Google Map
           GoogleMap(
             initialCameraPosition: _santaCruz,
-            markers: _markers,
-            myLocationEnabled: true,
+            markers: mapState.markers,
+            myLocationEnabled: false,
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
             onMapCreated: (controller) {
@@ -84,6 +94,7 @@ class _MapScreenState extends State<MapScreen> {
                 _mapController.complete(controller);
               }
             },
+            onCameraIdle: _onCameraIdle,
           ),
 
           // Search bar overlay
@@ -92,11 +103,10 @@ class _MapScreenState extends State<MapScreen> {
             left: 16,
             right: 16,
             child: GestureDetector(
-              onTap: () {
-                // TODO: Navigate to search
-              },
+              onTap: () => context.go('/search'),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -122,22 +132,113 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
 
-          // Filter chips
-          const Positioned(
-            top: 70,
-            left: 16,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _MapFilterChip(label: 'Todos', isSelected: true),
-                  _MapFilterChip(label: 'Restaurantes'),
-                  _MapFilterChip(label: 'Hoteles'),
-                  _MapFilterChip(label: 'Atracciones'),
-                ],
+          // Active category chip indicator
+          if (mapState.selectedCategoryId != null)
+            Positioned(
+              top: 70,
+              left: 16,
+              child: GestureDetector(
+                onTap: _showFilterSheet,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.filter_list,
+                          size: 16, color: AppColors.primary700),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Filtro activo',
+                        style: TextStyle(
+                          color: AppColors.primary700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: () {
+                          ref.read(mapProvider.notifier).setSelectedCategory(null);
+                          _loadMarkersForCurrentView();
+                        },
+                        child: const Icon(Icons.close,
+                            size: 14, color: AppColors.primary700),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
+
+          // Loading indicator
+          if (mapState.status == MapStatus.loading)
+            const Positioned(
+              top: 70,
+              right: 16,
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+
+          // Place count badge
+          if (mapState.status == MapStatus.loaded)
+            Positioned(
+              bottom: 100,
+              left: 16,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  '${mapState.places.length} lugares',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.neutral700,
+                  ),
+                ),
+              ),
+            ),
+
+          // Error snackbar
+          if (mapState.status == MapStatus.error && mapState.errorMessage != null)
+            Positioned(
+              bottom: 100,
+              left: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.error100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  mapState.errorMessage!,
+                  style: const TextStyle(
+                    color: AppColors.error900,
+                    fontSize: 13,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
 
           // Zoom controls
           Positioned(
@@ -164,29 +265,6 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _MapFilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-
-  const _MapFilterChip({required this.label, this.isSelected = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (selected) {},
-        selectedColor: AppColors.primary100,
-        backgroundColor: Colors.white,
-        checkmarkColor: AppColors.primary700,
-        elevation: 2,
       ),
     );
   }

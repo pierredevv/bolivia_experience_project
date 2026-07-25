@@ -143,8 +143,8 @@ web/
 
 ### 6.1 Paleta
 
-- **Primary:** Azul (#1976D2) - Admin
-- **Secondary:** Naranja (#E65100) - Empresa
+- **Primary:** Verde (#43A047) — Color oficial, CTAs principales
+- **Secondary:** Azul (#1976D2) — Links, info, acentos
 - **Neutrals:** Escala de grises
 
 ### 6.2 Tipografía

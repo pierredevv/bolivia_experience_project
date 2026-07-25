@@ -8,6 +8,8 @@ export interface NearbyPlace {
   description: string | null;
   address: string;
   phone: string | null;
+  latitude: number;
+  longitude: number;
   rating_avg: number;
   rating_count: number;
   category_name: string;
@@ -95,6 +97,8 @@ export class GeoRepository {
         description: place.description,
         address: place.address,
         phone: place.phone,
+        latitude: Number(place.latitude),
+        longitude: Number(place.longitude),
         rating_avg: Number(place.ratingAvg),
         rating_count: place.ratingCount,
         category_name: place.category?.name || '',
@@ -294,6 +298,8 @@ export class GeoRepository {
       description: place.description,
       address: place.address,
       phone: place.phone,
+      latitude: Number(place.latitude),
+      longitude: Number(place.longitude),
       rating_avg: Number(place.ratingAvg),
       rating_count: place.ratingCount,
       category_name: place.category?.name || '',

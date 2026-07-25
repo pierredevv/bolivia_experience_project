@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../config/colors.dart';
+import '../../../../core/network/dio_provider.dart';
+import '../../../trips/data/trips_service.dart';
 import '../providers/place_detail_provider.dart';
 
 class PlaceDetailScreen extends ConsumerWidget {
@@ -192,6 +194,12 @@ class PlaceDetailScreen extends ConsumerWidget {
                         );
                       },
                     ),
+                    _ActionButton(
+                      icon: Icons.map_outlined,
+                      label: 'Agregar a viaje',
+                      color: AppColors.primary500,
+                      onTap: () => _showAddToTripSheet(context, ref, place),
+                    ),
                   ],
                 ),
 
@@ -273,10 +281,18 @@ class PlaceDetailScreen extends ConsumerWidget {
                             ),
                             Row(
                               children: List.generate(5, (index) {
+                                final rating = double.tryParse(averageRating.toString()) ?? 0;
+                                final roundedRating = rating.round();
+                                IconData icon;
+                                if (index < roundedRating) {
+                                  icon = Icons.star;
+                                } else if (index < rating.ceil() && index >= roundedRating) {
+                                  icon = Icons.star_half;
+                                } else {
+                                  icon = Icons.star_outline;
+                                }
                                 return Icon(
-                                   index < (double.tryParse(averageRating.toString()) ?? 0).round()
-                                      ? Icons.star
-                                      : Icons.star_half,
+                                  icon,
                                   color: AppColors.secondary500,
                                   size: 20,
                                 );
@@ -286,15 +302,15 @@ class PlaceDetailScreen extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(width: 24),
-                        const Expanded(
+                        Expanded(
                           child: Column(
-                            children: [
-                              _RatingBar(label: '5', value: 0.7),
-                              _RatingBar(label: '4', value: 0.2),
-                              _RatingBar(label: '3', value: 0.05),
-                              _RatingBar(label: '2', value: 0.03),
-                              _RatingBar(label: '1', value: 0.02),
-                            ],
+                            children: List.generate(5, (index) {
+                              final starValue = 5 - index;
+                              final count = reviews.where((r) => (r['rating'] ?? 0) == starValue).length;
+                              final total = reviews.length;
+                              final value = total > 0 ? count / total : 0.0;
+                              return _RatingBar(label: '$starValue', value: value);
+                            }),
                           ),
                         ),
                       ],
@@ -319,6 +335,24 @@ class PlaceDetailScreen extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showAddToTripSheet(BuildContext context, WidgetRef ref, dynamic place) {
+    final dio = ref.read(dioProvider);
+    final tripsService = TripsService(dio);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => _AddToTripSheet(
+        tripsService: tripsService,
+        placeId: placeId,
+        placeName: place.name ?? '',
+      ),
     );
   }
 
@@ -462,6 +496,238 @@ class _ReviewCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AddToTripSheet extends StatefulWidget {
+  final TripsService tripsService;
+  final String placeId;
+  final String placeName;
+
+  const _AddToTripSheet({
+    required this.tripsService,
+    required this.placeId,
+    required this.placeName,
+  });
+
+  @override
+  State<_AddToTripSheet> createState() => _AddToTripSheetState();
+}
+
+class _AddToTripSheetState extends State<_AddToTripSheet> {
+  List<dynamic> _trips = [];
+  bool _isLoading = true;
+  String? _selectedTripId;
+  List<dynamic> _days = [];
+  String? _selectedDayId;
+  String? _selectedTimeSlot;
+  bool _isAdding = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTrips();
+  }
+
+  Future<void> _loadTrips() async {
+    try {
+      final trips = await widget.tripsService.getTrips();
+      setState(() {
+        _trips = trips;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _onTripSelected(String tripId) {
+    final trip = _trips.firstWhere((t) => t['id'] == tripId, orElse: () => null);
+    setState(() {
+      _selectedTripId = tripId;
+      _days = (trip?['days'] as List<dynamic>?) ?? [];
+      _selectedDayId = null;
+    });
+  }
+
+  Future<void> _addItem() async {
+    if (_selectedDayId == null) return;
+    setState(() => _isAdding = true);
+    try {
+      await widget.tripsService.addItem(
+        _selectedDayId!,
+        title: widget.placeName,
+        placeId: widget.placeId,
+        timeSlot: _selectedTimeSlot,
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${widget.placeName} agregado al viaje')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al agregar: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isAdding = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.3,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (ctx, scrollController) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: ListView(
+            controller: scrollController,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.neutral300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Agregar a mi viaje',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                widget.placeName,
+                style: const TextStyle(color: AppColors.neutral500),
+              ),
+              const SizedBox(height: 20),
+
+              if (_isLoading)
+                const Center(child: CircularProgressIndicator())
+              else if (_trips.isEmpty) ...[
+                const Icon(Icons.map_outlined, size: 48, color: AppColors.neutral300),
+                const SizedBox(height: 12),
+                const Text(
+                  'No tenés viajes creados',
+                  style: TextStyle(color: AppColors.neutral500),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.push('/trips/create');
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Crear viaje'),
+                ),
+              ] else ...[
+                const Text(
+                  'Seleccioná un viaje',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                ..._trips.map((trip) {
+                  final isSelected = trip['id'] == _selectedTripId;
+                  final budgetType = trip['budgetType'] as String?;
+                  final budgetLabel = budgetType == 'low_cost'
+                      ? 'Low Cost'
+                      : budgetType == 'luxury'
+                          ? 'Premium'
+                          : budgetType == 'medium'
+                              ? 'Medio'
+                              : '';
+                  return Card(
+                    color: isSelected ? AppColors.primary50 : null,
+                    child: ListTile(
+                      title: Text(trip['name'] ?? ''),
+                      subtitle: Text(
+                        '${trip['destination'] ?? ''} $budgetLabel',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      trailing: isSelected
+                          ? const Icon(Icons.check_circle, color: AppColors.primary700)
+                          : const Icon(Icons.chevron_right),
+                      onTap: () => _onTripSelected(trip['id']),
+                    ),
+                  );
+                }),
+              ],
+
+              if (_selectedTripId != null && _days.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                const Text(
+                  'Seleccioná el día',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _days.map((day) {
+                    final isSelected = day['id'] == _selectedDayId;
+                    return ChoiceChip(
+                      label: Text('Día ${day['dayNumber']}'),
+                      selected: isSelected,
+                      onSelected: (_) {
+                        setState(() => _selectedDayId = day['id']);
+                      },
+                    );
+                  }).toList(),
+                ),
+              ],
+
+              if (_selectedDayId != null) ...[
+                const SizedBox(height: 20),
+                const Text(
+                  'Horario (opcional)',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedTimeSlot,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Seleccionar horario',
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'manana', child: Text('Mañana')),
+                    DropdownMenuItem(value: 'mediodia', child: Text('Mediodía')),
+                    DropdownMenuItem(value: 'tarde', child: Text('Tarde')),
+                    DropdownMenuItem(value: 'noche', child: Text('Noche')),
+                  ],
+                  onChanged: (v) => setState(() => _selectedTimeSlot = v),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _isAdding ? null : _addItem,
+                    child: _isAdding
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Agregar al viaje'),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 32),
+            ],
+          ),
+        );
+      },
     );
   }
 }

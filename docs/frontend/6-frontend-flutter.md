@@ -125,10 +125,10 @@ app/
 
 ### 4.1 Colores
 
-- **Primary:** Azul (#1976D2) - Cielo boliviano, confianza
-- **Secondary:** Naranja (#E65100) - Energía, turismo
-- **Success:** Verde (#2E7D32) - Naturaleza
-- **Error:** Rojo (#D32F2F) - Alertas
+- **Primary:** Verde (#43A047) — Color oficial, CTAs, naturaleza
+- **Secondary:** Azul (#1976D2) — Links, info, confianza
+- **Success:** Verde oscuro (#2E7D32) — Estados de éxito
+- **Error:** Rojo (#D32F2F) — Alertas
 - **Neutrals:** Escala de grises
 
 ### 4.2 Temas

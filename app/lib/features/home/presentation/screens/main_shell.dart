@@ -10,7 +10,7 @@ class MainShell extends StatelessWidget {
     final location = GoRouterState.of(context).uri.path;
     if (location == '/') return 0;
     if (location == '/map') return 1;
-    if (location == '/explore') return 2;
+    if (location.startsWith('/explore')) return 2;
     if (location == '/favorites') return 3;
     if (location == '/profile') return 4;
     return 0;

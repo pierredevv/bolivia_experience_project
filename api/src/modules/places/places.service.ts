@@ -22,14 +22,25 @@ export class PlacesService {
       where.isActive = true;
     }
 
-    if (query.categoryId) {
+    // Support filtering by categorySlug (resolve to categoryId)
+    if (query.categorySlug) {
+      const category = await this.prisma.category.findUnique({
+        where: { slug: query.categorySlug },
+        select: { id: true },
+      });
+      if (category) {
+        where.categoryId = category.id;
+      } else {
+        // Category not found, return empty results
+        return new PaginatedResponse([], 0, page, limit);
+      }
+    } else if (query.categoryId) {
       where.categoryId = query.categoryId;
     }
 
     if (query.search) {
       where.OR = [
         { name: { contains: query.search } },
-        { description: { contains: query.search } },
         { address: { contains: query.search } },
       ];
     }

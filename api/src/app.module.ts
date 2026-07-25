@@ -23,6 +23,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
 import { ChatbotModule } from './modules/chatbot/chatbot.module';
+import { TripsModule } from './modules/trips/trips.module';
 import { HealthController } from './common/controllers/health.controller';
 import configuration from './config/configuration';
 
@@ -65,6 +66,7 @@ import configuration from './config/configuration';
     ReferralsModule,
     RecommendationsModule,
     ChatbotModule,
+    TripsModule,
   ],
   controllers: [HealthController],
   providers: [

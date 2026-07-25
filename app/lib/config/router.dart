@@ -21,9 +21,15 @@ import '../features/reviews/presentation/screens/create_review_screen.dart';
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/profile/presentation/screens/settings_screen.dart';
 import '../features/home/presentation/screens/main_shell.dart';
+import '../features/trips/presentation/screens/trips_list_screen.dart';
+import '../features/trips/presentation/screens/trip_detail_screen.dart';
+import '../features/trips/presentation/screens/create_trip_screen.dart';
+
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     redirect: (context, state) {
       final isAuthenticated = TokenManager.hasToken;
@@ -98,7 +104,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/places/category/:slug',
         builder: (context, state) => PlacesListScreen(
           categorySlug: state.pathParameters['slug']!,
-          categoryName: state.extra as String? ?? '',
+          categoryName: state.uri.queryParameters['name'] ?? state.extra as String? ?? '',
         ),
       ),
       GoRoute(
@@ -126,6 +132,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/trips',
+        builder: (context, state) => const TripsListScreen(),
+      ),
+      GoRoute(
+        path: '/trips/create',
+        builder: (context, state) => const CreateTripScreen(),
+      ),
+      GoRoute(
+        path: '/trips/:id',
+        builder: (context, state) => TripDetailScreen(
+          tripId: state.pathParameters['id']!,
+        ),
       ),
     ],
   );

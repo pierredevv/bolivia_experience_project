@@ -75,7 +75,7 @@ class FavoritesScreen extends ConsumerWidget {
           final place = favorite['place'] ?? favorite;
           return _FavoritePlaceCard(
             place: place,
-            onTap: () => context.go('/places/${place['id']}'),
+            onTap: () => context.push('/places/${place['id']}'),
             onRemove: () {
               ref.read(favoritesProvider.notifier).removeFavorite(place['id']);
             },

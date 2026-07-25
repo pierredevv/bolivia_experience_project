@@ -28,9 +28,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.dispose();
   }
 
+  void _onSuggestionTap(Map<String, dynamic> suggestion) {
+    final text = suggestion['text'] ?? suggestion.toString();
+    _searchController.text = text;
+    _focusNode.unfocus();
+    ref.read(searchProvider.notifier).updateQuery(text);
+  }
+
   @override
   Widget build(BuildContext context) {
     final searchState = ref.watch(searchProvider);
+
+    final bool showDropdown =
+        searchState.showSuggestions &&
+        searchState.suggestions.isNotEmpty &&
+        searchState.query.length >= 2;
 
     return Scaffold(
       appBar: AppBar(
@@ -48,6 +60,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     onPressed: () {
                       _searchController.clear();
                       ref.read(searchProvider.notifier).clearSearch();
+                      setState(() {});
                     },
                   )
                 : null,
@@ -62,19 +75,103 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             onPressed: () {
               _searchController.clear();
               ref.read(searchProvider.notifier).clearSearch();
-              Navigator.pop(context);
+              context.go('/map');
             },
             child: const Text('Cancelar'),
           ),
         ],
       ),
-      body: _buildBody(context, searchState),
+      body: Column(
+        children: [
+          AnimatedOpacity(
+            opacity: showDropdown ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: showDropdown
+                  ? _buildSuggestionsDropdown(searchState)
+                  : const SizedBox.shrink(),
+            ),
+          ),
+          Expanded(child: _buildBody(context, searchState)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsDropdown(SearchState state) {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 300),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(
+          bottom: BorderSide(color: AppColors.neutral200),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.neutral900.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListView.builder(
+        shrinkWrap: true,
+        padding: EdgeInsets.zero,
+        itemCount: state.suggestions.length,
+        itemBuilder: (context, index) {
+          final suggestion = state.suggestions[index];
+          final text = suggestion['text'] ?? suggestion.toString();
+          final category = suggestion['category'] as Map<String, dynamic>?;
+
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _onSuggestionTap(suggestion),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search, size: 20, color: AppColors.neutral400),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        text,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (category != null && category.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          category['name'] ?? '',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.primary700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildBody(BuildContext context, SearchState state) {
     if (state.query.isEmpty) {
-      return _buildHistoryAndSuggestions(context, state);
+      return _buildHistory(context, state);
     }
 
     if (state.status == SearchStatus.loading) {
@@ -147,85 +244,66 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         final result = state.results[index];
         return _SearchResultCard(
           result: result,
-          onTap: () => context.go('/places/${result['id']}'),
+          onTap: () => context.push('/places/${result['id']}'),
         );
       },
     );
   }
 
-  Widget _buildHistoryAndSuggestions(BuildContext context, SearchState state) {
+  Widget _buildHistory(BuildContext context, SearchState state) {
+    if (state.searchHistory.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 100),
+          child: Column(
+            children: [
+              const Icon(Icons.search, size: 64, color: AppColors.neutral300),
+              const SizedBox(height: 16),
+              Text(
+                '¿Qué estás buscando?',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.neutral500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (state.suggestions.isNotEmpty) ...[
-            Text(
-              'Sugerencias',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            ...state.suggestions.map((suggestion) {
-              return ListTile(
-                leading: const Icon(Icons.search, size: 20),
-                title: Text(suggestion['text'] ?? suggestion.toString()),
-                onTap: () {
-                  final text = suggestion['text'] ?? suggestion.toString();
-                  _searchController.text = text;
-                  ref.read(searchProvider.notifier).updateQuery(text);
-                },
-              );
-            }),
-            const SizedBox(height: 16),
-          ],
-          if (state.searchHistory.isNotEmpty) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Búsquedas recientes',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                TextButton(
-                  onPressed: () {
-                    // TODO: Clear search history
-                  },
-                  child: const Text('Limpiar'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ...state.searchHistory.map((history) {
-              final text = history['query'] ?? history.toString();
-              return ListTile(
-                leading: const Icon(Icons.history, size: 20),
-                title: Text(text),
-                trailing: const Icon(Icons.north_west, size: 16),
-                onTap: () {
-                  _searchController.text = text;
-                  ref.read(searchProvider.notifier).updateQuery(text);
-                },
-              );
-            }),
-          ],
-          if (state.suggestions.isEmpty && state.searchHistory.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 100),
-                child: Column(
-                  children: [
-                    const Icon(Icons.search, size: 64, color: AppColors.neutral300),
-                    const SizedBox(height: 16),
-                    Text(
-                      '¿Qué estás buscando?',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.neutral500,
-                      ),
-                    ),
-                  ],
-                ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Búsquedas recientes',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-            ),
+              TextButton(
+                onPressed: () {
+                  // TODO: Clear search history
+                },
+                child: const Text('Limpiar'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...state.searchHistory.map((history) {
+            final text = history['query'] ?? history.toString();
+            return ListTile(
+              leading: const Icon(Icons.history, size: 20),
+              title: Text(text),
+              trailing: const Icon(Icons.north_west, size: 16),
+              onTap: () {
+                _searchController.text = text;
+                ref.read(searchProvider.notifier).updateQuery(text);
+              },
+            );
+          }),
         ],
       ),
     );

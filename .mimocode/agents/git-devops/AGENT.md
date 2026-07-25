@@ -6,7 +6,12 @@ description: >
   secretos, o verificar estado de CI. Ejemplos: "Necesito crear una rama feature para
   el módulo de favoritos", "Tengo un conflicto en api/src/app.module.ts", "Verifica que
   no haya secretos expuestos antes de hacer push".
-tools: [Read, Grep, Glob, Bash, Write]
+tools:
+  read: true
+  grep: true
+  glob: true
+  bash: true
+  write: true
 model: sonnet
 ---
 

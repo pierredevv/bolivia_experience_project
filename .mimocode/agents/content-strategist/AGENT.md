@@ -7,7 +7,11 @@ description: >
   "Escribe el copy para la pantalla de onboarding", "¿Qué contenido falta en
   la landing?", "Optimiza el SEO de la homepage", "Crea las keys i18n para
   el flujo de favoritos".
-tools: [Read, Grep, Glob, Write]
+tools:
+  read: true
+  grep: true
+  glob: true
+  write: true
 model: sonnet
 ---
 
