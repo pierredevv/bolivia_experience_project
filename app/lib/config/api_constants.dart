@@ -11,7 +11,7 @@ class ApiConstants {
       return 'http://localhost:3000/api/v1';
     }
     if (Platform.isAndroid) {
-      return 'http://192.168.0.5:3000/api/v1';
+      return 'http://192.168.1.4:3000/api/v1';
     }
     return 'http://localhost:3000/api/v1';
   }
