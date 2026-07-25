@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../data/auth_service.dart';
+import '../../../../core/network/dio_provider.dart';
 import '../../../../core/auth/token_manager.dart';
 import '../../../../config/api_constants.dart';
 export '../../data/auth_service.dart' show AuthException;
@@ -33,7 +34,7 @@ class AuthState {
 }
 
 final authServiceProvider = Provider<AuthService>((ref) {
-  return AuthService();
+  return AuthService(dio: ref.watch(dioProvider));
 });
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
@@ -50,7 +51,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
   void _checkInitialAuth() async {
     if (TokenManager.hasToken) {
       try {
-        final dio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
+        final dio = Dio(
+          BaseOptions(
+            baseUrl: ApiConstants.baseUrl,
+            connectTimeout: const Duration(seconds: 10),
+            receiveTimeout: const Duration(seconds: 10),
+          ),
+        );
         final response = await dio.get(
           ApiConstants.userProfile,
           options: Options(
