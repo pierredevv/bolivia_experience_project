@@ -20,10 +20,16 @@ import '../features/events/presentation/screens/event_detail_screen.dart';
 import '../features/reviews/presentation/screens/create_review_screen.dart';
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/profile/presentation/screens/settings_screen.dart';
+import '../features/profile/presentation/screens/my_reviews_screen.dart';
+import '../features/profile/presentation/screens/privacy_policy_screen.dart';
 import '../features/home/presentation/screens/main_shell.dart';
 import '../features/trips/presentation/screens/trips_list_screen.dart';
 import '../features/trips/presentation/screens/trip_detail_screen.dart';
 import '../features/trips/presentation/screens/create_trip_screen.dart';
+import '../features/events/presentation/screens/events_screen.dart';
+import '../features/promotions/presentation/screens/promotions_screen.dart';
+import '../features/promotions/presentation/screens/promotion_detail_screen.dart';
+import '../features/notifications/presentation/screens/notifications_screen.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -38,7 +44,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/splash' ||
           state.matchedLocation == '/onboarding';
 
-      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/settings'];
+      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/profile/reviews', '/settings'];
       final isProtectedRoute = protectedRoutes.any((r) => state.matchedLocation.startsWith(r));
       final isReviewRoute = state.matchedLocation.contains('/review');
 
@@ -131,6 +137,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const EditProfileScreen(),
       ),
       GoRoute(
+        path: '/profile/reviews',
+        builder: (context, state) => const MyReviewsScreen(),
+      ),
+      GoRoute(
+        path: '/profile/privacy',
+        builder: (context, state) => const PrivacyPolicyScreen(),
+      ),
+      GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
       ),
@@ -147,6 +161,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => TripDetailScreen(
           tripId: state.pathParameters['id']!,
         ),
+      ),
+      GoRoute(
+        path: '/events',
+        builder: (context, state) => const EventsScreen(),
+      ),
+      GoRoute(
+        path: '/promotions',
+        builder: (context, state) => const PromotionsScreen(),
+      ),
+      GoRoute(
+        path: '/promotions/:id',
+        builder: (context, state) => PromotionDetailScreen(
+          promotionId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
       ),
     ],
   );

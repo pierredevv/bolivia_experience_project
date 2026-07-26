@@ -430,6 +430,34 @@ async function main() {
         isActive: true,
       },
     }),
+    prisma.event.create({
+      data: {
+        name: 'Ruta del Vino y el Queso',
+        description: 'Recorrido gastronómico por las mejores bodegas de la zona.',
+        descriptionEn: 'Gastronomic tour through the best wineries in the area.',
+        dateStart: now,
+        dateEnd: new Date(now.getTime() + 6 * 3600000),
+        location: 'Zona de Sacaba',
+        latitude: -17.4000,
+        longitude: -66.0500,
+        category: 'Gastronomía',
+        isActive: true,
+      },
+    }),
+    prisma.event.create({
+      data: {
+        name: 'Almuerzo Cultural en la Chanchería',
+        description: 'Almuerzo tradicional con shows de música en vivo.',
+        descriptionEn: 'Traditional lunch with live music shows.',
+        dateStart: new Date(now.getTime() + 5 * 3600000),
+        dateEnd: new Date(now.getTime() + 8 * 3600000),
+        location: 'La Chanchería, Centro',
+        latitude: -17.7830,
+        longitude: -63.1820,
+        category: 'Gastronomía',
+        isActive: true,
+      },
+    }),
   ]);
   console.log(`Created ${events.length} events`);
 

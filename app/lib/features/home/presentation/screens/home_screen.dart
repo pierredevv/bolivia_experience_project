@@ -30,7 +30,7 @@ class HomeScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
+            onPressed: () => context.push('/notifications'),
           ),
         ],
       ),
@@ -225,7 +225,7 @@ class HomeScreen extends ConsumerWidget {
             if (state.todayEvents.isNotEmpty) ...[
               _SectionHeader(
                 title: 'Eventos de Hoy',
-                onSeeAll: () {},
+                onSeeAll: () => context.push('/events'),
               ),
               SizedBox(
                 height: 160,
@@ -248,7 +248,7 @@ class HomeScreen extends ConsumerWidget {
             if (state.promotions.isNotEmpty) ...[
               _SectionHeader(
                 title: 'Promociones',
-                onSeeAll: () {},
+                onSeeAll: () => context.push('/promotions'),
               ),
               SizedBox(
                 height: 140,
@@ -258,7 +258,10 @@ class HomeScreen extends ConsumerWidget {
                   itemCount: state.promotions.length,
                   itemBuilder: (context, index) {
                     final promo = state.promotions[index];
-                    return _PromoCard(promotion: promo);
+                    return _PromoCard(
+                      promotion: promo,
+                      onTap: () => context.push('/promotions/${promo['id']}'),
+                    );
                   },
                 ),
               ),
@@ -543,49 +546,53 @@ class _EventCard extends StatelessWidget {
 
 class _PromoCard extends StatelessWidget {
   final Map<String, dynamic> promotion;
+  final VoidCallback? onTap;
 
-  const _PromoCard({required this.promotion});
+  const _PromoCard({required this.promotion, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(right: 12),
-      color: AppColors.secondary50,
-      child: SizedBox(
-        width: 180,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.secondary700,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${promotion['discountPercentage'] ?? 0}% OFF',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        margin: const EdgeInsets.only(right: 12),
+        color: AppColors.secondary50,
+        child: SizedBox(
+          width: 180,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary700,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${promotion['discountPercentage'] ?? 0}% OFF',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              const Spacer(),
-              Text(
-                promotion['title'] ?? '',
-                style: Theme.of(context).textTheme.titleMedium,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                (promotion['place']?['name']) ?? '',
-                style: Theme.of(context).textTheme.bodySmall,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+                const Spacer(),
+                Text(
+                  promotion['title'] ?? '',
+                  style: Theme.of(context).textTheme.titleMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  (promotion['place']?['name']) ?? '',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),

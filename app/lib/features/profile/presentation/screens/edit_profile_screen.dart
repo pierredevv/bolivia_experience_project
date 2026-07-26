@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
+import '../providers/profile_provider.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -11,27 +12,58 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
-  final _nameController = TextEditingController(text: 'Usuario');
-  final _countryController = TextEditingController(text: 'Bolivia');
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
   String _selectedLanguage = 'es';
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfileData();
+    });
+  }
+
+  void _loadProfileData() {
+    if (_initialized) return;
+    final profileState = ref.read(profileProvider);
+    final profile = profileState.profile;
+    if (profile != null) {
+      _nameController.text = profile.name;
+      _emailController.text = profile.email;
+      _initialized = true;
+    }
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _countryController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final profileState = ref.watch(profileProvider);
+    final profile = profileState.profile;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Editar Perfil'),
         actions: [
           TextButton(
-            onPressed: () {
-              // TODO: Save profile
-              context.pop();
+            onPressed: () async {
+              if (_nameController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('El nombre no puede estar vacío')),
+                );
+                return;
+              }
+              await ref.read(profileProvider.notifier).updateProfile(
+                name: _nameController.text.trim(),
+              );
+              if (context.mounted) context.pop();
             },
             child: const Text('Guardar'),
           ),
@@ -45,14 +77,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Center(
               child: Stack(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 60,
                     backgroundColor: AppColors.primary100,
-                    child: Icon(
-                      Icons.person,
-                      size: 60,
-                      color: AppColors.primary700,
-                    ),
+                    backgroundImage: profile?.photo != null
+                        ? NetworkImage(profile!.photo!)
+                        : null,
+                    child: profile?.photo == null
+                        ? const Icon(
+                            Icons.person,
+                            size: 60,
+                            color: AppColors.primary700,
+                          )
+                        : null,
                   ),
                   Positioned(
                     bottom: 0,
@@ -88,8 +125,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 16),
 
             // Email (read-only)
-            const TextField(
-              decoration: InputDecoration(
+            TextField(
+              controller: _emailController,
+              decoration: const InputDecoration(
                 labelText: 'Email',
                 prefixIcon: Icon(Icons.email_outlined),
               ),
@@ -98,13 +136,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
             const SizedBox(height: 16),
 
-            // Country
-            TextField(
-              controller: _countryController,
+            // Country (fixed to Bolivia)
+            DropdownButtonFormField<String>(
+              initialValue: 'Bolivia',
               decoration: const InputDecoration(
                 labelText: 'País',
                 prefixIcon: Icon(Icons.flag_outlined),
               ),
+              items: const [
+                DropdownMenuItem(
+                  value: 'Bolivia',
+                  child: Text('Bolivia'),
+                ),
+              ],
+              onChanged: null, // Disabled - app is for Bolivia
             ),
 
             const SizedBox(height: 16),

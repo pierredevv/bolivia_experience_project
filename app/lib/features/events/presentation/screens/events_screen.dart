@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../config/api_constants.dart';
 import '../../../../config/colors.dart';
 import '../../../../core/network/dio_provider.dart';
+import '../../data/events_service.dart';
 import '../providers/events_provider.dart';
 
 class EventsScreen extends ConsumerStatefulWidget {
@@ -15,7 +16,7 @@ class EventsScreen extends ConsumerStatefulWidget {
 
 class _EventsScreenState extends ConsumerState<EventsScreen> {
   bool _showTodayOnly = false;
-  List<dynamic> _todayEvents = [];
+  List<Event> _todayEvents = [];
   bool _loadingToday = false;
 
   @override
@@ -31,7 +32,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
       final response = await dio.get(ApiConstants.todayEvents);
       final data = response.data;
       setState(() {
-        _todayEvents = data['data'] ?? [];
+        final List items = (data is Map<String, dynamic> && data['data'] is List)
+            ? data['data']
+            : (data is List ? data : []);
+        _todayEvents = items.map((json) => Event.fromJson(json)).toList();
         _loadingToday = false;
       });
     } catch (_) {

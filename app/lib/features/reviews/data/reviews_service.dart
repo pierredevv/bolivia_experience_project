@@ -7,6 +7,7 @@ class Review {
   final String? userName;
   final String? userPhoto;
   final String placeId;
+  final String? placeName;
   final int rating;
   final String? comment;
   final String? createdAt;
@@ -18,6 +19,7 @@ class Review {
     this.userName,
     this.userPhoto,
     required this.placeId,
+    this.placeName,
     required this.rating,
     this.comment,
     this.createdAt,
@@ -31,6 +33,7 @@ class Review {
       userName: json['user']?['name'],
       userPhoto: json['user']?['photoUrl'],
       placeId: json['placeId']?.toString() ?? '',
+      placeName: json['place']?['name'],
       rating: json['rating'] ?? 0,
       comment: json['comment'],
       createdAt: json['createdAt'],
@@ -89,5 +92,21 @@ class ReviewsService {
 
   Future<void> deleteReview(String reviewId) async {
     await _dio.delete('${ApiConstants.reviews}/$reviewId');
+  }
+
+  Future<List<Review>> getUserReviews() async {
+    final response = await _dio.get(ApiConstants.userReviews);
+    final data = response.data;
+    final inner = data is Map<String, dynamic> ? data['data'] : data;
+    final List items = (inner is Map<String, dynamic> && inner['data'] is List)
+        ? inner['data']
+        : (inner is List ? inner : []);
+    return items.map((json) => Review.fromJson(json)).toList();
+  }
+
+  Future<Map<String, dynamic>> getUserReviewStats() async {
+    final response = await _dio.get(ApiConstants.userReviewsStats);
+    final data = response.data;
+    return data['data'] ?? data;
   }
 }

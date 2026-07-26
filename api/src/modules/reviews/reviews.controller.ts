@@ -24,6 +24,27 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
+  @Get('users/me/reviews')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user reviews' })
+  @ApiResponse({ status: 200, description: 'User reviews list' })
+  async findByCurrentUser(
+    @CurrentUser('id') userId: string,
+    @Query() query: PaginationDto,
+  ) {
+    return this.reviewsService.findByUser(userId, query.page, query.limit);
+  }
+
+  @Get('users/me/reviews/stats')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user review stats' })
+  @ApiResponse({ status: 200, description: 'User review statistics' })
+  async getUserStats(@CurrentUser('id') userId: string) {
+    return this.reviewsService.getUserStats(userId);
+  }
+
   @Get('places/:id/reviews')
   @ApiOperation({ summary: 'Get reviews for a place' })
   @ApiResponse({ status: 200, description: 'Reviews list' })

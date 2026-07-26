@@ -35,6 +35,8 @@ class ApiConstants {
   // Reviews
   static String placeReviews(String placeId) => '/places/$placeId/reviews';
   static const reviews = '/reviews';
+  static const userReviews = '/users/me/reviews';
+  static const userReviewsStats = '/users/me/reviews/stats';
 
   // Favorites
   static const favorites = '/favorites';
