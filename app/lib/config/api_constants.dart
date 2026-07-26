@@ -11,7 +11,7 @@ class ApiConstants {
       return 'http://localhost:3000/api/v1';
     }
     if (Platform.isAndroid) {
-      return 'http://192.168.0.5:3000/api/v1';
+      return 'http://192.168.1.4:3000/api/v1';
     }
     return 'http://localhost:3000/api/v1';
   }
@@ -35,6 +35,8 @@ class ApiConstants {
   // Reviews
   static String placeReviews(String placeId) => '/places/$placeId/reviews';
   static const reviews = '/reviews';
+  static const userReviews = '/users/me/reviews';
+  static const userReviewsStats = '/users/me/reviews/stats';
 
   // Favorites
   static const favorites = '/favorites';

@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../config/colors.dart';
 import '../providers/map_provider.dart';
 import '../widgets/map_filter_sheet.dart';
+import '../widgets/place_preview_sheet.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -29,7 +30,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadMarkersForCurrentView();
+      ref.read(mapProvider.notifier).loadUserLocation();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final mapState = ref.read(mapProvider);
+    if (mapState.lastTappedMarkerId != null) {
+      _showPlacePreview(mapState.lastTappedMarkerId!);
+      ref.read(mapProvider.notifier).clearLastTappedMarker();
+    }
   }
 
   void _loadMarkersForCurrentView() async {
@@ -57,6 +69,87 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
+  void _showPlacePreview(String placeId) {
+    final place = ref.read(mapProvider.notifier).getPlaceById(placeId);
+    if (place == null) return;
+
+    final mapState = ref.read(mapProvider);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => PlacePreviewSheet(
+        place: place,
+        userLocation: mapState.userLocation,
+      ),
+    );
+  }
+
+  Future<void> _goToMyLocation() async {
+    final mapState = ref.read(mapProvider);
+
+    if (mapState.userLocation != null) {
+      final controller = await _mapController.future;
+      controller.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: mapState.userLocation!,
+            zoom: 15,
+          ),
+        ),
+      );
+    } else {
+      await ref.read(mapProvider.notifier).loadUserLocation();
+      final newState = ref.read(mapProvider);
+      if (newState.userLocation != null) {
+        final controller = await _mapController.future;
+        controller.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: newState.userLocation!,
+              zoom: 15,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadNearbyPlaces() async {
+    final mapState = ref.read(mapProvider);
+
+    if (mapState.userLocation == null) {
+      await ref.read(mapProvider.notifier).loadUserLocation();
+    }
+
+    final newState = ref.read(mapProvider);
+    if (newState.userLocation == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo obtener tu ubicación'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Center map on user location
+    final controller = await _mapController.future;
+    controller.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: newState.userLocation!,
+          zoom: 14,
+        ),
+      ),
+    );
+
+    // Load nearby places
+    await ref.read(mapProvider.notifier).loadNearbyFromUser();
+  }
+
   @override
   Widget build(BuildContext context) {
     final mapState = ref.watch(mapProvider);
@@ -71,13 +164,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             tooltip: 'Filtros',
           ),
           IconButton(
+            icon: const Icon(Icons.near_me),
+            onPressed: _loadNearbyPlaces,
+            tooltip: 'Cercanos a mí',
+          ),
+          IconButton(
             icon: const Icon(Icons.my_location),
-            onPressed: () async {
-              final controller = await _mapController.future;
-              controller.animateCamera(
-                CameraUpdate.newCameraPosition(_santaCruz),
-              );
-            },
+            onPressed: _goToMyLocation,
+            tooltip: 'Mi ubicación',
           ),
         ],
       ),
@@ -86,7 +180,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           GoogleMap(
             initialCameraPosition: _santaCruz,
             markers: mapState.markers,
-            myLocationEnabled: false,
+            myLocationEnabled: true,
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
             onMapCreated: (controller) {

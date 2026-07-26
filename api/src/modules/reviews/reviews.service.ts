@@ -38,6 +38,38 @@ export class ReviewsService {
     return new PaginatedResponse(reviews, total, page, limit);
   }
 
+  async findByUser(userId: string, page = 1, limit = 20) {
+    const where = { userId, status: ReviewStatus.PUBLISHED };
+
+    const [reviews, total] = await Promise.all([
+      this.prisma.review.findMany({
+        where,
+        include: {
+          place: { select: { id: true, name: true, photos: { take: 1 } } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.review.count({ where }),
+    ]);
+
+    return new PaginatedResponse(reviews, total, page, limit);
+  }
+
+  async getUserStats(userId: string) {
+    const stats = await this.prisma.review.aggregate({
+      where: { userId, status: ReviewStatus.PUBLISHED },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+
+    return {
+      totalReviews: stats._count.rating,
+      averageRating: stats._avg.rating ?? 0,
+    };
+  }
+
   async create(userId: string, placeId: string, dto: CreateReviewDto) {
     const existing = await this.prisma.review.findUnique({
       where: { userId_placeId: { userId, placeId } },

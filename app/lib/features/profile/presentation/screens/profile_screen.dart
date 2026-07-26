@@ -1,24 +1,114 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
 import '../../../../config/colors.dart';
-import '../../../../l10n/app_localizations.dart';
+import '../../../../config/router.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../favorites/presentation/providers/favorites_provider.dart';
 import '../providers/profile_provider.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  late bool _notificationsEnabled;
+
+  @override
+  void initState() {
+    super.initState();
+    final box = Hive.box('settings');
+    _notificationsEnabled = box.get('notificationsEnabled', defaultValue: true);
+  }
+
+  void _showLanguageDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Seleccionar idioma'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Idioma cambiado a Español (próximamente)')),
+              );
+            },
+            child: const Row(
+              children: [
+                Text('🇪🇸  ', style: TextStyle(fontSize: 20)),
+                Text('Español'),
+              ],
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Idioma cambiado a English (próximamente)')),
+              );
+            },
+            child: const Row(
+              children: [
+                Text('🇺🇸  ', style: TextStyle(fontSize: 20)),
+                Text('English'),
+              ],
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Idioma cambiado a Português (próximamente)')),
+              );
+            },
+            child: const Row(
+              children: [
+                Text('🇧🇷  ', style: TextStyle(fontSize: 20)),
+                Text('Português'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog() {
+    showAboutDialog(
+      context: context,
+      applicationName: 'BoliviaExperience',
+      applicationVersion: '1.0.0',
+      applicationIcon: const Icon(
+        Icons.explore,
+        size: 48,
+        color: AppColors.primary700,
+      ),
+      children: const [
+        Text(
+          'Descubre los mejores lugares de Santa Cruz de la Sierra. '
+          'Explora restaurantes, hoteles, eventos y mucho más.',
+        ),
+        SizedBox(height: 16),
+        Text('Desarrollado con ❤️ en Bolivia'),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final profileState = ref.watch(profileProvider);
     final favoritesState = ref.watch(favoritesProvider);
-    final l10n = AppLocalizations.of(context)!;
+    final themeMode = ref.watch(themeModeProvider);
+    final isDark = themeMode == ThemeMode.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.profileTitle),
+        title: const Text('Perfil'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -26,12 +116,16 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: _buildBody(context, ref, profileState, favoritesState),
+      body: _buildBody(context, profileState, favoritesState, isDark),
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, ProfileState state, FavoritesState favoritesState) {
-    final l10n = AppLocalizations.of(context)!;
+  Widget _buildBody(
+    BuildContext context,
+    ProfileState state,
+    FavoritesState favoritesState,
+    bool isDark,
+  ) {
     if (state.status == ProfileStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -68,6 +162,7 @@ class ProfileScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          // Profile header
           Center(
             child: Column(
               children: [
@@ -111,62 +206,80 @@ class ProfileScreen extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
+          // Stats
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _StatItem(value: '${favoritesState.favorites.length}', label: 'Favoritos'),
-              const _StatItem(value: '-', label: 'Reseñas'),
-              const _StatItem(value: '-', label: 'Rating'),
+              _StatItem(
+                value: '${state.totalReviews}',
+                label: 'Reseñas',
+              ),
+              _StatItem(
+                value: state.averageRating > 0
+                    ? state.averageRating.toStringAsFixed(1)
+                    : '-',
+                label: 'Rating',
+              ),
             ],
           ),
 
           const SizedBox(height: 32),
 
+          // Menu items
           _ProfileMenuItem(
             icon: Icons.edit_outlined,
-            title: l10n.profileEdit,
+            title: 'Editar Perfil',
             onTap: () => context.push('/profile/edit'),
           ),
           _ProfileMenuItem(
             icon: Icons.rate_review_outlined,
-            title: l10n.profileReviews,
-            onTap: () {},
+            title: 'Mis Reseñas (${state.totalReviews})',
+            onTap: () => context.push('/profile/reviews'),
           ),
           _ProfileMenuItem(
             icon: Icons.language,
-            title: l10n.settingsLanguage,
+            title: 'Idioma',
             subtitle: 'Español',
-            onTap: () {},
+            onTap: _showLanguageDialog,
           ),
           _ProfileMenuItem(
             icon: Icons.dark_mode_outlined,
-            title: l10n.settingsDarkMode,
+            title: 'Modo Oscuro',
             trailing: Switch(
-              value: false,
-              onChanged: (value) {},
+              value: isDark,
+              onChanged: (value) {
+                ref.read(themeModeProvider.notifier).state =
+                    value ? ThemeMode.dark : ThemeMode.light;
+                Hive.box('settings').put('darkMode', value);
+              },
             ),
           ),
           _ProfileMenuItem(
             icon: Icons.notifications_outlined,
-            title: l10n.notificationsTitle,
+            title: 'Notificaciones',
             trailing: Switch(
-              value: true,
-              onChanged: (value) {},
+              value: _notificationsEnabled,
+              onChanged: (value) {
+                setState(() => _notificationsEnabled = value);
+                Hive.box('settings').put('notificationsEnabled', value);
+              },
             ),
           ),
           _ProfileMenuItem(
             icon: Icons.info_outline,
-            title: l10n.settingsAbout,
-            onTap: () {},
+            title: 'Acerca de',
+            onTap: _showAboutDialog,
           ),
           _ProfileMenuItem(
             icon: Icons.privacy_tip_outlined,
-            title: l10n.settingsPrivacy,
-            onTap: () {},
+            title: 'Política de Privacidad',
+            onTap: () => context.push('/profile/privacy'),
           ),
 
           const SizedBox(height: 24),
 
+          // Logout button
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -174,18 +287,18 @@ class ProfileScreen extends ConsumerWidget {
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: Text(l10n.profileLogout),
-                    content: Text(l10n.profileLogout),
+                    title: const Text('Cerrar Sesión'),
+                    content: const Text('¿Estás seguro que deseas cerrar sesión?'),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: Text(l10n.cancel),
+                        child: const Text('Cancelar'),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        child: Text(
-                          l10n.profileLogout,
-                          style: const TextStyle(color: AppColors.error700),
+                        child: const Text(
+                          'Cerrar Sesión',
+                          style: TextStyle(color: AppColors.error700),
                         ),
                       ),
                     ],
@@ -198,9 +311,9 @@ class ProfileScreen extends ConsumerWidget {
                 }
               },
               icon: const Icon(Icons.logout, color: AppColors.error700),
-              label: Text(
-                l10n.profileLogout,
-                style: const TextStyle(color: AppColors.error700),
+              label: const Text(
+                'Cerrar Sesión',
+                style: TextStyle(color: AppColors.error700),
               ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.error300),

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_provider.dart';
 import '../../data/profile_service.dart';
+import '../../../reviews/data/reviews_service.dart';
 
 enum ProfileStatus { initial, loading, loaded, error }
 
@@ -9,22 +10,30 @@ class ProfileState {
   final ProfileStatus status;
   final UserProfile? profile;
   final String? errorMessage;
+  final int totalReviews;
+  final double averageRating;
 
   const ProfileState({
     this.status = ProfileStatus.initial,
     this.profile,
     this.errorMessage,
+    this.totalReviews = 0,
+    this.averageRating = 0,
   });
 
   ProfileState copyWith({
     ProfileStatus? status,
     UserProfile? profile,
     String? errorMessage,
+    int? totalReviews,
+    double? averageRating,
   }) {
     return ProfileState(
       status: status ?? this.status,
       profile: profile ?? this.profile,
       errorMessage: errorMessage,
+      totalReviews: totalReviews ?? this.totalReviews,
+      averageRating: averageRating ?? this.averageRating,
     );
   }
 }
@@ -34,14 +43,23 @@ final profileServiceProvider = Provider<ProfileService>((ref) {
   return ProfileService(dio);
 });
 
+final reviewsServiceProvider = Provider<ReviewsService>((ref) {
+  final dio = ref.read(dioProvider);
+  return ReviewsService(dio);
+});
+
 final profileProvider = StateNotifierProvider<ProfileNotifier, ProfileState>((ref) {
-  return ProfileNotifier(ref.read(profileServiceProvider));
+  return ProfileNotifier(
+    ref.read(profileServiceProvider),
+    ref.read(reviewsServiceProvider),
+  );
 });
 
 class ProfileNotifier extends StateNotifier<ProfileState> {
   final ProfileService _profileService;
+  final ReviewsService _reviewsService;
 
-  ProfileNotifier(this._profileService) : super(const ProfileState()) {
+  ProfileNotifier(this._profileService, this._reviewsService) : super(const ProfileState()) {
     loadProfile();
   }
 
@@ -56,6 +74,8 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         status: ProfileStatus.loaded,
         profile: profile,
       );
+      // Load review stats after profile loads
+      _loadReviewStats();
     } on DioException catch (e) {
       if (!mounted) return;
       String message = 'Error al cargar perfil';
@@ -80,6 +100,19 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
         status: ProfileStatus.error,
         errorMessage: 'Error inesperado. Intentá de nuevo.',
       );
+    }
+  }
+
+  Future<void> _loadReviewStats() async {
+    try {
+      final stats = await _reviewsService.getUserReviewStats();
+      if (!mounted) return;
+      state = state.copyWith(
+        totalReviews: stats['totalReviews'] ?? 0,
+        averageRating: (stats['averageRating'] ?? 0).toDouble(),
+      );
+    } catch (_) {
+      // Silently fail for review stats
     }
   }
 
