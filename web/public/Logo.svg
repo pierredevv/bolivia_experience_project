@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="gRed" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF3A2F"></stop>
+      <stop offset="1" stop-color="#FF0000"></stop>
+    </linearGradient>
+
+    <linearGradient id="gOrange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF9A1A"></stop>
+      <stop offset="1" stop-color="#FFC61A"></stop>
+    </linearGradient>
+
+    <linearGradient id="gYellow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFD23A"></stop>
+      <stop offset="1" stop-color="#F8B400"></stop>
+    </linearGradient>
+
+    <linearGradient id="gGreen1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B7A33"></stop>
+      <stop offset="1" stop-color="#58C32E"></stop>
+    </linearGradient>
+
+    <linearGradient id="gGreen2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0F8E4A"></stop>
+      <stop offset="1" stop-color="#17B69B"></stop>
+    </linearGradient>
+
+    <linearGradient id="gBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B2F66"></stop>
+      <stop offset="1" stop-color="#1F8FFF"></stop>
+    </linearGradient>
+
+    <clipPath id="diamond">
+      <polygon points="256,6 506,256 256,506 6,256"></polygon>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#diamond)">
+    <!-- Fondo -->
+    <rect width="512" height="512" fill="#ffffff"></rect>
+
+    <!-- Superior -->
+    <polygon fill="url(#gOrange)" points="256,6 384,134 256,262 128,134"></polygon>
+    <polygon fill="#FFC72A" points="256,6 384,134 256,134"></polygon>
+
+    <!-- Izquierda -->
+    <polygon fill="url(#gRed)" points="6,256 128,134 256,262 128,384"></polygon>
+
+    <!-- Derecha -->
+    <polygon fill="url(#gYellow)" points="506,256 384,134 256,262 384,384"></polygon>
+
+    <!-- Inferior -->
+    <polygon fill="url(#gBlue)" points="256,506 128,384 256,262 384,384"></polygon>
+
+    <!-- Montañas -->
+    <polygon fill="url(#gGreen1)" points="128,286 186,184 228,280"></polygon>
+    <polygon fill="#69D13D" points="186,184 202,232 228,280"></polygon>
+    <polygon fill="url(#gGreen1)" points="206,286 256,164 330,274"></polygon>
+    <polygon fill="#4FB42D" points="256,164 286,226 330,274"></polygon>
+    <polygon fill="url(#gGreen1)" points="294,286 384,174 506,286"></polygon>
+    <polygon fill="#63CF42" points="384,174 384,226 506,286"></polygon>
+
+    <!-- Colinas -->
+    <path fill="#0E5F37" d="M128 286C180 274 218 278 256 286C296 294 340 300 384 286L506 286L506 512L6 512L6 286Z"></path>
+    <path fill="url(#gGreen2)" d="M256 304C316 296 372 304 506 286L506 512L256 512Z"></path>
+
+    <!-- Río -->
+    <path fill="#0A3C73" d="M6 286C72 276 114 280 156 286C210 294 246 322 286 352C314 372 350 398 384 414L256 506L6 506Z"></path>
+    <path fill="#1B78D7" d="M256 352L384 414L256 506Z"></path>
+  </g>
+</svg>

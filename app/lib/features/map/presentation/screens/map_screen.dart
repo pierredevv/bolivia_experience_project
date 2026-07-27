@@ -1,12 +1,36 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../config/colors.dart';
+import '../../data/map_service.dart';
 import '../providers/map_provider.dart';
 import '../widgets/map_filter_sheet.dart';
 import '../widgets/place_preview_sheet.dart';
+
+// ── Brand tokens ──────────────────────────────────────────────────────────────
+const _brandDark = Color(0xFF0F172A);
+const _brandEmerald = Color(0xFF10B981);
+const _borderSubtle = Color(0xFFE2E8F0);
+const _textSecondary = Color(0xFF64748B);
+
+// Quick-filter category definitions (label + optional slug for filtering)
+const _quickFilters = [
+  _QuickFilter(label: 'Todos', slug: null),
+  _QuickFilter(label: 'Restaurantes', slug: 'restaurantes'),
+  _QuickFilter(label: 'Hoteles', slug: 'hoteles'),
+  _QuickFilter(label: 'Cultura', slug: 'cultura'),
+  _QuickFilter(label: 'Parques', slug: 'parques'),
+];
+
+class _QuickFilter {
+  final String label;
+  final String? slug;
+  const _QuickFilter({required this.label, required this.slug});
+}
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -16,8 +40,17 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
+  // ── Map controller & bounds ──────────────────────────────────────────────
   final Completer<GoogleMapController> _mapController = Completer();
   LatLngBounds? _lastBounds;
+
+  // Active quick-filter index (0 = Todos)
+  int _activeFilterIndex = 0;
+
+  // Custom generated TripAdvisor/Google Maps style markers
+  Set<Marker> _customMarkers = {};
+  List<MapPlace>? _lastProcessedPlaces;
+  bool _showSearchThisArea = false;
 
   // Santa Cruz de la Sierra center
   static const CameraPosition _santaCruz = CameraPosition(
@@ -25,6 +58,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     zoom: 13,
   );
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
@@ -44,6 +78,257 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
   }
 
+  // ── Reactive Custom Marker Generation ─────────────────────────────────────
+  void _updateCustomMarkersIfNeeded(List<MapPlace> places) {
+    if (identical(places, _lastProcessedPlaces)) return;
+    _lastProcessedPlaces = places;
+    _generateCustomMarkers(places);
+  }
+
+  Future<void> _generateCustomMarkers(List<MapPlace> places) async {
+    final Set<Marker> newMarkers = {};
+    for (final place in places) {
+      try {
+        final bitmap = await _createCustomMarkerBitmap(place);
+        if (!mounted) return;
+        newMarkers.add(
+          Marker(
+            markerId: MarkerId(place.id),
+            position: LatLng(place.latitude, place.longitude),
+            icon: bitmap,
+            anchor: const Offset(0.5, 0.36), // Center of circle pin anchor
+            onTap: () => _showPlacePreview(place.id),
+          ),
+        );
+      } catch (_) {
+        // Fallback to default marker if bitmap drawing fails for any reason
+        if (!mounted) return;
+        newMarkers.add(
+          Marker(
+            markerId: MarkerId(place.id),
+            position: LatLng(place.latitude, place.longitude),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              place.isUrban
+                  ? BitmapDescriptor.hueAzure
+                  : BitmapDescriptor.hueGreen,
+            ),
+            onTap: () => _showPlacePreview(place.id),
+          ),
+        );
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _customMarkers = newMarkers;
+      });
+    }
+  }
+
+  // ── Canvas-based Custom Marker Bitmap Generator (TripAdvisor/Google Maps Style)
+  Future<BitmapDescriptor> _createCustomMarkerBitmap(MapPlace place) async {
+    const double canvasWidth = 200.0;
+    const double canvasHeight = 110.0;
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+
+    // Center of circle pin
+    const Offset circleCenter = Offset(100.0, 38.0);
+    const double radius = 22.0;
+
+    // 1. Shadow under white circle
+    final Paint shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.18)
+      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5.0);
+    canvas.drawCircle(circleCenter.translate(0, 3), radius, shadowPaint);
+
+    // 2. White circle container
+    final Paint circlePaint = Paint()..color = Colors.white;
+    canvas.drawCircle(circleCenter, radius, circlePaint);
+
+    // Subtle border
+    final Paint borderPaint = Paint()
+      ..color = const Color(0xFFE2E8F0)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawCircle(circleCenter, radius, borderPaint);
+
+    // 3. Category icon inside circle
+    final IconData iconData = _getCategoryIconData(place.categorySlug);
+    final TextPainter iconPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(iconData.codePoint),
+        style: TextStyle(
+          fontSize: 22.0,
+          fontFamily: iconData.fontFamily,
+          package: iconData.fontPackage,
+          color: _brandDark,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    iconPainter.layout();
+    iconPainter.paint(
+      canvas,
+      Offset(
+        circleCenter.dx - iconPainter.width / 2,
+        circleCenter.dy - iconPainter.height / 2,
+      ),
+    );
+
+    // 4. Floating Emerald Rating Badge
+    if (place.ratingAvg != null && _parseDouble(place.ratingAvg) > 0) {
+      final double ratingVal = _parseDouble(place.ratingAvg);
+      final String ratingText = ratingVal.toStringAsFixed(1);
+      final TextPainter badgeTextPainter = TextPainter(
+        text: TextSpan(
+          text: ratingText,
+          style: const TextStyle(
+            fontSize: 11.0,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      badgeTextPainter.layout();
+
+      final double badgeWidth = badgeTextPainter.width + 10.0;
+      const double badgeHeight = 18.0;
+      // Attached to top-right of circle pin
+      const Offset badgeCenter = Offset(118.0, 20.0);
+      final Rect badgeRect = Rect.fromCenter(
+        center: badgeCenter,
+        width: badgeWidth,
+        height: badgeHeight,
+      );
+      final RRect badgeRRect = RRect.fromRectAndRadius(
+        badgeRect,
+        const Radius.circular(9.0),
+      );
+
+      // Badge shadow
+      final Paint badgeShadow = Paint()
+        ..color = Colors.black.withValues(alpha: 0.20)
+        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 3.0);
+      canvas.drawRRect(badgeRRect.shift(const Offset(0, 2)), badgeShadow);
+
+      // Badge background
+      final Paint badgeFill = Paint()..color = _brandEmerald;
+      canvas.drawRRect(badgeRRect, badgeFill);
+
+      // Badge border
+      final Paint badgeBorder = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+      canvas.drawRRect(badgeRRect, badgeBorder);
+
+      badgeTextPainter.paint(
+        canvas,
+        Offset(
+          badgeCenter.dx - badgeTextPainter.width / 2,
+          badgeCenter.dy - badgeTextPainter.height / 2,
+        ),
+      );
+    }
+
+    // 5. Place Name Text Label below circle
+    final TextPainter namePainter = TextPainter(
+      text: TextSpan(
+        text: place.name,
+        style: const TextStyle(
+          fontSize: 12.0,
+          fontWeight: FontWeight.w700,
+          color: _brandDark,
+        ),
+      ),
+      maxLines: 1,
+      ellipsis: '...',
+      textDirection: TextDirection.ltr,
+    );
+    namePainter.layout(maxWidth: 160.0);
+
+    final double labelWidth = namePainter.width + 16.0;
+    const double labelHeight = 22.0;
+    const Offset labelCenter = Offset(100.0, 76.0);
+    final Rect labelRect = Rect.fromCenter(
+      center: labelCenter,
+      width: labelWidth,
+      height: labelHeight,
+    );
+    final RRect labelRRect = RRect.fromRectAndRadius(
+      labelRect,
+      const Radius.circular(11.0),
+    );
+
+    // Label shadow
+    final Paint labelShadow = Paint()
+      ..color = Colors.black.withValues(alpha: 0.14)
+      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 4.0);
+    canvas.drawRRect(labelRRect.shift(const Offset(0, 2)), labelShadow);
+
+    // Label white background
+    final Paint labelFill = Paint()..color = Colors.white;
+    canvas.drawRRect(labelRRect, labelFill);
+
+    // Label thin border
+    final Paint labelBorder = Paint()
+      ..color = const Color(0xFFE2E8F0)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawRRect(labelRRect, labelBorder);
+
+    namePainter.paint(
+      canvas,
+      Offset(
+        labelCenter.dx - namePainter.width / 2,
+        labelCenter.dy - namePainter.height / 2,
+      ),
+    );
+
+    final ui.Image image = await recorder.endRecording().toImage(
+      canvasWidth.toInt(),
+      canvasHeight.toInt(),
+    );
+    final ByteData? byteData = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    final Uint8List bytes = byteData!.buffer.asUint8List();
+
+    return BitmapDescriptor.bytes(bytes);
+  }
+
+  double _parseDouble(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is double) return val;
+    if (val is int) return val.toDouble();
+    return double.tryParse(val.toString()) ?? 0.0;
+  }
+
+  IconData _getCategoryIconData(String? slug) {
+    switch (slug) {
+      case 'restaurantes':
+        return Icons.restaurant_rounded;
+      case 'hoteles':
+        return Icons.hotel_rounded;
+      case 'cafeterias':
+        return Icons.local_cafe_rounded;
+      case 'naturaleza':
+        return Icons.landscape_rounded;
+      case 'parques':
+        return Icons.park_rounded;
+      case 'compras':
+        return Icons.shopping_bag_rounded;
+      case 'vida-nocturna':
+        return Icons.nightlife_rounded;
+      case 'cultura':
+        return Icons.museum_rounded;
+      default:
+        return Icons.place_rounded;
+    }
+  }
+
+  // ── Map actions ───────────────────────────────────────────────────────────
   void _loadMarkersForCurrentView() async {
     if (_lastBounds == null) return;
     final notifier = ref.read(mapProvider.notifier);
@@ -57,6 +342,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       setState(() => _lastBounds = bounds);
       final notifier = ref.read(mapProvider.notifier);
       await notifier.loadMarkers(bounds);
+    }
+  }
+
+  void _searchInThisArea() async {
+    setState(() => _showSearchThisArea = false);
+    if (_lastBounds != null) {
+      await ref.read(mapProvider.notifier).loadMarkers(_lastBounds!);
     }
   }
 
@@ -87,15 +379,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   Future<void> _goToMyLocation() async {
     final mapState = ref.read(mapProvider);
-
     if (mapState.userLocation != null) {
       final controller = await _mapController.future;
       controller.animateCamera(
         CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: mapState.userLocation!,
-            zoom: 15,
-          ),
+          CameraPosition(target: mapState.userLocation!, zoom: 15),
         ),
       );
     } else {
@@ -105,10 +393,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         final controller = await _mapController.future;
         controller.animateCamera(
           CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: newState.userLocation!,
-              zoom: 15,
-            ),
+            CameraPosition(target: newState.userLocation!, zoom: 15),
           ),
         );
       }
@@ -117,11 +402,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   Future<void> _loadNearbyPlaces() async {
     final mapState = ref.read(mapProvider);
-
     if (mapState.userLocation == null) {
       await ref.read(mapProvider.notifier).loadUserLocation();
     }
-
     final newState = ref.read(mapProvider);
     if (newState.userLocation == null) {
       if (mounted) {
@@ -134,52 +417,40 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       }
       return;
     }
-
-    // Center map on user location
     final controller = await _mapController.future;
     controller.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: newState.userLocation!,
-          zoom: 14,
-        ),
+        CameraPosition(target: newState.userLocation!, zoom: 14),
       ),
     );
-
-    // Load nearby places
     await ref.read(mapProvider.notifier).loadNearbyFromUser();
+  }
+
+  // ── Quick filter tap ──────────────────────────────────────────────────────
+  void _onQuickFilter(int index) {
+    setState(() => _activeFilterIndex = index);
+    final slug = _quickFilters[index].slug;
+    ref.read(mapProvider.notifier).setSelectedCategory(slug);
+    _loadMarkersForCurrentView();
   }
 
   @override
   Widget build(BuildContext context) {
     final mapState = ref.watch(mapProvider);
 
+    // Trigger reactive generation of custom markers whenever places update
+    _updateCustomMarkersIfNeeded(mapState.places);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mapa'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterSheet,
-            tooltip: 'Filtros',
-          ),
-          IconButton(
-            icon: const Icon(Icons.near_me),
-            onPressed: _loadNearbyPlaces,
-            tooltip: 'Cercanos a mí',
-          ),
-          IconButton(
-            icon: const Icon(Icons.my_location),
-            onPressed: _goToMyLocation,
-            tooltip: 'Mi ubicación',
-          ),
-        ],
-      ),
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
+          // ── Google Map ──────────────────────────────────────────────────
           GoogleMap(
             initialCameraPosition: _santaCruz,
-            markers: mapState.markers,
+            markers: _customMarkers.isNotEmpty
+                ? _customMarkers
+                : mapState.markers,
             myLocationEnabled: true,
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
@@ -188,164 +459,318 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 _mapController.complete(controller);
               }
             },
+            onCameraMoveStarted: () {
+              if (!_showSearchThisArea && mounted) {
+                setState(() => _showSearchThisArea = true);
+              }
+            },
             onCameraIdle: _onCameraIdle,
           ),
 
-          // Search bar overlay
+          // ── Top overlay: search bar + pill filters ───────────────────────
           Positioned(
-            top: 16,
-            left: 16,
-            right: 16,
-            child: GestureDetector(
-              onTap: () => context.go('/search'),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Search bar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: GestureDetector(
+                      onTap: () => context.go('/search'),
+                      child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.10),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 14),
+                            const Icon(
+                              Icons.search_rounded,
+                              size: 20,
+                              color: _textSecondary,
+                            ),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Text(
+                                'Buscar en el mapa...',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                            // Filters icon button
+                            GestureDetector(
+                              onTap: _showFilterSheet,
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: _brandDark,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.tune_rounded,
+                                  size: 17,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.search, color: AppColors.neutral500),
-                    SizedBox(width: 12),
-                    Text(
-                      'Buscar en el mapa...',
-                      style: TextStyle(color: AppColors.neutral500),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // ── Horizontal pill filter strip ─────────────────────────
+                  SizedBox(
+                    height: 44,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _quickFilters.length,
+                      itemBuilder: (context, index) {
+                        final filter = _quickFilters[index];
+                        final isActive = _activeFilterIndex == index;
+                        return GestureDetector(
+                          onTap: () => _onQuickFilter(index),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 11,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isActive ? _brandEmerald : Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              filter.label,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: isActive ? Colors.white : _textSecondary,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
 
-          // Active category chip indicator
-          if (mapState.selectedCategoryId != null)
+          // ── "Buscar en esta área" Pill Button (Top Center) ──────────────
+          if (_showSearchThisArea)
             Positioned(
-              top: 70,
-              left: 16,
-              child: GestureDetector(
-                onTap: _showFilterSheet,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary100,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.filter_list,
-                          size: 16, color: AppColors.primary700),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'Filtro activo',
-                        style: TextStyle(
-                          color: AppColors.primary700,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+              top: 115,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: GestureDetector(
+                  onTap: _searchInThisArea,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: _borderSubtle),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {
-                          ref.read(mapProvider.notifier).setSelectedCategory(null);
-                          _loadMarkersForCurrentView();
-                        },
-                        child: const Icon(Icons.close,
-                            size: 14, color: AppColors.primary700),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.refresh_rounded,
+                          size: 16,
+                          color: _brandDark,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'Buscar en esta área',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: _brandDark,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
 
-          // Loading indicator
+          // ── Floating GPS / Mi Ubicación Button (Top Right) ──────────────
+          Positioned(
+            top: 115,
+            right: 16,
+            child: _MapControlButton(
+              icon: Icons.my_location_rounded,
+              onPressed: _goToMyLocation,
+              tooltip: 'Mi ubicación',
+            ),
+          ),
+
+          // ── Loading spinner ──────────────────────────────────────────────
           if (mapState.status == MapStatus.loading)
             const Positioned(
-              top: 70,
+              top: 130,
               right: 16,
               child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: _brandEmerald,
+                ),
               ),
             ),
 
-          // Place count badge
+          // ── Place count badge ────────────────────────────────────────────
           if (mapState.status == MapStatus.loaded)
             Positioned(
               bottom: 100,
               left: 16,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: _borderSubtle),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 6,
+                      color: Colors.black.withValues(alpha: 0.07),
+                      blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: Text(
-                  '${mapState.places.length} lugares',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.neutral700,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.location_on_rounded,
+                      size: 13,
+                      color: _brandEmerald,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${mapState.places.length} lugares',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _brandDark,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
 
-          // Error snackbar
-          if (mapState.status == MapStatus.error && mapState.errorMessage != null)
+          // ── Error banner ─────────────────────────────────────────────────
+          if (mapState.status == MapStatus.error &&
+              mapState.errorMessage != null)
             Positioned(
               bottom: 100,
               left: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.error100,
-                  borderRadius: BorderRadius.circular(12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-                child: Text(
-                  mapState.errorMessage!,
-                  style: const TextStyle(
-                    color: AppColors.error900,
-                    fontSize: 13,
-                  ),
-                  textAlign: TextAlign.center,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.error300),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 16,
+                      color: AppColors.error500,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        mapState.errorMessage!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.error700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
 
-          // Zoom controls
+          // ── Zoom + Near Me controls (Bottom Right) ──────────────────────
           Positioned(
             bottom: 100,
             right: 16,
             child: Column(
               children: [
                 _MapControlButton(
+                  icon: Icons.near_me_rounded,
+                  onPressed: _loadNearbyPlaces,
+                  tooltip: 'Cercanos a mí',
+                ),
+                const SizedBox(height: 8),
+                _MapControlButton(
                   icon: Icons.add,
                   onPressed: () async {
                     final controller = await _mapController.future;
                     controller.animateCamera(CameraUpdate.zoomIn());
                   },
+                  tooltip: 'Acercar',
                 ),
                 const SizedBox(height: 8),
                 _MapControlButton(
@@ -354,6 +779,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     final controller = await _mapController.future;
                     controller.animateCamera(CameraUpdate.zoomOut());
                   },
+                  tooltip: 'Alejar',
                 ),
               ],
             ),
@@ -364,29 +790,43 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Map control floating button — white circle with brand icon
+// ─────────────────────────────────────────────────────────────────────────────
 class _MapControlButton extends StatelessWidget {
+  const _MapControlButton({
+    required this.icon,
+    required this.onPressed,
+    this.tooltip,
+  });
+
   final IconData icon;
   final VoidCallback onPressed;
-
-  const _MapControlButton({required this.icon, required this.onPressed});
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return Tooltip(
+      message: tooltip ?? '',
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: _borderSubtle),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.09),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: IconButton(
-        icon: Icon(icon),
-        onPressed: onPressed,
+          child: Icon(icon, size: 20, color: _brandDark),
+        ),
       ),
     );
   }

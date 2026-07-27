@@ -285,7 +285,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  // TODO: Clear search history
+                  ref.read(searchProvider.notifier).clearSearchHistory();
                 },
                 child: const Text('Limpiar'),
               ),

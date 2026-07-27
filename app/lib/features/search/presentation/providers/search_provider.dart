@@ -170,4 +170,13 @@ class SearchNotifier extends StateNotifier<SearchState> {
     _searchDebounce?.cancel();
     state = const SearchState();
   }
+
+  Future<void> clearSearchHistory() async {
+    try {
+      await _searchService.clearSearchHistory();
+    } catch (e) {
+      // ignore
+    }
+    state = state.copyWith(searchHistory: const []);
+  }
 }

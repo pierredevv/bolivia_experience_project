@@ -6,10 +6,18 @@ import {
   MaxLength,
   Min,
   Max,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
+
+export class PlacePhotoDto {
+  @ApiProperty({ example: 'https://example.com/photo.jpg' })
+  @IsString()
+  url: string;
+}
 
 export class CreatePlaceDto {
   @ApiProperty({ example: 'Bioparque Güembé' })
@@ -83,6 +91,16 @@ export class CreatePlaceDto {
   @IsOptional()
   @IsBoolean()
   isFeatured?: boolean;
+
+  @ApiPropertyOptional({
+    type: [PlacePhotoDto],
+    description: 'Optional array of photos to associate with the place. When provided during update, replaces all existing photos.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PlacePhotoDto)
+  photos?: PlacePhotoDto[];
 }
 
 export class UpdatePlaceDto extends PartialType(CreatePlaceDto) {}

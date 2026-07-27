@@ -5,7 +5,7 @@ import { PaginatedResponse } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class PlacesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async findAll(query: QueryPlacesDto) {
     const where: any = {};
@@ -160,18 +160,43 @@ export class PlacesService {
   }
 
   async create(dto: CreatePlaceDto) {
+    const { photos, ...placeData } = dto;
     return this.prisma.place.create({
-      data: dto,
-      include: { category: true },
+      data: {
+        ...placeData,
+        ...(photos && photos.length > 0 && {
+          photos: {
+            create: photos.map((p, index) => ({
+              url: p.url,
+              displayOrder: index,
+            })),
+          },
+        }),
+      },
+      include: { category: true, photos: { orderBy: { displayOrder: 'asc' } } },
     });
   }
 
   async update(id: string, dto: UpdatePlaceDto) {
     await this.findPlaceOrThrow(id);
+
+    const { photos, ...placeData } = dto;
+
     return this.prisma.place.update({
       where: { id },
-      data: dto,
-      include: { category: true },
+      data: {
+        ...placeData,
+        ...(photos !== undefined && {
+          photos: {
+            deleteMany: {},
+            create: photos.map((p, index) => ({
+              url: p.url,
+              displayOrder: index,
+            })),
+          },
+        }),
+      },
+      include: { category: true, photos: { orderBy: { displayOrder: 'asc' } } },
     });
   }
 
