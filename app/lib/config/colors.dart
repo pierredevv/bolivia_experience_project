@@ -58,4 +58,12 @@ class AppColors {
   static const neutral200 = Color(0xFFE5E5E5);
   static const neutral100 = Color(0xFFF5F5F5);
   static const neutral50 = Color(0xFFFAFAFA);
+
+  // Brand Tokens (Clean FinTech / BoliviaExperience)
+  static const brandDark = Color(0xFF0F172A);
+  static const brandEmerald = Color(0xFF10B981);
+  static const brandGold = Color(0xFFF59E0B);
+  static const borderSubtle = Color(0xFFE2E8F0);
+  static const backgroundCanvas = Color(0xFFFAFAFA);
+  static const textSecondary = Color(0xFF64748B);
 }

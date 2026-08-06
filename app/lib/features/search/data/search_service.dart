@@ -46,4 +46,12 @@ class SearchService {
     }
     return [];
   }
+
+  Future<void> clearSearchHistory() async {
+    try {
+      await _dio.delete(ApiConstants.searchHistory);
+    } catch (e) {
+      // Ignore error
+    }
+  }
 }

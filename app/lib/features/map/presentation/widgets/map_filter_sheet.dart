@@ -87,8 +87,8 @@ class _MapFilterSheetState extends ConsumerState<MapFilterSheet> {
             min: 1,
             max: 20,
             divisions: 19,
-            activeColor: AppColors.primary500,
-            inactiveColor: AppColors.primary100,
+            activeColor: const Color(0xFF10B981),
+            inactiveColor: const Color(0xFFE2E8F0),
             label: '${_tempRadius.toStringAsFixed(0)} km',
             onChanged: (value) {
               setState(() => _tempRadius = value);
@@ -100,8 +100,9 @@ class _MapFilterSheetState extends ConsumerState<MapFilterSheet> {
             child: ElevatedButton(
               onPressed: _applyFilters,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary700,
+                backgroundColor: const Color(0xFF0F172A),
                 foregroundColor: Colors.white,
+                elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -142,8 +143,8 @@ class _MapFilterSheetState extends ConsumerState<MapFilterSheet> {
                 _tempCategoryId = _tempCategoryId == cat.id ? null : cat.id;
               });
             },
-            selectedColor: AppColors.primary100,
-            checkmarkColor: AppColors.primary700,
+            selectedColor: const Color(0xFF10B981).withValues(alpha: 0.15),
+            checkmarkColor: const Color(0xFF10B981),
           ),
         ),
       ],

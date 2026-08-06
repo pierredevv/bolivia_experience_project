@@ -73,12 +73,13 @@ dev_dependencies:
   mockito: ^5.4.4
 
 flutter_launcher_icons:
-  android: "ic_launcher"
+  android: true
   ios: false
-  image_path: "assets/images/App_icono.png"
-  min_sdk_android: 21
-  adaptive_icon_background: "#0F172A"
-  adaptive_icon_foreground: "assets/images/App_icono.png"
+  image_path: "assets/images/app_icono.png"
+  
+  # Configuración para que Android no recorte el logo (Adaptive Icons)
+  adaptive_icon_background: "#0F172A" # El color oscuro de fondo
+  adaptive_icon_foreground: "assets/images/app_icono.png"
 
 flutter:
   uses-material-design: true

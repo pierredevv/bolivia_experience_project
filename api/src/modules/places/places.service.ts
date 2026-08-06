@@ -6,7 +6,7 @@ import { PlacesScoringService, TripPreferences } from './places-scoring.service'
 
 @Injectable()
 export class PlacesService {
-  constructor(
+constructor(
     private prisma: PrismaService,
     private scoringService: PlacesScoringService,
   ) {}
@@ -224,22 +224,47 @@ export class PlacesService {
   }
 
   async create(dto: CreatePlaceDto) {
-    const data: any = { ...dto };
-    if (dto.priceLevel !== undefined && dto.priceLevel !== null) {
-      data.priceUpdatedAt = new Date();
+    const { photos, ...rest } = dto;
+    const placeData: any = { ...rest };
+    if (placeData.priceLevel !== undefined && placeData.priceLevel !== null) {
+      placeData.priceUpdatedAt = new Date();
     }
     return this.prisma.place.create({
-      data,
-      include: { category: true },
+      data: {
+        ...placeData,
+        ...(photos && photos.length > 0 && {
+          photos: {
+            create: photos.map((p, index) => ({
+              url: p.url,
+              displayOrder: index,
+            })),
+          },
+        }),
+      },
+      include: { category: true, photos: { orderBy: { displayOrder: 'asc' } } },
     });
   }
 
   async update(id: string, dto: UpdatePlaceDto) {
     await this.findPlaceOrThrow(id);
+
+    const { photos, ...placeData } = dto;
+
     return this.prisma.place.update({
       where: { id },
-      data: dto,
-      include: { category: true },
+      data: {
+        ...placeData,
+        ...(photos !== undefined && {
+          photos: {
+            deleteMany: {},
+            create: photos.map((p, index) => ({
+              url: p.url,
+              displayOrder: index,
+            })),
+          },
+        }),
+      },
+      include: { category: true, photos: { orderBy: { displayOrder: 'asc' } } },
     });
   }
 

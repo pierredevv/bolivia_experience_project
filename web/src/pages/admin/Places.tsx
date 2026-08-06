@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, Loader2, MapPin, Star, Eye, EyeOff } from 'lucide-react'
-import { usePlaces, useCreatePlace, useDeletePlace, useTogglePlaceStatus } from '../../hooks/usePlaces'
+import { Plus, Pencil, Trash2, Loader2, MapPin, Star, Eye, EyeOff, Image as ImageIcon } from 'lucide-react'
+import { usePlaces, useCreatePlace, useDeletePlace, useTogglePlaceStatus, useUpdatePlace } from '../../hooks/usePlaces'
 import { useCategories } from '../../hooks/useCategories'
 import Modal from '../../components/ui/Modal'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
@@ -25,6 +25,7 @@ interface PlaceForm {
   longitude: string
   categoryId: string
   isFeatured: boolean
+  photoUrl: string // <--- Campo añadido para la URL de la foto
 }
 
 const defaultForm: PlaceForm = {
@@ -41,6 +42,7 @@ const defaultForm: PlaceForm = {
   longitude: '',
   categoryId: '',
   isFeatured: false,
+  photoUrl: '',
 }
 
 export default function AdminPlaces() {
@@ -63,6 +65,7 @@ export default function AdminPlaces() {
     isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
   })
   const createPlace = useCreatePlace()
+  const updatePlace = useUpdatePlace()
   const deletePlace = useDeletePlace()
   const toggleStatus = useTogglePlaceStatus()
 
@@ -76,6 +79,10 @@ export default function AdminPlaces() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Construimos el array de fotos si existe la URL
+    const photosPayload = form.photoUrl.trim() ? [{ url: form.photoUrl.trim() }] : []
+
     const payload: any = {
       name: form.name,
       description: form.description || undefined,
@@ -90,15 +97,16 @@ export default function AdminPlaces() {
       longitude: parseFloat(form.longitude),
       categoryId: form.categoryId,
       isFeatured: form.isFeatured,
+      photos: photosPayload, // <--- Se envía el arreglo con la foto al backend
     }
 
     try {
       if (editingId) {
-        // Update not implemented in API yet, placeholder
+        await updatePlace.mutateAsync({ id: editingId, data: payload })
         toast.success('Lugar actualizado')
       } else {
         await createPlace.mutateAsync(payload)
-        toast.success('Lugar creado')
+        toast.success('Lugar creado con éxito')
       }
       setIsModalOpen(false)
       setEditingId(null)
@@ -124,6 +132,7 @@ export default function AdminPlaces() {
       longitude: place.longitude?.toString() || '',
       categoryId: place.categoryId || '',
       isFeatured: place.isFeatured || false,
+      photoUrl: place.photos?.[0]?.url || '', // <--- Carga la foto existente si la tiene
     })
     setIsModalOpen(true)
   }
@@ -282,6 +291,30 @@ export default function AdminPlaces() {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input label="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+
+          {/* Campo de Imagen e Previsualización */}
+          <div className="space-y-2">
+            <Input
+              label="URL de la Foto Principal"
+              value={form.photoUrl}
+              onChange={(e) => setForm({ ...form, photoUrl: e.target.value })}
+              placeholder="https://ejemplo.com/imagen.jpg"
+            />
+            {form.photoUrl && (
+              <div className="relative h-32 w-full rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600">
+                <img
+                  src={form.photoUrl}
+                  alt="Vista previa"
+                  className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLElement).style.display = 'none' }}
+                />
+                <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 text-white text-xs rounded-md flex items-center gap-1">
+                  <ImageIcon className="h-3 w-3" /> Vista Previa
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <Textarea label="Descripción (ES)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             <Textarea label="Descripción (EN)" value={form.descriptionEn} onChange={(e) => setForm({ ...form, descriptionEn: e.target.value })} />
@@ -309,8 +342,8 @@ export default function AdminPlaces() {
             <button type="button" onClick={() => { setIsModalOpen(false); setEditingId(null) }} className="px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
               Cancelar
             </button>
-            <button type="submit" disabled={createPlace.isPending} className="px-4 py-2 rounded-lg bg-primary-700 text-white text-sm font-medium hover:bg-primary-800 disabled:opacity-50">
-              {createPlace.isPending ? 'Guardando...' : editingId ? 'Actualizar' : 'Crear'}
+            <button type="submit" disabled={createPlace.isPending || updatePlace.isPending} className="px-4 py-2 rounded-lg bg-primary-700 text-white text-sm font-medium hover:bg-primary-800 disabled:opacity-50">
+              {(createPlace.isPending || updatePlace.isPending) ? 'Guardando...' : editingId ? 'Actualizar' : 'Crear'}
             </button>
           </div>
         </form>
