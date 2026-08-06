@@ -64,10 +64,14 @@ model Place {
   ratingCount   Int      @default(0) @map("rating_count")
   categoryId    String   @map("category_id") @db.Uuid
   ownerId       String?  @map("owner_id") @db.Uuid
-  isFeatured    Boolean  @default(false) @map("is_featured")
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+  isUrban         Boolean   @default(true) @map("is_urban")
+  isFeatured      Boolean   @default(false) @map("is_featured")
+  isActive        Boolean   @default(true) @map("is_active")
+  priceLevel      Int?      @map("price_level")
+  priceUpdatedAt  DateTime? @map("price_updated_at") @db.Timestamptz()
+  priceProposedBy String?   @map("price_proposed_by") @db.VarChar(255)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
 
   category   Category    @relation(fields: [categoryId], references: [id])
   owner      User?       @relation(fields: [ownerId], references: [id])

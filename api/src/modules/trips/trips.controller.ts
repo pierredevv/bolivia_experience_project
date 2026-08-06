@@ -20,6 +20,8 @@ export class TripsController {
       budgetType?: string;
       budgetMin?: number;
       budgetMax?: number;
+      tourismType?: string;
+      groupType?: string;
       isPublic?: boolean;
     },
   ) {

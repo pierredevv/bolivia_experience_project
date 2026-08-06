@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEmail, MinLength } from 'class-validator';
+import { IsString, IsOptional, IsEmail, MinLength, IsInt, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
 
@@ -37,6 +37,13 @@ export class UpdatePlaceDto {
   @IsOptional()
   @IsString()
   instagram?: string;
+
+  @ApiPropertyOptional({ description: 'Price level 1-4 (1=cheapest, 4=most expensive)' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(4)
+  priceLevel?: number;
 }
 
 export class EmpresaReviewsDto extends PaginationDto {

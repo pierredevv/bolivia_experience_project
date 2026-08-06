@@ -14,6 +14,8 @@ export class TripsService {
     budgetType?: string;
     budgetMin?: number;
     budgetMax?: number;
+    tourismType?: string;
+    groupType?: string;
     isPublic?: boolean;
   }) {
     return this.prisma.trip.create({
@@ -27,6 +29,8 @@ export class TripsService {
         budgetType: data.budgetType,
         budgetMin: data.budgetMin,
         budgetMax: data.budgetMax,
+        tourismType: data.tourismType,
+        groupType: data.groupType,
         isPublic: data.isPublic || false,
       },
       include: { days: { include: { items: true }, orderBy: { dayNumber: 'asc' } } },

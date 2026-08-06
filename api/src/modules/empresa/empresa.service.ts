@@ -37,9 +37,16 @@ export class EmpresaService {
       throw new NotFoundException('No place found for this user');
     }
 
+    // If priceLevel is being updated, track when and by whom
+    const data: any = { ...dto };
+    if (dto.priceLevel !== undefined) {
+      data.priceUpdatedAt = new Date();
+      data.priceProposedBy = userId;
+    }
+
     return this.prisma.place.update({
       where: { id: place.id },
-      data: dto,
+      data,
       include: {
         category: { select: { id: true, name: true, slug: true } },
         photos: { orderBy: { displayOrder: 'asc' } },

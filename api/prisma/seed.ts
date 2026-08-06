@@ -128,6 +128,10 @@ async function main() {
         ownerId: empresaUser.id,
         isFeatured: true,
         isActive: true,
+        isUrban: true,
+        priceLevel: 2,
+        priceUpdatedAt: new Date(),
+        priceProposedBy: empresaUser.id,
       },
     {
         name: 'Cocina Mestiza',
@@ -143,6 +147,10 @@ async function main() {
         ownerId: empresaUser.id,
         isFeatured: true,
         isActive: true,
+        isUrban: true,
+        priceLevel: 3,
+        priceUpdatedAt: new Date(),
+        priceProposedBy: empresaUser.id,
       },
     {
         name: 'Hotel Buganvilia',
@@ -159,6 +167,10 @@ async function main() {
         ownerId: empresaUser.id,
         isFeatured: true,
         isActive: true,
+        isUrban: true,
+        priceLevel: 4,
+        priceUpdatedAt: new Date(),
+        priceProposedBy: empresaUser.id,
       },
     {
         name: 'Parque Municipal Lomas de Arena',
@@ -174,6 +186,9 @@ async function main() {
         ownerId: null,
         isFeatured: true,
         isActive: true,
+        isUrban: false,
+        priceLevel: 1,
+        priceUpdatedAt: new Date(),
       },
     {
         name: 'Museo de Historia Natural Noel Kempff',
@@ -189,6 +204,9 @@ async function main() {
         ownerId: null,
         isFeatured: true,
         isActive: true,
+        isUrban: true,
+        priceLevel: 1,
+        priceUpdatedAt: new Date(),
       },
     {
         name: 'Café Munaipata',
@@ -204,6 +222,10 @@ async function main() {
         ownerId: empresaUser.id,
         isFeatured: true,
         isActive: true,
+        isUrban: true,
+        priceLevel: 2,
+        priceUpdatedAt: new Date(),
+        priceProposedBy: empresaUser.id,
       },
     {
         name: 'Blue Velvet Bar',
@@ -219,6 +241,10 @@ async function main() {
         ownerId: empresaUser.id,
         isFeatured: false,
         isActive: true,
+        isUrban: true,
+        priceLevel: 3,
+        priceUpdatedAt: new Date(),
+        priceProposedBy: empresaUser.id,
       },
     {
         name: 'Churrasquía Don Toto',
@@ -234,6 +260,10 @@ async function main() {
         ownerId: empresaUser.id,
         isFeatured: true,
         isActive: true,
+        isUrban: true,
+        priceLevel: 2,
+        priceUpdatedAt: new Date(),
+        priceProposedBy: empresaUser.id,
       },
     {
         name: 'CC Ventura',
@@ -250,6 +280,8 @@ async function main() {
         ownerId: null,
         isFeatured: false,
         isActive: true,
+        isUrban: true,
+        // priceLevel: null — intentionally left null for "price not verified" badge testing
       },
     {
         name: 'Coliseo de Domingo Savio',
@@ -265,6 +297,8 @@ async function main() {
         ownerId: null,
         isFeatured: false,
         isActive: true,
+        isUrban: true,
+        // priceLevel: null — intentionally left null for "price not verified" badge testing
       },
     {
         name: 'Aero Club Santa Cruz',
@@ -280,6 +314,8 @@ async function main() {
         ownerId: empresaUser.id,
         isFeatured: false,
         isActive: true,
+        isUrban: true,
+        // priceLevel: null — intentionally left null for "price not verified" badge testing
       },
     {
         name: 'Cristo Redentor',
@@ -294,6 +330,8 @@ async function main() {
         ownerId: null,
         isFeatured: true,
         isActive: true,
+        isUrban: false,
+        // priceLevel: null — intentionally left null for "price not verified" badge testing
       }];
 
   const places: any[] = [];
@@ -732,6 +770,8 @@ async function main() {
       budgetType: 'low_cost',
       budgetMin: 500,
       budgetMax: 1000,
+      tourismType: 'ambos',
+      groupType: 'solo',
       isPublic: true,
     },
   });
@@ -759,6 +799,8 @@ async function main() {
       budgetType: 'luxury',
       budgetMin: 3000,
       budgetMax: 5000,
+      tourismType: 'urbano',
+      groupType: 'pareja',
       isPublic: true,
     },
   });

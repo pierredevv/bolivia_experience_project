@@ -13,14 +13,16 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { PlacesService } from './places.service';
-import { CreatePlaceDto, UpdatePlaceDto, QueryPlacesDto } from './dto';
+import { PlacesScoringService } from './places-scoring.service';
+import { CreatePlaceDto, UpdatePlaceDto, QueryPlacesDto, QueryScoredPlacesDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { FileUploadService } from '../../common/services/file-upload.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import * as multer from 'multer';
 
 @ApiTags('places')
@@ -29,6 +31,8 @@ export class PlacesController {
   constructor(
     private readonly placesService: PlacesService,
     private readonly fileUploadService: FileUploadService,
+    private readonly scoringService: PlacesScoringService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Get()
@@ -43,6 +47,37 @@ export class PlacesController {
   @ApiResponse({ status: 200, description: 'Featured places list' })
   async findFeatured() {
     return this.placesService.findFeatured();
+  }
+
+  @Get('scored')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get places scored by match with trip preferences',
+    description: 'Returns ALL places (never filters), reordered by match score based on budget and tourism type preferences. Places with priceLevel=null appear in neutral position.',
+  })
+  @ApiResponse({ status: 200, description: 'Scored and sorted places list' })
+  async findScored(
+    @CurrentUser() user: any,
+    @Query() query: QueryScoredPlacesDto,
+  ) {
+    let preferences = { budgetType: query.budgetType, tourismType: query.tourismType };
+
+    // If tripId provided, fetch preferences from the trip
+    if (query.tripId) {
+      const trip = await this.prisma.trip.findFirst({
+        where: { id: query.tripId, userId: user.id },
+        select: { budgetType: true, tourismType: true },
+      });
+      if (trip) {
+        preferences = {
+          budgetType: trip.budgetType || query.budgetType,
+          tourismType: trip.tourismType || query.tourismType,
+        };
+      }
+    }
+
+    return this.placesService.findAllScored(preferences, query);
   }
 
   @Get(':id')

@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePlaceDto, UpdatePlaceDto, QueryPlacesDto } from './dto';
 import { PaginatedResponse } from '../../common/dto/pagination.dto';
+import { PlacesScoringService, TripPreferences } from './places-scoring.service';
 
 @Injectable()
 export class PlacesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private scoringService: PlacesScoringService,
+  ) {}
 
   async findAll(query: QueryPlacesDto) {
     const where: any = {};
@@ -108,6 +112,66 @@ export class PlacesService {
     return new PaginatedResponse(filteredPlaces, filteredPlaces.length, page, limit);
   }
 
+  /**
+   * Find all places scored and sorted by match against trip preferences.
+   * This NEVER filters (excludes) places — it only REORDERS them.
+   * Places with priceLevel=null get a neutral score (middle of the list).
+   */
+  async findAllScored(preferences: TripPreferences, query: QueryPlacesDto) {
+    const where: any = { isActive: true };
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    // Apply basic filters (category, search, city) but NOT ordering from DB
+    if (query.categorySlug) {
+      const category = await this.prisma.category.findUnique({
+        where: { slug: query.categorySlug },
+        select: { id: true },
+      });
+      if (category) {
+        where.categoryId = category.id;
+      } else {
+        return new PaginatedResponse([], 0, page, limit);
+      }
+    } else if (query.categoryId) {
+      where.categoryId = query.categoryId;
+    }
+
+    if (query.search) {
+      where.OR = [
+        { name: { contains: query.search } },
+        { address: { contains: query.search } },
+      ];
+    }
+
+    if (query.city) {
+      where.city = query.city;
+    }
+
+    if (query.minRating) {
+      where.ratingAvg = { gte: query.minRating };
+    }
+
+    // Fetch ALL matching places (no pagination yet — we need to score first, then paginate)
+    const allPlaces = await this.prisma.place.findMany({
+      where,
+      include: {
+        category: { select: { id: true, name: true, icon: true } },
+        photos: { take: 1, orderBy: { displayOrder: 'asc' } },
+      },
+    });
+
+    // Score and sort all places
+    const scored = this.scoringService.scoreAndSort(allPlaces, preferences);
+
+    // Now paginate the scored results
+    const total = scored.length;
+    const skip = (page - 1) * limit;
+    const paginated = scored.slice(skip, skip + limit);
+
+    return new PaginatedResponse(paginated, total, page, limit);
+  }
+
   private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371e3;
     const φ1 = (lat1 * Math.PI) / 180;
@@ -156,12 +220,16 @@ export class PlacesService {
       throw new NotFoundException('Place not found');
     }
 
-    return place;
+    return this.scoringService.enrichWithPriceVerified(place);
   }
 
   async create(dto: CreatePlaceDto) {
+    const data: any = { ...dto };
+    if (dto.priceLevel !== undefined && dto.priceLevel !== null) {
+      data.priceUpdatedAt = new Date();
+    }
     return this.prisma.place.create({
-      data: dto,
+      data,
       include: { category: true },
     });
   }

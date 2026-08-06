@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsNumber,
   IsBoolean,
+  IsInt,
   MaxLength,
   Min,
   Max,
@@ -83,6 +84,23 @@ export class CreatePlaceDto {
   @IsOptional()
   @IsBoolean()
   isFeatured?: boolean;
+
+  @ApiPropertyOptional({ description: 'Whether the place is urban (true) or rural (false)' })
+  @IsOptional()
+  @IsBoolean()
+  isUrban?: boolean;
+
+  @ApiPropertyOptional({ description: 'Price level 1-4 (1=cheapest, 4=most expensive). null = not verified.' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(4)
+  priceLevel?: number;
+
+  @ApiPropertyOptional({ description: 'User ID of the empresa that proposed the price level' })
+  @IsOptional()
+  @IsString()
+  priceProposedBy?: string;
 }
 
 export class UpdatePlaceDto extends PartialType(CreatePlaceDto) {}
@@ -180,3 +198,21 @@ export class QueryPlacesDto extends PaginationDto {
   @IsString()
   city?: string;
 }
+
+export class QueryScoredPlacesDto extends QueryPlacesDto {
+  @ApiPropertyOptional({ description: 'Trip ID to get preferences from' })
+  @IsOptional()
+  @IsString()
+  tripId?: string;
+
+  @ApiPropertyOptional({ description: 'Direct budget type: low_cost, medio, premium, luxury' })
+  @IsOptional()
+  @IsString()
+  budgetType?: string;
+
+  @ApiPropertyOptional({ description: 'Direct tourism type: urbano, rural, ambos' })
+  @IsOptional()
+  @IsString()
+  tourismType?: string;
+}
+
