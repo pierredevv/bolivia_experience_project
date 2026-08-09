@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Step 1: Migrating is_approved to status...');
+  console.log("Step 1: Migrating is_approved to status...");
 
   // Migrar is_approved: 1 → PUBLISHED
   const published = await prisma.$executeRaw`
@@ -17,7 +17,7 @@ async function main() {
   `;
   console.log(`  Migrated ${pending} reviews to UNDER_REVIEW`);
 
-  console.log('Step 1 complete');
+  console.log("Step 1 complete");
 }
 
 main()

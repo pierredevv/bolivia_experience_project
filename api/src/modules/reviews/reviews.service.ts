@@ -4,12 +4,12 @@ import {
   ForbiddenException,
   ConflictException,
   BadRequestException,
-} from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CreateReviewDto, UpdateReviewDto } from './dto';
-import { ReviewStatus } from '../../common/constants/review-status';
-import { Prisma } from '@prisma/client';
-import { PaginatedResponse } from '../../common/dto/pagination.dto';
+} from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service";
+import { CreateReviewDto, UpdateReviewDto } from "./dto";
+import { ReviewStatus } from "../../common/constants/review-status";
+import { Prisma } from "@prisma/client";
+import { PaginatedResponse } from "../../common/dto/pagination.dto";
 
 @Injectable()
 export class ReviewsService {
@@ -25,10 +25,10 @@ export class ReviewsService {
           user: { select: { id: true, name: true, photoUrl: true } },
           replies: {
             include: { user: { select: { id: true, name: true } } },
-            orderBy: { createdAt: 'asc' },
+            orderBy: { createdAt: "asc" },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -47,7 +47,7 @@ export class ReviewsService {
         include: {
           place: { select: { id: true, name: true, photos: { take: 1 } } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -76,7 +76,7 @@ export class ReviewsService {
     });
 
     if (existing) {
-      throw new ConflictException('You already reviewed this place');
+      throw new ConflictException("You already reviewed this place");
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -105,7 +105,7 @@ export class ReviewsService {
     const review = await this.findReviewOrThrow(reviewId);
 
     if (review.userId !== userId) {
-      throw new ForbiddenException('You can only edit your own reviews');
+      throw new ForbiddenException("You can only edit your own reviews");
     }
 
     // No permitir editar reseñas DELETED o HIDDEN
@@ -113,15 +113,14 @@ export class ReviewsService {
       review.status === ReviewStatus.DELETED ||
       review.status === ReviewStatus.HIDDEN
     ) {
-      throw new BadRequestException(
-        'Cannot edit a review with this status',
-      );
+      throw new BadRequestException("Cannot edit a review with this status");
     }
 
     const updateData: any = {};
     if (dto.rating !== undefined) updateData.rating = dto.rating;
     if (dto.comment !== undefined) updateData.comment = dto.comment;
-    if (dto.photos !== undefined) updateData.photos = JSON.stringify(dto.photos);
+    if (dto.photos !== undefined)
+      updateData.photos = JSON.stringify(dto.photos);
 
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.review.update({
@@ -142,11 +141,11 @@ export class ReviewsService {
     const review = await this.findReviewOrThrow(reviewId);
 
     if (review.status === ReviewStatus.DELETED) {
-      throw new BadRequestException('Review already deleted');
+      throw new BadRequestException("Review already deleted");
     }
 
     if (!isAdmin && review.userId !== userId) {
-      throw new ForbiddenException('You can only delete your own reviews');
+      throw new ForbiddenException("You can only delete your own reviews");
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -157,7 +156,7 @@ export class ReviewsService {
 
       await this.recalculatePlaceRating(tx, review.placeId);
 
-      return { message: 'Review deleted' };
+      return { message: "Review deleted" };
     });
   }
 
@@ -178,7 +177,7 @@ export class ReviewsService {
       review.status === ReviewStatus.DELETED &&
       status !== ReviewStatus.DELETED
     ) {
-      throw new BadRequestException('Deleted reviews cannot be restored');
+      throw new BadRequestException("Deleted reviews cannot be restored");
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -230,7 +229,7 @@ export class ReviewsService {
   private async findReviewOrThrow(id: string) {
     const review = await this.prisma.review.findUnique({ where: { id } });
     if (!review) {
-      throw new NotFoundException('Review not found');
+      throw new NotFoundException("Review not found");
     }
     return review;
   }

@@ -1,6 +1,14 @@
-import { IsString, IsOptional, IsEmail, MinLength, IsInt, Min, Max } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationDto } from '../../../common/dto/pagination.dto';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  MinLength,
+  IsInt,
+  Min,
+  Max,
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { PaginationDto } from "../../../common/dto/pagination.dto";
 
 export class UpdatePlaceDto {
   @ApiPropertyOptional()
@@ -38,17 +46,33 @@ export class UpdatePlaceDto {
   @IsString()
   instagram?: string;
 
-  @ApiPropertyOptional({ description: 'Price level 1-4 (1=cheapest, 4=most expensive)' })
+  @ApiPropertyOptional({
+    description: "Price level 1-4 (1=cheapest, 4=most expensive)",
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Max(4)
   priceLevel?: number;
+
+  @ApiPropertyOptional({
+    description: "Destacado especial del establecimiento (p.ej. 'Piscina', 'Vista panorámica')",
+  })
+  @IsOptional()
+  @IsString()
+  specialFeature?: string;
+
+  @ApiPropertyOptional({
+    description: "Tipo de cocina para restaurantes (p.ej. 'Cruceña', 'Italiana')",
+  })
+  @IsOptional()
+  @IsString()
+  cuisineType?: string;
 }
 
 export class EmpresaReviewsDto extends PaginationDto {
-  @ApiPropertyOptional({ enum: ['all', 'published', 'hidden'] })
+  @ApiPropertyOptional({ enum: ["all", "published", "hidden"] })
   @IsOptional()
   @IsString()
-  filter?: 'all' | 'published' | 'hidden';
+  filter?: "all" | "published" | "hidden";
 }

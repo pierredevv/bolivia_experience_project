@@ -1,8 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as multer from 'multer';
-import * as path from 'path';
-import * as fs from 'fs';
+import { Injectable, BadRequestException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import * as multer from "multer";
+import * as path from "path";
+import * as fs from "fs";
 
 @Injectable()
 export class FileUploadService {
@@ -10,8 +10,8 @@ export class FileUploadService {
   private useGCS: boolean;
 
   constructor(private configService: ConfigService) {
-    this.uploadDir = path.join(process.cwd(), 'uploads');
-    this.useGCS = !!this.configService.get('GCS_BUCKET');
+    this.uploadDir = path.join(process.cwd(), "uploads");
+    this.useGCS = !!this.configService.get("GCS_BUCKET");
 
     if (!this.useGCS) {
       this.ensureUploadDir();
@@ -44,11 +44,20 @@ export class FileUploadService {
         fileSize: 5 * 1024 * 1024, // 5MB
       },
       fileFilter: (_req, file, cb) => {
-        const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        const allowedMimes = [
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "image/gif",
+        ];
         if (allowedMimes.includes(file.mimetype)) {
           cb(null, true);
         } else {
-          cb(new BadRequestException('Solo se permiten archivos JPEG, PNG, WebP o GIF'));
+          cb(
+            new BadRequestException(
+              "Solo se permiten archivos JPEG, PNG, WebP o GIF",
+            ),
+          );
         }
       },
     };
@@ -81,7 +90,7 @@ export class FileUploadService {
   }
 
   async deleteFile(filePath: string): Promise<void> {
-    if (filePath.startsWith('/uploads/')) {
+    if (filePath.startsWith("/uploads/")) {
       const fullPath = path.join(process.cwd(), filePath);
       if (fs.existsSync(fullPath)) {
         fs.unlinkSync(fullPath);

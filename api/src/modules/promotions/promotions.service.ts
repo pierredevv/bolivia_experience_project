@@ -1,25 +1,47 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { PaginatedResponse } from '../../common/dto/pagination.dto';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service";
+import { PaginatedResponse } from "../../common/dto/pagination.dto";
 
 @Injectable()
 export class PromotionsService {
   constructor(private prisma: PrismaService) {}
 
-  private async verifyPlaceOwnership(userId: string, placeId: string, userRole: string) {
-    if (userRole === 'admin') return true;
-    const place = await this.prisma.place.findUnique({ where: { id: placeId } });
-    if (!place) throw new NotFoundException('Place not found');
-    if (place.ownerId !== userId) throw new ForbiddenException('You can only manage promotions for your own place');
+  private async verifyPlaceOwnership(
+    userId: string,
+    placeId: string,
+    userRole: string,
+  ) {
+    if (userRole === "admin") return true;
+    const place = await this.prisma.place.findUnique({
+      where: { id: placeId },
+    });
+    if (!place) throw new NotFoundException("Place not found");
+    if (place.ownerId !== userId)
+      throw new ForbiddenException(
+        "You can only manage promotions for your own place",
+      );
     return true;
   }
 
-  private async verifyPromotionOwnership(userId: string, promotionId: string, userRole: string) {
-    if (userRole === 'admin') return true;
-    const promotion = await this.prisma.promotion.findUnique({ where: { id: promotionId } });
-    if (!promotion) throw new NotFoundException('Promotion not found');
-    const place = await this.prisma.place.findUnique({ where: { id: promotion.placeId } });
-    if (!place || place.ownerId !== userId) throw new ForbiddenException('You can only manage your own promotions');
+  private async verifyPromotionOwnership(
+    userId: string,
+    promotionId: string,
+    userRole: string,
+  ) {
+    if (userRole === "admin") return true;
+    const promotion = await this.prisma.promotion.findUnique({
+      where: { id: promotionId },
+    });
+    if (!promotion) throw new NotFoundException("Promotion not found");
+    const place = await this.prisma.place.findUnique({
+      where: { id: promotion.placeId },
+    });
+    if (!place || place.ownerId !== userId)
+      throw new ForbiddenException("You can only manage your own promotions");
     return true;
   }
 
@@ -37,11 +59,11 @@ export class PromotionsService {
         include: {
           place: {
             include: {
-              photos: { take: 1, orderBy: { displayOrder: 'asc' } },
+              photos: { take: 1, orderBy: { displayOrder: "asc" } },
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -66,11 +88,11 @@ export class PromotionsService {
         include: {
           place: {
             include: {
-              photos: { take: 1, orderBy: { displayOrder: 'asc' } },
+              photos: { take: 1, orderBy: { displayOrder: "asc" } },
             },
           },
         },
-        orderBy: { endDate: 'asc' },
+        orderBy: { endDate: "asc" },
         skip,
         take: limit,
       }),
@@ -87,7 +109,7 @@ export class PromotionsService {
     });
 
     if (!promotion) {
-      throw new NotFoundException('Promotion not found');
+      throw new NotFoundException("Promotion not found");
     }
 
     return promotion;
@@ -100,7 +122,12 @@ export class PromotionsService {
     });
   }
 
-  async update(userId: string, userRole: string, promotionId: string, data: any) {
+  async update(
+    userId: string,
+    userRole: string,
+    promotionId: string,
+    data: any,
+  ) {
     await this.verifyPromotionOwnership(userId, promotionId, userRole);
     return this.prisma.promotion.update({
       where: { id: promotionId },

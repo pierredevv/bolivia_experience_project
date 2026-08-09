@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { PaginatedResponse } from '../../common/dto/pagination.dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service";
+import { PaginatedResponse } from "../../common/dto/pagination.dto";
 
 @Injectable()
 export class EventsService {
@@ -12,16 +12,13 @@ export class EventsService {
     const where: any = { isActive: true };
 
     if (query.upcoming !== false) {
-      where.OR = [
-        { dateEnd: null },
-        { dateEnd: { gte: new Date() } },
-      ];
+      where.OR = [{ dateEnd: null }, { dateEnd: { gte: new Date() } }];
     }
 
     const [events, total] = await Promise.all([
       this.prisma.event.findMany({
         where,
-        orderBy: { dateStart: 'asc' },
+        orderBy: { dateStart: "asc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -41,19 +38,16 @@ export class EventsService {
       where: {
         isActive: true,
         dateStart: { lte: tomorrow },
-        OR: [
-          { dateEnd: null },
-          { dateEnd: { gte: today } },
-        ],
+        OR: [{ dateEnd: null }, { dateEnd: { gte: today } }],
       },
-      orderBy: { dateStart: 'asc' },
+      orderBy: { dateStart: "asc" },
     });
   }
 
   async findById(id: string) {
     const event = await this.prisma.event.findUnique({ where: { id } });
     if (!event) {
-      throw new NotFoundException('Event not found');
+      throw new NotFoundException("Event not found");
     }
     return event;
   }

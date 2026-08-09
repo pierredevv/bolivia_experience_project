@@ -1,7 +1,11 @@
-import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { ConfigService } from '@nestjs/config';
-import { randomBytes } from 'crypto';
+import {
+  Injectable,
+  BadRequestException,
+  ConflictException,
+} from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service";
+import { ConfigService } from "@nestjs/config";
+import { randomBytes } from "crypto";
 
 @Injectable()
 export class ReferralsService {
@@ -31,7 +35,7 @@ export class ReferralsService {
       code: referral.code,
       referralCount: referral.referralCount,
       rewardsEarned: referral.rewardsEarned,
-      shareUrl: `${this.configService.get('APP_URL', 'https://boliviaexperience.app')}/invite/${referral.code}`,
+      shareUrl: `${this.configService.get("APP_URL", "https://boliviaexperience.app")}/invite/${referral.code}`,
     };
   }
 
@@ -41,11 +45,11 @@ export class ReferralsService {
     });
 
     if (!referral) {
-      throw new BadRequestException('Código de referido inválido');
+      throw new BadRequestException("Código de referido inválido");
     }
 
     if (referral.userId === userId) {
-      throw new BadRequestException('No podés usar tu propio código');
+      throw new BadRequestException("No podés usar tu propio código");
     }
 
     // Check if user already used a referral code
@@ -54,7 +58,7 @@ export class ReferralsService {
     });
 
     if (existingUse) {
-      throw new ConflictException('Ya usaste un código de referido');
+      throw new ConflictException("Ya usaste un código de referido");
     }
 
     // Create the referral use
@@ -91,7 +95,7 @@ export class ReferralsService {
       },
     });
 
-    return { success: true, message: 'Código aplicado exitosamente' };
+    return { success: true, message: "Código aplicado exitosamente" };
   }
 
   async getReferralStats(userId: string) {
@@ -106,14 +110,14 @@ export class ReferralsService {
           select: { id: true, name: true, createdAt: true },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return {
       code: referral?.code ?? null,
       totalReferrals: referral?.referralCount ?? 0,
       totalRewards: referral?.rewardsEarned ?? 0,
-      recentReferrals: uses.map(use => ({
+      recentReferrals: uses.map((use) => ({
         userName: use.referredUser.name,
         date: use.createdAt,
       })),
@@ -121,6 +125,6 @@ export class ReferralsService {
   }
 
   private generateCode(): string {
-    return randomBytes(4).toString('hex').toUpperCase();
+    return randomBytes(4).toString("hex").toUpperCase();
   }
 }

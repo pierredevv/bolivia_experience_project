@@ -1,5 +1,12 @@
-import { IsInt, Min, Max, IsOptional, IsString, IsArray } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsInt,
+  Min,
+  Max,
+  IsOptional,
+  IsString,
+  IsArray,
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class CreateReviewDto {
   @ApiProperty({ minimum: 1, maximum: 5, example: 5 })
@@ -8,7 +15,7 @@ export class CreateReviewDto {
   @Max(5)
   rating: number;
 
-  @ApiPropertyOptional({ example: 'Excelente lugar!' })
+  @ApiPropertyOptional({ example: "Excelente lugar!" })
   @IsOptional()
   @IsString()
   comment?: string;
@@ -19,7 +26,7 @@ export class CreateReviewDto {
   @IsString({ each: true })
   photos?: string[];
 
-  @ApiPropertyOptional({ example: '2026-06-15' })
+  @ApiPropertyOptional({ example: "2026-06-15" })
   @IsOptional()
   @IsString()
   visitDate?: string;
@@ -45,4 +52,4 @@ export class UpdateReviewDto {
   photos?: string[];
 }
 
-export { UpdateReviewStatusDto } from './update-review-status.dto';
+export { UpdateReviewStatusDto } from "./update-review-status.dto";

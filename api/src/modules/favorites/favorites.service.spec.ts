@@ -1,9 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { FavoritesService } from './favorites.service';
-import { PrismaService } from '../../prisma/prisma.service';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { Test, TestingModule } from "@nestjs/testing";
+import { FavoritesService } from "./favorites.service";
+import { PrismaService } from "../../prisma/prisma.service";
+import { NotFoundException, ConflictException } from "@nestjs/common";
 
-describe('FavoritesService', () => {
+describe("FavoritesService", () => {
   let service: FavoritesService;
   let prisma: PrismaService;
 
@@ -29,77 +29,102 @@ describe('FavoritesService', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(service).toBeDefined();
   });
 
-  describe('findAll', () => {
-    it('should return user favorites', async () => {
+  describe("findAll", () => {
+    it("should return user favorites", async () => {
       const mockFavorites = [
-        { id: '1', userId: 'user1', placeId: 'place1', place: { name: 'Test Place' } },
+        {
+          id: "1",
+          userId: "user1",
+          placeId: "place1",
+          place: { name: "Test Place" },
+        },
       ];
       mockPrisma.favorite.findMany.mockResolvedValue(mockFavorites);
 
-      const result = await service.findAll('user1');
+      const result = await service.findAll("user1");
       expect(result).toEqual(mockFavorites);
       expect(mockPrisma.favorite.findMany).toHaveBeenCalledWith({
-        where: { userId: 'user1' },
+        where: { userId: "user1" },
         include: expect.objectContaining({
           place: expect.any(Object),
         }),
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
     });
 
-    it('should return empty array for user with no favorites', async () => {
+    it("should return empty array for user with no favorites", async () => {
       mockPrisma.favorite.findMany.mockResolvedValue([]);
-      const result = await service.findAll('user1');
+      const result = await service.findAll("user1");
       expect(result).toEqual([]);
     });
   });
 
-  describe('add', () => {
-    it('should add a favorite', async () => {
+  describe("add", () => {
+    it("should add a favorite", async () => {
       mockPrisma.favorite.findUnique.mockResolvedValue(null);
-      mockPrisma.favorite.create.mockResolvedValue({ id: '1', userId: 'user1', placeId: 'place1' });
+      mockPrisma.favorite.create.mockResolvedValue({
+        id: "1",
+        userId: "user1",
+        placeId: "place1",
+      });
 
-      const result = await service.add('user1', 'place1');
-      expect(result).toEqual({ id: '1', userId: 'user1', placeId: 'place1' });
+      const result = await service.add("user1", "place1");
+      expect(result).toEqual({ id: "1", userId: "user1", placeId: "place1" });
     });
 
-    it('should throw ConflictException if already in favorites', async () => {
-      mockPrisma.favorite.findUnique.mockResolvedValue({ id: '1', userId: 'user1', placeId: 'place1' });
+    it("should throw ConflictException if already in favorites", async () => {
+      mockPrisma.favorite.findUnique.mockResolvedValue({
+        id: "1",
+        userId: "user1",
+        placeId: "place1",
+      });
 
-      await expect(service.add('user1', 'place1')).rejects.toThrow(ConflictException);
+      await expect(service.add("user1", "place1")).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
-  describe('remove', () => {
-    it('should remove a favorite', async () => {
-      mockPrisma.favorite.findUnique.mockResolvedValue({ id: '1', userId: 'user1', placeId: 'place1' });
-      mockPrisma.favorite.delete.mockResolvedValue({ id: '1', userId: 'user1', placeId: 'place1' });
+  describe("remove", () => {
+    it("should remove a favorite", async () => {
+      mockPrisma.favorite.findUnique.mockResolvedValue({
+        id: "1",
+        userId: "user1",
+        placeId: "place1",
+      });
+      mockPrisma.favorite.delete.mockResolvedValue({
+        id: "1",
+        userId: "user1",
+        placeId: "place1",
+      });
 
-      const result = await service.remove('user1', 'place1');
+      const result = await service.remove("user1", "place1");
       expect(result).toBeDefined();
     });
 
-    it('should throw NotFoundException if favorite not found', async () => {
+    it("should throw NotFoundException if favorite not found", async () => {
       mockPrisma.favorite.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('user1', 'place1')).rejects.toThrow(NotFoundException);
+      await expect(service.remove("user1", "place1")).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
-  describe('check', () => {
-    it('should return isFavorite true when exists', async () => {
-      mockPrisma.favorite.findUnique.mockResolvedValue({ id: '1' });
-      const result = await service.check('user1', 'place1');
+  describe("check", () => {
+    it("should return isFavorite true when exists", async () => {
+      mockPrisma.favorite.findUnique.mockResolvedValue({ id: "1" });
+      const result = await service.check("user1", "place1");
       expect(result).toEqual({ isFavorite: true });
     });
 
-    it('should return isFavorite false when not exists', async () => {
+    it("should return isFavorite false when not exists", async () => {
       mockPrisma.favorite.findUnique.mockResolvedValue(null);
-      const result = await service.check('user1', 'place1');
+      const result = await service.check("user1", "place1");
       expect(result).toEqual({ isFavorite: false });
     });
   });

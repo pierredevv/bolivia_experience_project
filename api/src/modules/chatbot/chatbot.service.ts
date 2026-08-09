@@ -1,20 +1,20 @@
-import { Injectable, HttpException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Injectable, HttpException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { HttpService } from "@nestjs/axios";
+import { firstValueFrom } from "rxjs";
+import { PrismaService } from "../../prisma/prisma.service";
 
 @Injectable()
 export class ChatbotService {
   private readonly apiKey: string;
-  private readonly apiUrl = 'https://api.openai.com/v1/chat/completions';
+  private readonly apiUrl = "https://api.openai.com/v1/chat/completions";
 
   constructor(
     private configService: ConfigService,
     private httpService: HttpService,
     private prisma: PrismaService,
   ) {
-    this.apiKey = this.configService.get<string>('OPENAI_API_KEY') || '';
+    this.apiKey = this.configService.get<string>("OPENAI_API_KEY") || "";
   }
 
   async sendMessage(userId: string, message: string, conversationId?: string) {
@@ -33,12 +33,12 @@ Respondé en español.
 Tenés acceso a información de ${placesContext.count} lugares en Santa Cruz.
 
 Lugares relevantes:
-${placesContext.places.map(p => `- ${p.name}: ${p.description} (${p.address})`).join('\n')}`;
+${placesContext.places.map((p) => `- ${p.name}: ${p.description} (${p.address})`).join("\n")}`;
 
     const messages = [
-      { role: 'system', content: systemPrompt },
-      ...history.map(h => ({ role: h.role, content: h.content })),
-      { role: 'user', content: message },
+      { role: "system", content: systemPrompt },
+      ...history.map((h) => ({ role: h.role, content: h.content })),
+      { role: "user", content: message },
     ];
 
     try {
@@ -46,7 +46,7 @@ ${placesContext.places.map(p => `- ${p.name}: ${p.description} (${p.address})`).
         this.httpService.post(
           this.apiUrl,
           {
-            model: 'gpt-3.5-turbo',
+            model: "gpt-3.5-turbo",
             messages,
             max_tokens: 500,
             temperature: 0.7,
@@ -54,25 +54,27 @@ ${placesContext.places.map(p => `- ${p.name}: ${p.description} (${p.address})`).
           {
             headers: {
               Authorization: `Bearer ${this.apiKey}`,
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
           },
         ),
       );
 
-      const reply = response.data.choices[0]?.message?.content || 'No pude generar una respuesta.';
+      const reply =
+        response.data.choices[0]?.message?.content ||
+        "No pude generar una respuesta.";
 
       // Save conversation
-      const convId = conversationId || await this.createConversation(userId);
-      await this.saveMessage(convId, 'user', message);
-      await this.saveMessage(convId, 'assistant', reply);
+      const convId = conversationId || (await this.createConversation(userId));
+      await this.saveMessage(convId, "user", message);
+      await this.saveMessage(convId, "assistant", reply);
 
       return {
         reply,
         conversationId: convId,
       };
     } catch (error) {
-      throw new HttpException('Error al procesar mensaje', 502);
+      throw new HttpException("Error al procesar mensaje", 502);
     }
   }
 
@@ -105,12 +107,16 @@ ${placesContext.places.map(p => `- ${p.name}: ${p.description} (${p.address})`).
   private async getConversationHistory(conversationId: string) {
     return this.prisma.chatMessage.findMany({
       where: { conversationId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
       take: 20,
     });
   }
 
-  private async saveMessage(conversationId: string, role: string, content: string) {
+  private async saveMessage(
+    conversationId: string,
+    role: string,
+    content: string,
+  ) {
     return this.prisma.chatMessage.create({
       data: { conversationId, role, content },
     });
@@ -122,11 +128,11 @@ ${placesContext.places.map(p => `- ${p.name}: ${p.description} (${p.address})`).
       include: {
         messages: {
           take: 1,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
         },
         _count: { select: { messages: true } },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { updatedAt: "desc" },
     });
   }
 }

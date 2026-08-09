@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { UpdatePlaceDto, EmpresaReviewsDto } from './dto';
-import { PaginatedResponse } from '../../common/dto/pagination.dto';
-import { ReviewStatus } from '../../common/constants/review-status';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service";
+import { UpdatePlaceDto, EmpresaReviewsDto } from "./dto";
+import { PaginatedResponse } from "../../common/dto/pagination.dto";
+import { ReviewStatus } from "../../common/constants/review-status";
 
 @Injectable()
 export class EmpresaService {
@@ -13,8 +13,8 @@ export class EmpresaService {
       where: { ownerId: userId },
       include: {
         category: { select: { id: true, name: true, slug: true } },
-        photos: { orderBy: { displayOrder: 'asc' } },
-        hours: { orderBy: { dayOfWeek: 'asc' } },
+        photos: { orderBy: { displayOrder: "asc" } },
+        hours: { orderBy: { dayOfWeek: "asc" } },
         _count: {
           select: { reviews: true, favorites: true },
         },
@@ -22,7 +22,7 @@ export class EmpresaService {
     });
 
     if (!place) {
-      throw new NotFoundException('No place found for this user');
+      throw new NotFoundException("No place found for this user");
     }
 
     return place;
@@ -34,7 +34,7 @@ export class EmpresaService {
     });
 
     if (!place) {
-      throw new NotFoundException('No place found for this user');
+      throw new NotFoundException("No place found for this user");
     }
 
     // If priceLevel is being updated, track when and by whom
@@ -49,8 +49,8 @@ export class EmpresaService {
       data,
       include: {
         category: { select: { id: true, name: true, slug: true } },
-        photos: { orderBy: { displayOrder: 'asc' } },
-        hours: { orderBy: { dayOfWeek: 'asc' } },
+        photos: { orderBy: { displayOrder: "asc" } },
+        hours: { orderBy: { dayOfWeek: "asc" } },
       },
     });
   }
@@ -61,7 +61,7 @@ export class EmpresaService {
     });
 
     if (!place) {
-      throw new NotFoundException('No place found for this user');
+      throw new NotFoundException("No place found for this user");
     }
 
     const page = dto.page ?? 1;
@@ -70,9 +70,9 @@ export class EmpresaService {
 
     // Empresa solo ve PUBLISHED y HIDDEN (nunca DELETED ni UNDER_REVIEW)
     const where: any = { placeId: place.id };
-    if (dto.filter === 'published') {
+    if (dto.filter === "published") {
       where.status = ReviewStatus.PUBLISHED;
-    } else if (dto.filter === 'hidden') {
+    } else if (dto.filter === "hidden") {
       where.status = ReviewStatus.HIDDEN;
     } else {
       where.status = { in: [ReviewStatus.PUBLISHED, ReviewStatus.HIDDEN] };
@@ -93,7 +93,7 @@ export class EmpresaService {
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.review.count({ where }),
     ]);
@@ -107,7 +107,7 @@ export class EmpresaService {
     });
 
     if (!place) {
-      throw new NotFoundException('No place found for this user');
+      throw new NotFoundException("No place found for this user");
     }
 
     const [totalReviews, publishedReviews, favoriteCount] = await Promise.all([
@@ -137,7 +137,7 @@ export class EmpresaService {
     });
 
     if (!place) {
-      throw new NotFoundException('No place found for this user');
+      throw new NotFoundException("No place found for this user");
     }
 
     const [totalReviews, favoriteCount, recentReviews] = await Promise.all([
@@ -151,7 +151,7 @@ export class EmpresaService {
           status: { in: [ReviewStatus.PUBLISHED, ReviewStatus.HIDDEN] },
         },
         take: 5,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           user: { select: { id: true, name: true } },
         },

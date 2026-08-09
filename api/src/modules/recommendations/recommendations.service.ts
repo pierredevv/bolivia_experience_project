@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service";
 
 @Injectable()
 export class RecommendationsService {
@@ -15,12 +15,12 @@ export class RecommendationsService {
       this.prisma.review.findMany({
         where: { userId },
         include: { place: { select: { categoryId: true, ratingAvg: true } } },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: 20,
       }),
       this.prisma.searchHistory.findMany({
         where: { userId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: 10,
       }),
     ]);
@@ -29,7 +29,7 @@ export class RecommendationsService {
     const categoryScores: Record<string, number> = {};
 
     // Favorites weight: 3
-    favorites.forEach(fav => {
+    favorites.forEach((fav) => {
       const catId = fav.place?.categoryId;
       if (catId) {
         categoryScores[catId] = (categoryScores[catId] || 0) + 3;
@@ -37,7 +37,7 @@ export class RecommendationsService {
     });
 
     // Reviews weight: 2-5 based on rating
-    reviews.forEach(review => {
+    reviews.forEach((review) => {
       const catId = review.place?.categoryId;
       if (catId) {
         const weight = review.rating || 3;
@@ -53,8 +53,8 @@ export class RecommendationsService {
 
     // Get place IDs to exclude (already favorited or reviewed)
     const excludePlaceIds = [
-      ...favorites.map(f => f.placeId),
-      ...reviews.map(r => r.placeId),
+      ...favorites.map((f) => f.placeId),
+      ...reviews.map((r) => r.placeId),
     ];
 
     // Find recommended places based on preferred categories
@@ -68,9 +68,9 @@ export class RecommendationsService {
       },
       include: {
         category: { select: { id: true, name: true, icon: true } },
-        photos: { take: 1, orderBy: { displayOrder: 'asc' } },
+        photos: { take: 1, orderBy: { displayOrder: "asc" } },
       },
-      orderBy: { ratingAvg: 'desc' },
+      orderBy: { ratingAvg: "desc" },
       take: limit,
     });
 
@@ -79,13 +79,13 @@ export class RecommendationsService {
       const additional = await this.prisma.place.findMany({
         where: {
           isActive: true,
-          id: { notIn: [...excludePlaceIds, ...recommended.map(r => r.id)] },
+          id: { notIn: [...excludePlaceIds, ...recommended.map((r) => r.id)] },
         },
         include: {
           category: { select: { id: true, name: true, icon: true } },
-          photos: { take: 1, orderBy: { displayOrder: 'asc' } },
+          photos: { take: 1, orderBy: { displayOrder: "asc" } },
         },
-        orderBy: { ratingAvg: 'desc' },
+        orderBy: { ratingAvg: "desc" },
         take: limit - recommended.length,
       });
       recommended.push(...additional);
@@ -107,13 +107,10 @@ export class RecommendationsService {
       where: { isActive: true },
       include: {
         category: { select: { id: true, name: true, icon: true } },
-        photos: { take: 1, orderBy: { displayOrder: 'asc' } },
+        photos: { take: 1, orderBy: { displayOrder: "asc" } },
         _count: { select: { reviews: true, favorites: true } },
       },
-      orderBy: [
-        { ratingAvg: 'desc' },
-        { ratingCount: 'desc' },
-      ],
+      orderBy: [{ ratingAvg: "desc" }, { ratingCount: "desc" }],
       take: limit,
     });
   }
@@ -134,9 +131,9 @@ export class RecommendationsService {
       },
       include: {
         category: { select: { id: true, name: true, icon: true } },
-        photos: { take: 1, orderBy: { displayOrder: 'asc' } },
+        photos: { take: 1, orderBy: { displayOrder: "asc" } },
       },
-      orderBy: { ratingAvg: 'desc' },
+      orderBy: { ratingAvg: "desc" },
       take: limit,
     });
   }

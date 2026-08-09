@@ -1,16 +1,16 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Recalculating ratings...');
+  console.log("Recalculating ratings...");
 
   const places = await prisma.place.findMany();
   let updated = 0;
 
   for (const place of places) {
     const stats = await prisma.review.aggregate({
-      where: { placeId: place.id, status: 'PUBLISHED' },
+      where: { placeId: place.id, status: "PUBLISHED" },
       _avg: { rating: true },
       _count: { rating: true },
     });

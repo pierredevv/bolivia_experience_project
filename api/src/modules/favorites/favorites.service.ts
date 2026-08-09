@@ -1,5 +1,9 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service";
 
 @Injectable()
 export class FavoritesService {
@@ -12,11 +16,11 @@ export class FavoritesService {
         place: {
           include: {
             category: { select: { id: true, name: true, icon: true } },
-            photos: { take: 1, orderBy: { displayOrder: 'asc' } },
+            photos: { take: 1, orderBy: { displayOrder: "asc" } },
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -26,7 +30,7 @@ export class FavoritesService {
     });
 
     if (existing) {
-      throw new ConflictException('Already in favorites');
+      throw new ConflictException("Already in favorites");
     }
 
     return this.prisma.favorite.create({
@@ -40,7 +44,7 @@ export class FavoritesService {
     });
 
     if (!favorite) {
-      throw new NotFoundException('Favorite not found');
+      throw new NotFoundException("Favorite not found");
     }
 
     return this.prisma.favorite.delete({

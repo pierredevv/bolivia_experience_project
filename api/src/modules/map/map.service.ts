@@ -1,12 +1,23 @@
-import { Injectable } from '@nestjs/common';
-import { GeoRepository } from '../places/repositories/geo.repository';
+import { Injectable } from "@nestjs/common";
+import { GeoRepository } from "../places/repositories/geo.repository";
 
 @Injectable()
 export class MapService {
   constructor(private geoRepository: GeoRepository) {}
 
-  async findNearby(latitude: number, longitude: number, radius?: number, categoryId?: string) {
-    return this.geoRepository.findNearby(latitude, longitude, radius, 20, categoryId);
+  async findNearby(
+    latitude: number,
+    longitude: number,
+    radius?: number,
+    categoryId?: string,
+  ) {
+    return this.geoRepository.findNearby(
+      latitude,
+      longitude,
+      radius,
+      20,
+      categoryId,
+    );
   }
 
   async findClusters(

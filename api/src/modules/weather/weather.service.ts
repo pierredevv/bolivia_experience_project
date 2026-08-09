@@ -1,19 +1,19 @@
-import { Injectable, HttpException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import { Injectable, HttpException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { HttpService } from "@nestjs/axios";
+import { firstValueFrom } from "rxjs";
 
 @Injectable()
 export class WeatherService {
   private readonly apiKey: string;
-  private readonly baseUrl = 'https://api.openweathermap.org/data/2.5';
-  private readonly city = 'Santa Cruz de la Sierra,BO';
+  private readonly baseUrl = "https://api.openweathermap.org/data/2.5";
+  private readonly city = "Santa Cruz de la Sierra,BO";
 
   constructor(
     private configService: ConfigService,
     private httpService: HttpService,
   ) {
-    this.apiKey = this.configService.get<string>('OPENWEATHER_API_KEY') || '';
+    this.apiKey = this.configService.get<string>("OPENWEATHER_API_KEY") || "";
   }
 
   async getCurrent() {
@@ -23,8 +23,8 @@ export class WeatherService {
           params: {
             q: this.city,
             appid: this.apiKey,
-            units: 'metric',
-            lang: 'es',
+            units: "metric",
+            lang: "es",
           },
         }),
       );
@@ -39,7 +39,7 @@ export class WeatherService {
         city: data.name,
       };
     } catch (error) {
-      throw new HttpException('Error fetching weather data', 502);
+      throw new HttpException("Error fetching weather data", 502);
     }
   }
 
@@ -50,8 +50,8 @@ export class WeatherService {
           params: {
             q: this.city,
             appid: this.apiKey,
-            units: 'metric',
-            lang: 'es',
+            units: "metric",
+            lang: "es",
             cnt: 40,
           },
         }),
@@ -60,7 +60,7 @@ export class WeatherService {
       const daily = data.list
         .filter((_: any, i: number) => i % 8 === 0)
         .map((item: any) => ({
-          date: item.dt_txt.split(' ')[0],
+          date: item.dt_txt.split(" ")[0],
           temperature: Math.round(item.main.temp),
           tempMin: Math.round(item.main.temp_min),
           tempMax: Math.round(item.main.temp_max),
@@ -71,7 +71,7 @@ export class WeatherService {
 
       return { city: data.city.name, forecast: daily };
     } catch (error) {
-      throw new HttpException('Error fetching forecast data', 502);
+      throw new HttpException("Error fetching forecast data", 502);
     }
   }
 }

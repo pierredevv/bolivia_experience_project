@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service";
 
 @Injectable()
 export class CategoriesService {
@@ -8,7 +8,7 @@ export class CategoriesService {
   async findAll() {
     return this.prisma.category.findMany({
       where: { isActive: true },
-      orderBy: { displayOrder: 'asc' },
+      orderBy: { displayOrder: "asc" },
       include: {
         _count: {
           select: { places: { where: { isActive: true } } },
@@ -24,22 +24,27 @@ export class CategoriesService {
         places: {
           where: { isActive: true },
           include: {
-            photos: { take: 1, orderBy: { displayOrder: 'asc' } },
+            photos: { take: 1, orderBy: { displayOrder: "asc" } },
           },
-          orderBy: { ratingAvg: 'desc' },
+          orderBy: { ratingAvg: "desc" },
           take: 20,
         },
       },
     });
 
     if (!category) {
-      throw new NotFoundException('Category not found');
+      throw new NotFoundException("Category not found");
     }
 
     return category;
   }
 
-  async create(data: { name: string; nameEn: string; icon: string; slug: string }) {
+  async create(data: {
+    name: string;
+    nameEn: string;
+    icon: string;
+    slug: string;
+  }) {
     return this.prisma.category.create({ data });
   }
 
