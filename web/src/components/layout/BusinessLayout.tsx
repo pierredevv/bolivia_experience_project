@@ -10,11 +10,15 @@ import {
   Tag,
   BarChart3,
   Image,
+  CalendarCheck2,
+  Sparkles,
 } from 'lucide-react'
 
 const navigation = [
   { name: 'Dashboard', href: '/business', icon: LayoutDashboard },
   { name: 'Mi Lugar', href: '/business/place', icon: MapPin },
+  { name: 'Experiencias', href: '/business/experiences', icon: Sparkles },
+  { name: 'Reservas', href: '/business/reservations', icon: CalendarCheck2 },
   { name: 'Reseñas', href: '/business/reviews', icon: Star },
   { name: 'Promociones', href: '/business/promotions', icon: Tag },
   { name: 'Estadísticas', href: '/business/stats', icon: BarChart3 },

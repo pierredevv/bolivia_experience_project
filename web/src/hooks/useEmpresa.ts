@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { empresaApi } from '../services/api'
+import { empresaApi, productsApi } from '../services/api'
 
 export function useEmpresaPlace() {
   return useQuery({
@@ -51,6 +51,116 @@ export function useEmpresaDashboard() {
     queryFn: async () => {
       const response = await empresaApi.getDashboard()
       return response.data.data
+    },
+  })
+}
+
+export function useEmpresaProducts() {
+  return useQuery({
+    queryKey: ['empresa-products'],
+    queryFn: async () => {
+      const response = await productsApi.getMyProducts()
+      return response.data.data
+    },
+  })
+}
+
+export function useCreateEmpresaProduct() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await productsApi.createProduct(data)
+      return response.data.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['empresa-products'] })
+    },
+  })
+}
+
+export function useUpdateEmpresaProduct() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await productsApi.updateProduct(id, data)
+      return response.data.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['empresa-products'] })
+    },
+  })
+}
+
+export function useDeleteEmpresaProduct() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await productsApi.deleteProduct(id)
+      return response.data.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['empresa-products'] })
+    },
+  })
+}
+
+export function useUploadEmpresaProductPhoto() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, file }: { id: string; file: File }) => {
+      const response = await productsApi.uploadPhoto(id, file)
+      return response.data.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['empresa-products'] })
+    },
+  })
+}
+
+export function useEmpresaProductSlots(productId: string | null) {
+  return useQuery({
+    queryKey: ['empresa-product-slots', productId],
+    queryFn: async () => {
+      if (!productId) return []
+      const response = await productsApi.getMySlots(productId)
+      return response.data.data
+    },
+    enabled: !!productId,
+  })
+}
+
+export function useCreateEmpresaProductSlot() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      productId,
+      data,
+    }: {
+      productId: string
+      data: { date: string; time: string; capacity?: number }
+    }) => {
+      const response = await productsApi.createSlot(productId, data)
+      return response.data.data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['empresa-product-slots', variables.productId],
+      })
+    },
+  })
+}
+
+export function useDeleteEmpresaProductSlot() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ productId, slotId }: { productId: string; slotId: string }) => {
+      const response = await productsApi.deleteSlot(productId, slotId)
+      return response.data.data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['empresa-product-slots', variables.productId],
+      })
     },
   })
 }

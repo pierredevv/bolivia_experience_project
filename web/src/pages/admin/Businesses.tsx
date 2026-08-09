@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { CheckCircle, XCircle, Search, Filter, Store, Loader2 } from 'lucide-react'
-import { useAdminBusinesses, useApproveBusiness, useSuspendBusiness } from '../../hooks/useBusinesses'
+import { CheckCircle, XCircle, Search, Filter, Store, Loader2, Sparkles, Crown } from 'lucide-react'
+import { useAdminBusinesses, useApproveBusiness, useSuspendBusiness, useTogglePremiumBusiness } from '../../hooks/useBusinesses'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -10,10 +10,12 @@ export default function AdminBusinesses() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [confirmApproveId, setConfirmApproveId] = useState<string | null>(null)
   const [confirmSuspendId, setConfirmSuspendId] = useState<string | null>(null)
+  const [confirmPremiumId, setConfirmPremiumId] = useState<string | null>(null)
 
   const { data: businesses, isLoading } = useAdminBusinesses(statusFilter === 'all' ? undefined : statusFilter)
   const approveMutation = useApproveBusiness()
   const suspendMutation = useSuspendBusiness()
+  const togglePremiumMutation = useTogglePremiumBusiness()
 
   const handleApprove = async () => {
     if (!confirmApproveId) return
@@ -36,6 +38,19 @@ export default function AdminBusinesses() {
       toast.error('Error al suspender la empresa')
     }
   }
+
+  const handleTogglePremium = async () => {
+    if (!confirmPremiumId) return
+    try {
+      await togglePremiumMutation.mutateAsync(confirmPremiumId)
+      toast.success('Estado premium actualizado')
+      setConfirmPremiumId(null)
+    } catch (error) {
+      toast.error('Error al actualizar el estado premium')
+    }
+  }
+
+  const premiumBusiness = businesses?.find((b: any) => b.id === confirmPremiumId)
 
   return (
     <div className="space-y-6">
@@ -107,6 +122,9 @@ export default function AdminBusinesses() {
                     Estado
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                    Socio Recomendado
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Registro
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
@@ -156,6 +174,21 @@ export default function AdminBusinesses() {
                         </span>
                       )}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {business.isPremium ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                          <Crown className="h-3 w-3" /> Premium
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmPremiumId(business.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-900/30 dark:hover:text-amber-400 transition-colors"
+                          title="Activar socio recomendado"
+                        >
+                          <Sparkles className="h-3 w-3" /> Activar
+                        </button>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
                       {format(new Date(business.createdAt), "d MMM, yyyy", { locale: es })}
                     </td>
@@ -177,6 +210,23 @@ export default function AdminBusinesses() {
                             title="Suspender"
                           >
                             <XCircle className="h-5 w-5" />
+                          </button>
+                        )}
+                        {business.isPremium ? (
+                          <button
+                            onClick={() => setConfirmPremiumId(business.id)}
+                            className="p-2 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                            title="Quitar socio recomendado"
+                          >
+                            <Crown className="h-5 w-5" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmPremiumId(business.id)}
+                            className="p-2 text-slate-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                            title="Marcar como socio recomendado"
+                          >
+                            <Sparkles className="h-5 w-5" />
                           </button>
                         )}
                       </div>
@@ -210,6 +260,21 @@ export default function AdminBusinesses() {
         onClose={() => setConfirmSuspendId(null)}
         isLoading={suspendMutation.isPending}
         variant="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmPremiumId}
+        title={premiumBusiness?.isPremium ? 'Quitar Socio Recomendado' : 'Marcar como Socio Recomendado'}
+        message={
+          premiumBusiness?.isPremium
+            ? '¿Quitar el estado premium de este socio? Sus experiencias dejarán de mostrarse con el badge "Verificado" en el Home.'
+            : '¿Marcar a este socio como recomendado? Sus experiencias se mostrarán con el badge "Verificado" y prioridad en el Home.'
+        }
+        confirmLabel={premiumBusiness?.isPremium ? 'Sí, quitar' : 'Sí, marcar'}
+        cancelLabel="Cancelar"
+        onConfirm={handleTogglePremium}
+        onClose={() => setConfirmPremiumId(null)}
+        isLoading={togglePremiumMutation.isPending}
       />
     </div>
   )

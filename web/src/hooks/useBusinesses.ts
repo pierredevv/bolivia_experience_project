@@ -36,3 +36,16 @@ export function useSuspendBusiness() {
     },
   })
 }
+
+export function useTogglePremiumBusiness() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await adminApi.togglePremium(id)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-businesses'] })
+    },
+  })
+}

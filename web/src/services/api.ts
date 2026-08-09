@@ -123,6 +123,7 @@ export const adminApi = {
   getBusinesses: (status?: string) => api.get('/admin/businesses', { params: { status } }),
   approveBusiness: (id: string) => api.patch(`/admin/businesses/${id}/approve`),
   suspendBusiness: (id: string) => api.patch(`/admin/businesses/${id}/suspend`),
+  togglePremium: (id: string) => api.patch(`/admin/businesses/${id}/premium`),
 }
 
 // Places
@@ -157,7 +158,8 @@ export const categoriesApi = {
 export const reviewsApi = {
   getByPlace: (placeId: string, params?: any) =>
     api.get(`/places/${placeId}/reviews`, { params }),
-  approve: (id: string) => api.patch(`/reviews/${id}/approve`),
+  approve: (id: string) =>
+    api.patch(`/reviews/${id}/status`, { status: 'PUBLISHED' }),
   delete: (id: string) => api.delete(`/reviews/${id}`),
   respond: (id: string, comment: string) =>
     api.post(`/reviews/${id}/respond`, { comment }),
@@ -190,4 +192,35 @@ export const empresaApi = {
   getReviews: (params?: any) => api.get('/empresa/reviews', { params }),
   getStats: () => api.get('/empresa/analytics'),
   getDashboard: () => api.get('/empresa/dashboard'),
+}
+
+// Products / Experiences
+export const productsApi = {
+  getMyProducts: () => api.get('/products/my'),
+  createProduct: (data: any) => api.post('/products', data),
+  updateProduct: (id: string, data: any) => api.put(`/products/${id}`, data),
+  deleteProduct: (id: string) => api.delete(`/products/${id}`),
+  uploadPhoto: (id: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post(`/products/${id}/photo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  // Availability slots ("Reserva tu lugar")
+  getMySlots: (productId: string) => api.get(`/products/${productId}/slots/mine`),
+  createSlot: (productId: string, data: { date: string; time: string; capacity?: number }) =>
+    api.post(`/products/${productId}/slots`, data),
+  deleteSlot: (productId: string, slotId: string) =>
+    api.delete(`/products/${productId}/slots/${slotId}`),
+}
+
+// Reservations (socio / empresa)
+export const reservationsApi = {
+  getSocioReservations: (status?: string) =>
+    api.get('/reservations/socio', { params: { status } }),
+  confirm: (id: string) => api.post(`/reservations/${id}/confirm`),
+  reject: (id: string) => api.post(`/reservations/${id}/reject`),
+  complete: (id: string) => api.post(`/reservations/${id}/complete`),
+  noShow: (id: string) => api.post(`/reservations/${id}/no-show`),
 }

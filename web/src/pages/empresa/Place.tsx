@@ -17,6 +17,8 @@ export default function EmpresaPlace() {
     website: '',
     instagram: '',
     categoryId: '',
+    specialFeature: '',
+    cuisineType: '',
   })
   const [saved, setSaved] = useState(false)
 
@@ -30,6 +32,8 @@ export default function EmpresaPlace() {
         website: place.website || '',
         instagram: place.instagram || '',
         categoryId: place.categoryId || '',
+        specialFeature: place.specialFeature || '',
+        cuisineType: place.cuisineType || '',
       })
     }
   }, [place])
@@ -203,6 +207,50 @@ export default function EmpresaPlace() {
                   className={`${inputClass} pl-7`}
                 />
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Section (hoteles / restaurantes) */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="bg-slate-900 dark:bg-slate-700 p-2 rounded-xl">
+              <Globe className="h-4 w-4 text-white" />
+            </div>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Características del Lugar</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+                Destacado especial (hoteles)
+              </label>
+              <input
+                type="text"
+                name="specialFeature"
+                value={formData.specialFeature}
+                onChange={handleChange}
+                placeholder="Ej. Piscina, Vista panorámica, Spa"
+                className={inputClass}
+              />
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5">
+                Aparece en la tarjeta del hotel en el Home. Si tu negocio es un restaurante, déjalo vacío.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">
+                Tipo de cocina (restaurantes)
+              </label>
+              <input
+                type="text"
+                name="cuisineType"
+                value={formData.cuisineType}
+                onChange={handleChange}
+                placeholder="Ej. Cruceña, Italiana, Parrilla"
+                className={inputClass}
+              />
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5">
+                Clasifica tu cocina para la sección de Restaurantes del Home.
+              </p>
             </div>
           </div>
         </div>

@@ -32,6 +32,8 @@ const EmpresaReviews = lazy(() => import('./pages/empresa/Reviews'))
 const EmpresaPromotions = lazy(() => import('./pages/empresa/Promotions'))
 const EmpresaStats = lazy(() => import('./pages/empresa/Stats'))
 const EmpresaPhotos = lazy(() => import('./pages/empresa/Photos'))
+const EmpresaReservations = lazy(() => import('./pages/empresa/Reservations'))
+const EmpresaExperiences = lazy(() => import('./pages/empresa/Experiences'))
 
 // Legal Pages
 const PrivacyPolicy = lazy(() => import('./pages/legal/PrivacyPolicy'))
@@ -90,7 +92,9 @@ function App() {
             <Route path="/business" element={<BusinessLayout />}>
               <Route index element={<EmpresaDashboard />} />
               <Route path="place" element={<EmpresaPlace />} />
+              <Route path="experiences" element={<EmpresaExperiences />} />
               <Route path="reviews" element={<EmpresaReviews />} />
+              <Route path="reservations" element={<EmpresaReservations />} />
               <Route path="promotions" element={<EmpresaPromotions />} />
               <Route path="stats" element={<EmpresaStats />} />
               <Route path="photos" element={<EmpresaPhotos />} />
