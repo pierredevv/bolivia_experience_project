@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_provider.dart';
@@ -114,8 +115,13 @@ class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
           message = 'Error del servidor. Intentá más tarde.';
         }
       } else if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.unknown) {
         message = 'Sin conexión a internet. Verificá tu red.';
+      } else if (e.type == DioExceptionType.badResponse &&
+          e.response == null) {
+        message = 'Respuesta inesperada del servidor. Intentá de nuevo.';
       }
       state = state.copyWith(
         status: PlaceDetailStatus.error,
@@ -123,6 +129,7 @@ class PlaceDetailNotifier extends StateNotifier<PlaceDetailState> {
       );
     } catch (e) {
       if (!mounted) return;
+      debugPrint('PlaceDetail load error: $e');
       state = state.copyWith(
         status: PlaceDetailStatus.error,
         errorMessage: 'Error inesperado. Intentá de nuevo.',

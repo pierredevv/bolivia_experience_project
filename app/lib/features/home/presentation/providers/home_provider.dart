@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/dio_provider.dart';
 import '../../data/home_service.dart';
+import '../../data/home_experience.dart';
 
 enum HomeStatus { initial, loading, loaded, error }
 
@@ -10,6 +11,10 @@ class HomeState {
   final List<dynamic> categories;
   final List<dynamic> todayEvents;
   final List<dynamic> promotions;
+  final List<dynamic> hotels;
+  final List<dynamic> thingsToDo;
+  final List<HomeExperience> experiences;
+  final List<dynamic> restaurants;
   final String? errorMessage;
 
   const HomeState({
@@ -18,6 +23,10 @@ class HomeState {
     this.categories = const [],
     this.todayEvents = const [],
     this.promotions = const [],
+    this.hotels = const [],
+    this.thingsToDo = const [],
+    this.experiences = const [],
+    this.restaurants = const [],
     this.errorMessage,
   });
 
@@ -27,6 +36,10 @@ class HomeState {
     List<dynamic>? categories,
     List<dynamic>? todayEvents,
     List<dynamic>? promotions,
+    List<dynamic>? hotels,
+    List<dynamic>? thingsToDo,
+    List<HomeExperience>? experiences,
+    List<dynamic>? restaurants,
     String? errorMessage,
   }) {
     return HomeState(
@@ -35,6 +48,10 @@ class HomeState {
       categories: categories ?? this.categories,
       todayEvents: todayEvents ?? this.todayEvents,
       promotions: promotions ?? this.promotions,
+      hotels: hotels ?? this.hotels,
+      thingsToDo: thingsToDo ?? this.thingsToDo,
+      experiences: experiences ?? this.experiences,
+      restaurants: restaurants ?? this.restaurants,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -64,6 +81,10 @@ class HomeNotifier extends StateNotifier<HomeState> {
       List<dynamic> cats = [];
       List<dynamic> events = [];
       List<dynamic> promos = [];
+      List<dynamic> hotels = [];
+      List<dynamic> thingsToDo = [];
+      List<HomeExperience> experiences = [];
+      List<dynamic> restaurants = [];
 
       try {
         featured = await _homeService.getFeaturedPlaces();
@@ -89,12 +110,40 @@ class HomeNotifier extends StateNotifier<HomeState> {
         // Promotions failed, continue with empty list
       }
 
+      try {
+        hotels = await _homeService.getHotels();
+      } catch (e) {
+        // Hotels failed, continue with empty list
+      }
+
+      try {
+        thingsToDo = await _homeService.getThingsToDo();
+      } catch (e) {
+        // Things to do failed, continue with empty list
+      }
+
+      try {
+        experiences = await _homeService.getHomeExperiences();
+      } catch (e) {
+        // Experiences failed, continue with empty list
+      }
+
+      try {
+        restaurants = await _homeService.getRestaurants();
+      } catch (e) {
+        // Restaurants failed, continue with empty list
+      }
+
       state = state.copyWith(
         status: HomeStatus.loaded,
         featuredPlaces: featured,
         categories: cats,
         todayEvents: events,
         promotions: promos,
+        hotels: hotels,
+        thingsToDo: thingsToDo,
+        experiences: experiences,
+        restaurants: restaurants,
       );
     } catch (e) {
       state = state.copyWith(

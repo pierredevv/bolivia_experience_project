@@ -11,7 +11,7 @@ class ApiConstants {
       return 'http://localhost:3000/api/v1';
     }
     if (Platform.isAndroid) {
-      return 'http://192.168.1.4:3000/api/v1';
+      return 'http://192.168.1.10:3000/api/v1';
     }
     return 'http://localhost:3000/api/v1';
   }
@@ -28,6 +28,30 @@ class ApiConstants {
   // Places
   static const places = '/places';
   static const featuredPlaces = '/places/featured';
+  static String placesByCategorySlug(String slug) => '/places?categorySlug=$slug';
+  static const placesNotHotel = '/places?notCategorySlug=hoteles';
+  static const placesFeed = '/places/feed';
+  static String placesFeedByCategory(String slug) =>
+      '/places/feed?categorySlug=$slug';
+
+  // Hotels
+  static const hotels = '/hotels';
+  static const hotelsCatalog = '/hotels/catalog';
+
+  // Tours / Things to do
+  static const tours = '/tours';
+  static const toursRecommended = '/tours/recommended';
+
+  // Products / Experiences
+  static const products = '/products';
+  static const homeExperiences = '/experiences/home';
+  static const essentialExperiences = '/experiences/essential';
+  static String productById(String id) => '/products/$id';
+  static String experienceById(String id) => '/experiences/$id';
+  static String productReviews(String id) => '/products/$id/reviews';
+
+  // Restaurants
+  static const restaurants = '/restaurants';
 
   // Categories
   static const categories = '/categories';
@@ -65,4 +89,25 @@ class ApiConstants {
 
   // Trips
   static const trips = '/trips';
+
+  // Notifications
+  static const notifications = '/notifications';
+  static const notificationsReadAll = '/notifications/read-all';
+  static const notificationsRegisterToken = '/notifications/register-token';
+  static String notificationById(String id) => '/notifications/$id/read';
+
+  // Reservations
+  static const reservations = '/reservations';
+  static const myReservations = '/reservations/my';
+  static String reservationById(String id) => '/reservations/$id';
+  static String cancelReservation(String id) => '/reservations/$id/cancel';
+
+  // Payments
+  static const payments = '/payments';
+  static const paymentHistory = '/payments/my/history';
+  static String paymentById(String id) => '/payments/$id';
+  static String confirmPayment(String id) => '/payments/$id/confirm';
+
+  // Traveler Photos
+  static const travelerPhotos = '/traveler-photos';
 }

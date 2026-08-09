@@ -205,6 +205,31 @@ class PlaceDetailScreen extends ConsumerWidget {
 
                 const SizedBox(height: 24),
 
+                if (place.canReserve) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: FilledButton.icon(
+                      onPressed: () => context.push('/places/$placeId/reserve', extra: {
+                        'placeName': place.name,
+                        'priceLevel': place.priceLevel,
+                        'products': place.products,
+                      }),
+                      icon: const Icon(Icons.event_available_outlined, size: 20),
+                      label: const Text(
+                        'Reservar con pago QR',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brandDark,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
                 if (place.description != null) ...[
                   Text(
                     'Descripción',

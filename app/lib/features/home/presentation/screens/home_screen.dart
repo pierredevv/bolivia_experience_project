@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
 import '../providers/home_provider.dart';
+import '../../data/home_experience.dart';
 import '../../../weather/presentation/widgets/weather_widget.dart';
+import '../../../traveler_photos/presentation/providers/traveler_photos_provider.dart';
+import '../../../traveler_photos/presentation/widgets/traveler_photos_carousel.dart';
 
 // ── Brand tokens (shared across all private widgets) ──────────────────────────
 const _brandDark = Color(0xFF0F172A);
@@ -238,6 +241,10 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 18),
 
+                    // ── Fotos de Viajeros carousel ────────────────────
+                    const _TravelerPhotosSection(),
+                    const SizedBox(height: 18),
+
                     // ── Weather widget ───────────────────────────────
                     const WeatherWidget(),
                     const SizedBox(height: 20),
@@ -367,14 +374,14 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
 
-          // ── Featured places ────────────────────────────────────────────────
-          if (state.featuredPlaces.isNotEmpty)
+          // ── Hoteles ────────────────────────────────────────────────────────
+          if (state.hotels.isNotEmpty)
             SliverToBoxAdapter(
               child: Column(
                 children: [
                   _SectionHeader(
-                    title: 'Lugares Destacados',
-                    onSeeAll: () => context.go('/explore'),
+                    title: 'Hoteles',
+                    onSeeAll: () => context.push('/hotels'),
                   ),
                   const SizedBox(height: 14),
                   SizedBox(
@@ -383,9 +390,105 @@ class HomeScreen extends ConsumerWidget {
                       scrollDirection: Axis.horizontal,
                       padding:
                           const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: state.featuredPlaces.length,
+                      itemCount: state.hotels.length,
                       itemBuilder: (context, index) {
-                        final place = state.featuredPlaces[index];
+                        final place = state.hotels[index];
+                        return _PlaceCard(
+                          place: place,
+                          onTap: () =>
+                              context.push('/places/${place['id']}'),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                ],
+              ),
+            ),
+
+          // ── Cosas que Hacer (todo menos hoteles) ───────────────────────────
+          if (state.thingsToDo.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  _SectionHeader(
+                    title: 'Cosas que Hacer',
+                    onSeeAll: () => context.push('/things-to-do'),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 240,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: state.thingsToDo.length,
+                      itemBuilder: (context, index) {
+                        final place = state.thingsToDo[index];
+                        return _PlaceCard(
+                          place: place,
+                          onTap: () =>
+                              context.push('/places/${place['id']}'),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                ],
+              ),
+            ),
+
+          // ── Experiencias imprescindibles ───────────────────────────────────
+          if (state.experiences.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  _SectionHeader(
+                    title: 'Experiencias imprescindibles',
+                    onSeeAll: () => context.push('/experiences/essential'),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 250,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: state.experiences.length,
+                      itemBuilder: (context, index) {
+                        final exp = state.experiences[index];
+                        return _ExperienceCard(
+                          experience: exp,
+                          onTap: () =>
+                              context.push('/experiences/${exp.id}'),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                ],
+              ),
+            ),
+
+          // ── Restaurantes ───────────────────────────────────────────────────
+          if (state.restaurants.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  _SectionHeader(
+                    title: 'Restaurantes',
+                    onSeeAll: () => context.push('/restaurants'),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 240,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: state.restaurants.length,
+                      itemBuilder: (context, index) {
+                        final place = state.restaurants[index];
                         return _PlaceCard(
                           place: place,
                           onTap: () =>
@@ -468,6 +571,10 @@ class HomeScreen extends ConsumerWidget {
               state.categories.isEmpty &&
               state.todayEvents.isEmpty &&
               state.promotions.isEmpty &&
+              state.hotels.isEmpty &&
+              state.thingsToDo.isEmpty &&
+              state.experiences.isEmpty &&
+              state.restaurants.isEmpty &&
               state.status == HomeStatus.loaded)
             SliverFillRemaining(
               hasScrollBody: false,
@@ -540,6 +647,23 @@ class HomeScreen extends ConsumerWidget {
       default:
         return Icons.place;
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fotos de Viajeros section — carrusel en el home
+// ─────────────────────────────────────────────────────────────────────────────
+class _TravelerPhotosSection extends ConsumerWidget {
+  const _TravelerPhotosSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(travelerPhotosProvider);
+    final loading = state.status == TravelerPhotosStatus.loading;
+    return TravelerPhotosCarousel(
+      photos: state.photos,
+      loading: loading,
+    );
   }
 }
 
@@ -635,6 +759,217 @@ class _CategoryPill extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: _textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Experience card — larger card with score, verified/recommended badge + price
+// ─────────────────────────────────────────────────────────────────────────────
+class _ExperienceCard extends StatelessWidget {
+  const _ExperienceCard({required this.experience, this.onTap});
+  final HomeExperience experience;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final photoUrl = experience.photoUrl;
+    final ratingStr =
+        experience.ratingAvg.toStringAsFixed(1);
+    final price = experience.pricePerAdult ?? experience.price;
+    final priceStr = price > 0
+        ? '${experience.currency == 'USD' ? 'US\$' : 'Bs'} ${price.toStringAsFixed(0)}'
+        : null;
+    final badge = experience.verified
+        ? 'Verificado'
+        : (experience.recommended ? 'Recomendado' : null);
+    final badgeColor =
+        experience.verified ? _brandEmerald : _brandGold;
+    final badgeIcon = experience.verified
+        ? Icons.verified
+        : Icons.thumb_up_alt_rounded;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 210,
+        margin: const EdgeInsets.only(right: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image with score + badge
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(18)),
+                  child: SizedBox(
+                    height: 130,
+                    width: double.infinity,
+                    child: photoUrl != null
+                        ? Image.network(
+                            photoUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: _borderSubtle,
+                              child: const Center(
+                                child: Icon(Icons.image_outlined,
+                                    color: _textSecondary, size: 32),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            color: _borderSubtle,
+                            child: const Center(
+                              child: Icon(Icons.image_outlined,
+                                  color: _textSecondary, size: 32),
+                            ),
+                          ),
+                  ),
+                ),
+                // Score badge (top-right)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _brandGold,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star_rounded,
+                            size: 12, color: Colors.white),
+                        const SizedBox(width: 3),
+                        Text(
+                          ratingStr,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Verified / Recommended badge (top-left, with tooltip)
+                if (badge != null)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Tooltip(
+                      message: experience.recommendedReason ?? badge,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: badgeColor,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(badgeIcon,
+                                size: 12, color: Colors.white),
+                            const SizedBox(width: 3),
+                            Text(
+                              badge,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            // Info
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    experience.name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: _brandDark,
+                      letterSpacing: -0.1,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  if (experience.experienceCategory != null &&
+                      experience.experienceCategory!.isNotEmpty)
+                    Text(
+                      experience.experienceCategory!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: _textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      if (priceStr != null) ...[
+                        Text(
+                          priceStr,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: _brandEmerald,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'por persona',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: _textSecondary,
+                          ),
+                        ),
+                      ],
+                      if (experience.ratingCount > 0) ...[
+                        const Spacer(),
+                        Text(
+                          '(${experience.ratingCount})',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: _textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
