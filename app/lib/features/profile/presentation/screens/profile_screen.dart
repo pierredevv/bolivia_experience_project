@@ -350,6 +350,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: () => context.push('/profile/edit'),
                 ),
                 _MenuItem(
+                  icon: Icons.event_available_outlined,
+                  title: 'Mis Reservas',
+                  onTap: () => context.push('/reservations'),
+                ),
+                _MenuItem(
                   icon: Icons.rate_review_outlined,
                   title: 'Mis Reseñas (${state.totalReviews})',
                   onTap: () => context.push('/profile/reviews'),
