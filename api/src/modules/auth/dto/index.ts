@@ -1,33 +1,39 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsIn } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsIn,
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class RegisterDto {
-  @ApiProperty({ example: 'user@example.com' })
+  @ApiProperty({ example: "user@example.com" })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'John Doe' })
+  @ApiProperty({ example: "John Doe" })
   @IsString()
   @MinLength(2)
   name: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ example: "password123" })
   @IsString()
   @MinLength(6)
   password: string;
 
-  @ApiPropertyOptional({ example: 'es', enum: ['es', 'en', 'pt'] })
+  @ApiPropertyOptional({ example: "es", enum: ["es", "en", "pt"] })
   @IsOptional()
-  @IsIn(['es', 'en', 'pt'])
+  @IsIn(["es", "en", "pt"])
   language?: string;
 }
 
 export class LoginDto {
-  @ApiProperty({ example: 'user@example.com' })
+  @ApiProperty({ example: "user@example.com" })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ example: "password123" })
   @IsString()
   password: string;
 }
@@ -42,36 +48,42 @@ export class RefreshTokenDto {
   refreshToken: string;
 }
 
+export class GoogleLoginDto {
+  @ApiProperty({ example: "google-id-token" })
+  @IsString()
+  idToken: string;
+}
+
 export class RegisterBusinessDto {
-  @ApiProperty({ example: 'empresa@example.com' })
+  @ApiProperty({ example: "empresa@example.com" })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'Carlos Mendoza' })
+  @ApiProperty({ example: "Carlos Mendoza" })
   @IsString()
   @MinLength(2)
   name: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ example: "password123" })
   @IsString()
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ example: 'Restaurante El Sabor' })
+  @ApiProperty({ example: "Restaurante El Sabor" })
   @IsString()
   @MinLength(2)
   businessName: string;
 
-  @ApiPropertyOptional({ example: '+591 3 123456' })
+  @ApiPropertyOptional({ example: "+591 3 123456" })
   @IsOptional()
   @IsString()
   businessPhone?: string;
 
-  @ApiProperty({ example: 'Av. Principal #123' })
+  @ApiProperty({ example: "Av. Principal #123" })
   @IsString()
   address: string;
 
-  @ApiProperty({ description: 'Category ID for the place' })
+  @ApiProperty({ description: "Category ID for the place" })
   @IsString()
   categoryId: string;
 

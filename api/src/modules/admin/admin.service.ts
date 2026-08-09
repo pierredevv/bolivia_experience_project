@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { AdminUsersDto, AdminReviewsDto } from './dto';
-import { PaginatedResponse } from '../../common/dto/pagination.dto';
-import { ReviewStatus } from '../../common/constants/review-status';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service";
+import {
+  AdminUsersDto,
+  AdminReviewsDto,
+  UpdateProductCashbackDto,
+  UpdateProductPremiadoDto,
+} from "./dto";
+import { PaginatedResponse } from "../../common/dto/pagination.dto";
+import { ReviewStatus } from "../../common/constants/review-status";
 
 @Injectable()
 export class AdminService {
@@ -42,7 +47,7 @@ export class AdminService {
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.user.count({ where }),
     ]);
@@ -56,13 +61,13 @@ export class AdminService {
     const limit = dto.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    if (dto.status === 'pending') {
+    if (dto.status === "pending") {
       where.status = ReviewStatus.UNDER_REVIEW;
-    } else if (dto.status === 'approved') {
+    } else if (dto.status === "approved") {
       where.status = ReviewStatus.PUBLISHED;
-    } else if (dto.status === 'hidden') {
+    } else if (dto.status === "hidden") {
       where.status = ReviewStatus.HIDDEN;
-    } else if (dto.status === 'deleted') {
+    } else if (dto.status === "deleted") {
       where.status = ReviewStatus.DELETED;
     }
 
@@ -79,7 +84,7 @@ export class AdminService {
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.review.count({ where }),
     ]);
@@ -101,10 +106,12 @@ export class AdminService {
       this.prisma.place.count({ where: { isActive: true } }),
       this.prisma.review.count(),
       this.prisma.event.count({ where: { isActive: true } }),
-      this.prisma.review.count({ where: { status: ReviewStatus.UNDER_REVIEW } }),
+      this.prisma.review.count({
+        where: { status: ReviewStatus.UNDER_REVIEW },
+      }),
       this.prisma.review.findMany({
         take: 5,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           user: { select: { id: true, name: true } },
           place: { select: { id: true, name: true } },
@@ -112,7 +119,7 @@ export class AdminService {
       }),
       this.prisma.user.findMany({
         take: 5,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         select: {
           id: true,
           name: true,
@@ -137,14 +144,14 @@ export class AdminService {
   }
 
   async findBusinesses(status?: string) {
-    const where: any = { role: 'empresa' };
+    const where: any = { role: "empresa" };
 
-    if (status === 'pending') {
-      where.approvalStatus = 'pending';
-    } else if (status === 'approved') {
-      where.approvalStatus = 'approved';
-    } else if (status === 'rejected') {
-      where.approvalStatus = 'rejected';
+    if (status === "pending") {
+      where.approvalStatus = "pending";
+    } else if (status === "approved") {
+      where.approvalStatus = "approved";
+    } else if (status === "rejected") {
+      where.approvalStatus = "rejected";
     }
 
     return this.prisma.user.findMany({
@@ -157,26 +164,27 @@ export class AdminService {
         businessPhone: true,
         approvalStatus: true,
         isActive: true,
+        isPremium: true,
         createdAt: true,
         places: {
           select: { id: true, name: true, address: true, isActive: true },
           take: 1,
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
   async approveBusiness(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.role !== 'empresa') {
-      throw new NotFoundException('Business user not found');
+    if (!user || user.role !== "empresa") {
+      throw new NotFoundException("Business user not found");
     }
 
     return this.prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: userId },
-        data: { isActive: true, approvalStatus: 'approved' },
+        data: { isActive: true, approvalStatus: "approved" },
       });
 
       await tx.place.updateMany({
@@ -184,20 +192,20 @@ export class AdminService {
         data: { isActive: true },
       });
 
-      return { message: 'Business approved successfully' };
+      return { message: "Business approved successfully" };
     });
   }
 
   async suspendBusiness(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.role !== 'empresa') {
-      throw new NotFoundException('Business user not found');
+    if (!user || user.role !== "empresa") {
+      throw new NotFoundException("Business user not found");
     }
 
     return this.prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: userId },
-        data: { isActive: false, approvalStatus: 'rejected' },
+        data: { isActive: false, approvalStatus: "rejected" },
       });
 
       await tx.place.updateMany({
@@ -205,16 +213,83 @@ export class AdminService {
         data: { isActive: false },
       });
 
-      return { message: 'Business suspended' };
+      return { message: "Business suspended" };
+    });
+  }
+
+  async togglePremium(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.role !== "empresa") {
+      throw new NotFoundException("Business user not found");
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isPremium: !user.isPremium },
+      select: {
+        id: true,
+        isPremium: true,
+        name: true,
+        businessName: true,
+      },
+    });
+  }
+
+  async setProductCashback(
+    productId: string,
+    dto: UpdateProductCashbackDto,
+  ) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+    if (!product) throw new NotFoundException("Product not found");
+
+    const porcentaje =
+      dto.porcentaje !== undefined ? dto.porcentaje : product.cashbackPorcentaje;
+    const activo =
+      dto.activo !== undefined
+        ? dto.activo
+        : porcentaje !== null && porcentaje > 0
+          ? true
+          : product.cashbackActivo;
+
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: {
+        cashbackActivo: activo,
+        cashbackPorcentaje: porcentaje,
+      },
+      select: {
+        id: true,
+        name: true,
+        cashbackActivo: true,
+        cashbackPorcentaje: true,
+      },
+    });
+  }
+
+  async toggleProductPremiado(
+    productId: string,
+    dto: UpdateProductPremiadoDto,
+  ) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+    if (!product) throw new NotFoundException("Product not found");
+
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: { premiado: dto.premiado ?? !product.premiado },
+      select: { id: true, name: true, premiado: true },
     });
   }
 
   // In-memory settings for MVP - can be migrated to DB later
   private settings: Record<string, any> = {
-    siteName: 'BoliviaExperience',
-    contactEmail: 'info@boliviaexperience.com',
+    siteName: "BoliviaExperience",
+    contactEmail: "info@boliviaexperience.com",
     maintenanceMode: false,
-    defaultLanguage: 'es',
+    defaultLanguage: "es",
   };
 
   async getSettings() {
@@ -223,6 +298,6 @@ export class AdminService {
 
   async updateSettings(data: Record<string, any>) {
     this.settings = { ...this.settings, ...data };
-    return { message: 'Settings updated', settings: this.settings };
+    return { message: "Settings updated", settings: this.settings };
   }
 }

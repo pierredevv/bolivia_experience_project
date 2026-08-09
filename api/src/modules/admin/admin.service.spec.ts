@@ -1,8 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AdminService } from './admin.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Test, TestingModule } from "@nestjs/testing";
+import { AdminService } from "./admin.service";
+import { PrismaService } from "../../prisma/prisma.service";
 
-describe('AdminService', () => {
+describe("AdminService", () => {
   let service: AdminService;
   let prisma: PrismaService;
 
@@ -37,18 +37,18 @@ describe('AdminService', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(service).toBeDefined();
   });
 
-  describe('findAllUsers', () => {
-    it('should return paginated users', async () => {
+  describe("findAllUsers", () => {
+    it("should return paginated users", async () => {
       const mockUsers = [
         {
-          id: 'user-1',
-          email: 'test@example.com',
-          name: 'Test User',
-          role: 'usuario',
+          id: "user-1",
+          email: "test@example.com",
+          name: "Test User",
+          role: "usuario",
           isActive: true,
           createdAt: new Date(),
           _count: { reviews: 5 },
@@ -65,46 +65,53 @@ describe('AdminService', () => {
       expect(mockPrisma.user.findMany).toHaveBeenCalled();
     });
 
-    it('should filter by role', async () => {
+    it("should filter by role", async () => {
       mockPrisma.user.findMany.mockResolvedValue([]);
       mockPrisma.user.count.mockResolvedValue(0);
 
-      await service.findAllUsers({ skip: 0, limit: 20, role: 'admin' });
+      await service.findAllUsers({ skip: 0, limit: 20, role: "admin" });
 
       expect(mockPrisma.user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ role: 'admin' }),
-        })
+          where: expect.objectContaining({ role: "admin" }),
+        }),
       );
     });
 
-    it('should search by name or email', async () => {
+    it("should search by name or email", async () => {
       mockPrisma.user.findMany.mockResolvedValue([]);
       mockPrisma.user.count.mockResolvedValue(0);
 
-      await service.findAllUsers({ skip: 0, limit: 20, search: 'test' });
+      await service.findAllUsers({ skip: 0, limit: 20, search: "test" });
 
       expect(mockPrisma.user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             OR: expect.arrayContaining([
-              expect.objectContaining({ name: expect.objectContaining({ contains: 'test' }) }),
+              expect.objectContaining({
+                name: expect.objectContaining({ contains: "test" }),
+              }),
             ]),
           }),
-        })
+        }),
       );
     });
   });
 
-  describe('findAllReviews', () => {
-    it('should return paginated reviews', async () => {
+  describe("findAllReviews", () => {
+    it("should return paginated reviews", async () => {
       const mockReviews = [
         {
-          id: 'review-1',
+          id: "review-1",
           rating: 5,
-          comment: 'Great place!',
-          user: { id: 'user-1', name: 'Test User', email: 'test@example.com', photoUrl: null },
-          place: { id: 'place-1', name: 'Test Place' },
+          comment: "Great place!",
+          user: {
+            id: "user-1",
+            name: "Test User",
+            email: "test@example.com",
+            photoUrl: null,
+          },
+          place: { id: "place-1", name: "Test Place" },
         },
       ];
 
@@ -118,35 +125,35 @@ describe('AdminService', () => {
       expect(mockPrisma.review.findMany).toHaveBeenCalled();
     });
 
-    it('should filter by status (pending)', async () => {
+    it("should filter by status (pending)", async () => {
       mockPrisma.review.findMany.mockResolvedValue([]);
       mockPrisma.review.count.mockResolvedValue(0);
 
-      await service.findAllReviews({ skip: 0, limit: 20, status: 'pending' });
+      await service.findAllReviews({ skip: 0, limit: 20, status: "pending" });
 
       expect(mockPrisma.review.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ status: 'UNDER_REVIEW' }),
-        })
+          where: expect.objectContaining({ status: "UNDER_REVIEW" }),
+        }),
       );
     });
 
-    it('should filter by status (approved)', async () => {
+    it("should filter by status (approved)", async () => {
       mockPrisma.review.findMany.mockResolvedValue([]);
       mockPrisma.review.count.mockResolvedValue(0);
 
-      await service.findAllReviews({ skip: 0, limit: 20, status: 'approved' });
+      await service.findAllReviews({ skip: 0, limit: 20, status: "approved" });
 
       expect(mockPrisma.review.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ status: 'PUBLISHED' }),
-        })
+          where: expect.objectContaining({ status: "PUBLISHED" }),
+        }),
       );
     });
   });
 
-  describe('getDashboardStats', () => {
-    it('should return stats with counts and recent data', async () => {
+  describe("getDashboardStats", () => {
+    it("should return stats with counts and recent data", async () => {
       mockPrisma.user.count.mockResolvedValue(10);
       mockPrisma.place.count.mockResolvedValue(15);
       mockPrisma.review.count.mockResolvedValue(50);
@@ -154,20 +161,20 @@ describe('AdminService', () => {
 
       mockPrisma.review.findMany.mockResolvedValue([
         {
-          id: 'review-1',
+          id: "review-1",
           rating: 5,
-          comment: 'Great!',
-          user: { id: 'user-1', name: 'Test User' },
-          place: { id: 'place-1', name: 'Test Place' },
+          comment: "Great!",
+          user: { id: "user-1", name: "Test User" },
+          place: { id: "place-1", name: "Test Place" },
         },
       ]);
 
       mockPrisma.user.findMany.mockResolvedValue([
         {
-          id: 'user-1',
-          name: 'Test User',
-          email: 'test@example.com',
-          role: 'usuario',
+          id: "user-1",
+          name: "Test User",
+          email: "test@example.com",
+          role: "usuario",
           createdAt: new Date(),
         },
       ]);

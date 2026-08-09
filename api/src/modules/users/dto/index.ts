@@ -1,26 +1,26 @@
-import { IsString, IsOptional, IsIn, MaxLength } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsIn, MaxLength } from "class-validator";
+import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class UpdateUserDto {
-  @ApiPropertyOptional({ example: 'John Doe' })
+  @ApiPropertyOptional({ example: "John Doe" })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   name?: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/photo.jpg' })
+  @ApiPropertyOptional({ example: "https://example.com/photo.jpg" })
   @IsOptional()
   @IsString()
   photoUrl?: string;
 
-  @ApiPropertyOptional({ example: 'Bolivia' })
+  @ApiPropertyOptional({ example: "Bolivia" })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   country?: string;
 
-  @ApiPropertyOptional({ enum: ['es', 'en', 'pt'] })
+  @ApiPropertyOptional({ enum: ["es", "en", "pt"] })
   @IsOptional()
-  @IsIn(['es', 'en', 'pt'])
+  @IsIn(["es", "en", "pt"])
   language?: string;
 }
