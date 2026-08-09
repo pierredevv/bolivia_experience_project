@@ -17,6 +17,7 @@ model User {
   language       String   @default("es")
   role           String   @default("usuario")
   isActive       Boolean  @default(true) @map("is_active")
+  isPremium      Boolean  @default(false) @map("is_premium")
   businessName   String?  @map("business_name")
   businessPhone  String?  @map("business_phone")
   approvalStatus String   @default("none") @map("approval_status")
@@ -32,6 +33,7 @@ model User {
   replies             ReviewReply[]
   searchHistory       SearchHistory[]
   notifications       Notification[]
+  deviceTokens        DeviceToken[]
   refreshTokens       RefreshToken[]
   referral            Referral?
   referredUses        ReferralUse[]
@@ -39,8 +41,13 @@ model User {
   tours               Tour[]
   tickets             Ticket[]
   payments            Payment[]
+  products            Product[]
+  settlements         Settlement[]
   chatConversations   ChatConversation[]
   trips               Trip[]
+  travelerPhotos      TravelerPhoto[]
+  travelerPhotoLikes  TravelerPhotoLike[]
+  productReviews      ProductReview[]
 
   @@map("users")
 }
@@ -58,6 +65,7 @@ model Category {
   createdAt     DateTime @default(now()) @map("created_at")
 
   places Place[]
+  productsCocina Product[] @relation("CategoryCocina")
 
   @@map("categories")
 }
@@ -87,6 +95,12 @@ model Place {
   priceLevel      Int?      @map("price_level")
   priceUpdatedAt  DateTime? @map("price_updated_at")
   priceProposedBy String?   @map("price_proposed_by")
+  specialFeature  String?   @map("special_feature")
+  cuisineType     String?   @map("cuisine_type")
+  // Categoría del lugar definida por el administrador (ej. "Shopping mall", "Punto de interés")
+  categoriaPlace  String?   @map("categoria_place")
+  // Colección curada "Experiencias imprescindibles" (gestionado por admin)
+  esImprescindible  Boolean  @default(false) @map("es_imprescindible")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
@@ -99,6 +113,7 @@ model Place {
   promotions Promotion[]
   reservations Reservation[]
   tours      Tour[]
+  products   Product[]
 
   @@index([categoryId])
   @@index([ownerId])
@@ -264,6 +279,19 @@ model Notification {
   @@map("notifications")
 }
 
+model DeviceToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  platform  String   @default("flutter")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("device_tokens")
+}
+
 model RefreshToken {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
@@ -308,24 +336,43 @@ model ReferralUse {
 }
 
 model Reservation {
-  id           String   @id @default(cuid())
-  userId       String   @map("user_id")
-  placeId      String   @map("place_id")
-  date         DateTime
-  time         String
-  partySize    Int      @map("party_size")
-  status       String   @default("pending")
-  notes        String?
-  contactPhone String?  @map("contact_phone")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  // Transición: fase 1 usa productId; el app legacy envía placeId (se resuelve a producto)
+  productId     String?   @map("product_id")
+  placeId       String?   @map("place_id")
+  date          DateTime
+  time          String
+  partySize     Int       @map("party_size")
+  // Ciclo de vida: pendiente | confirmada | rechazada | cancelada | completada | expirada | no_show
+  status        String    @default("pending")
+  // Modalidad capturada al crear: instantanea | solicitud
+  modalidad     String    @default("instantanea")
+  // Solicitud manual: plazo de respuesta
+  responseDeadline DateTime? @map("response_deadline")
+  respondedAt   DateTime? @map("responded_at")
+  confirmedAt   DateTime? @map("confirmed_at")
+  cancelledAt   DateTime? @map("cancelled_at")
+  completedAt   DateTime? @map("completed_at")
+  cancelReason  String?   @map("cancel_reason")
+  // Monto acordado al confirmar (sin comisión)
+  totalAmount   Float?    @map("total_amount")
+  notes         String?
+  contactPhone  String?   @map("contact_phone")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  place   Place?  @relation(fields: [placeId], references: [id], onDelete: SetNull)
+  payments Payment[]
 
   @@index([userId])
+  @@index([productId])
   @@index([placeId])
+  @@index([status])
   @@index([date])
+  @@index([productId, date, time, status])
   @@map("reservations")
 }
 
@@ -343,6 +390,174 @@ model Coupon {
 
   @@index([code])
   @@map("coupons")
+}
+
+model Product {
+  id                  String   @id @default(cuid())
+  socioId             String   @map("socio_id")
+  placeId             String?  @map("place_id")
+  // tipo: hospedaje | transporte | actividad | guia | mesa | paquete | experiencia
+  type                String   @default("actividad")
+  name                String
+  description         String?
+  descriptionEn       String?  @map("description_en")
+  price               Float    @default(0)
+  currency            String   @default("BOB")
+  // Cupo/inventario por fecha-hora para modalidad instantanea (null = sin límite)
+  capacity            Int?
+  // ninguna | solicitud | instantanea
+  modalidadReserva    String   @default("ninguna") @map("modalidad_reserva")
+  // tipo_turismo: urbano | rural | ambos
+  tourismType         String?  @map("tourism_type")
+  // rango_presupuesto: mochilero | medio | premium
+  budgetRange         String?  @map("budget_range")
+  // verificado | pendiente | desactualizado
+  verificationStatus  String   @default("pendiente") @map("verification_status")
+  priceUpdatedAt      DateTime? @map("price_updated_at")
+  // Atributos específicos por tipo (JSON) - MVP
+  attributesJson      String?  @map("attributes_json")
+  // ── Hoteles: campos de la tarjeta (gestionados por el socio) ──
+  caracteristicas    String  ? @map("caracteristicas")
+  comodidadesJson    String   @default("[]") @map("comodidades_json")
+  // tipo de propiedad: hotel | bnb | inn
+  tipoPropiedad      String?  @map("tipo_propiedad")
+  estrellas          Int?     @map("estrellas")
+  // texto_precio: variante fija del set controlado
+  textoPrecio        String?  @map("texto_precio")
+  // ── Hoteles: gestión admin (cashback / premiado) ──
+  cashbackActivo     Boolean  @default(false) @map("cashback_activo")
+  cashbackPorcentaje Int?     @map("cashback_porcentaje")
+  premiado           Boolean  @default(false) @map("premiado")
+  // Colección curada "Experiencias imprescindibles" (gestionado por admin)
+  esImprescindible   Boolean  @default(false) @map("es_imprescindible")
+  // Tipo de cocina (referencia a Category con slug cocina-*)
+  tipoCocinaId       String?  @map("tipo_cocina_id")
+  // ── Hoteles: ofertas / deals (mock determinista) ──
+  tieneOferta        Boolean  @default(false) @map("tiene_oferta")
+  reembolsable       Boolean  @default(false) @map("reembolsable")
+  pagoDiferido       Boolean  @default(false) @map("pago_diferido")
+  // Experiencias: categoría (ej. "Tours de Noche") y precio por adulto
+  experienceCategory  String?  @map("experience_category")
+  pricePerAdult       Float?   @map("price_per_adult")
+  priceVarByGroup     Boolean  @default(false) @map("price_var_by_group")
+  // Subcategoría de tour (definida por el socio):
+  // naturaleza_vida_salvaje | cultural_rural | multi_dia | visita_privada |
+  // privada_lujo | recorrido_historico | caminata_turistica | caminata_sin_guia
+  subcategoriaTour    String?  @map("subcategoria_tour")
+  // Duración real en días (actividad/tour). Se usa para filtrar por duración
+  // (ej. "Excursiones de un día") en vez de inferirla de la subcategoría.
+  duracionDias        Int?     @map("duracion_dias")
+  // Tramo de precio por tamaño de grupo, JSON: [{ "min": 1, "max": 3, "precio": 50 }]
+  tramosPrecioJson    String?  @map("tramos_precio")
+  photoUrl            String?  @map("photo_url")
+  // Detalle de experiencia (completado por el socio)
+  duration            String?  @map("duration")
+  minAge              Int?     @map("min_age")
+  maxAge              Int?     @map("max_age")
+  maxGroup            Int?     @map("max_group")
+  guideLanguage       String?  @map("guide_language")
+  mobileTicket        Boolean  @default(false) @map("mobile_ticket")
+  advanceDays         Int?     @default(23) @map("advance_days")
+  // Políticas como array JSON, ej. ["Garantía de precio más bajo", "Cancelación gratuita"]
+  policiesJson        String   @default("[]") @map("policies_json")
+  ratingAvg           Float    @default(0) @map("rating_avg")
+  ratingCount         Int      @default(0) @map("rating_count")
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  socio         User          @relation(fields: [socioId], references: [id], onDelete: Cascade)
+  place         Place?        @relation(fields: [placeId], references: [id], onDelete: SetNull)
+  cocina        Category?     @relation("CategoryCocina", fields: [tipoCocinaId], references: [id], onDelete: SetNull)
+  policy        CancellationPolicy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
+  policyId      String?       @map("policy_id")
+  reservations  Reservation[]
+  productReviews ProductReview[]
+  slots         ProductSlot[]
+
+  @@index([socioId])
+  @@index([placeId])
+  @@index([type])
+  @@index([modalidadReserva])
+  @@map("products")
+}
+
+model ProductReview {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  userId    String   @map("user_id")
+  rating    Int
+  comment   String?
+  status    String   @default("PUBLISHED")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@index([userId])
+  @@index([status])
+  @@map("product_reviews")
+}
+
+// Slots de disponibilidad de una experiencia ("Reserva tu lugar")
+model ProductSlot {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  date      String   @map("date") // Fecha de la sesión, ej. "2026-08-08"
+  time      String   @map("time") // Hora de inicio, ej. "09:00"
+  capacity  Int      @default(10) @map("capacity")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([date])
+  @@map("product_slots")
+}
+
+model CancellationPolicy {
+  id        String   @id @default(cuid())
+  name      String
+  description String?
+  // Plantilla de reembolso: [{hastaHoras: 48, reembolso: 100}, {hastaHoras: 24, reembolso: 50}, {reembolso: 0}]
+  rulesJson String   @default("[]") @map("rules_json")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  products Product[]
+
+  @@map("cancellation_policies")
+}
+
+model PlatformConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_configs")
+}
+
+model Settlement {
+  id               String    @id @default(cuid())
+  paymentId        String    @unique @map("payment_id")
+  socioId          String    @map("socio_id")
+  grossAmount      Float     @map("gross_amount")
+  commissionAmount Float     @map("commission_amount")
+  netAmount        Float     @map("net_amount")
+  // pending | released
+  status           String    @default("pending")
+  releasedAt       DateTime? @map("released_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  socio   User    @relation(fields: [socioId], references: [id], onDelete: Cascade)
+
+  @@index([socioId])
+  @@index([status])
+  @@map("settlements")
 }
 
 model Tour {
@@ -395,22 +610,35 @@ model Ticket {
 model Payment {
   id            String    @id
   userId        String    @map("user_id")
+  reservationId String?   @map("reservation_id")
   amount        Float
   currency      String    @default("BOB")
   description   String
   type          String
   referenceId   String    @map("reference_id")
+  // Escrow: retenido hasta que se presta el servicio
+  subtotal        Float   @default(0)
+  commissionRate  Float   @default(0) @map("commission_rate")
+  commissionAmount Float  @default(0) @map("commission_amount")
+  // Ciclo de vida: pending | held | released | refunded | cancelled
   status        String    @default("pending")
   transactionId String?   @map("transaction_id")
   qrData        String?   @map("qr_data")
   paidAt        DateTime? @map("paid_at")
+  heldAt        DateTime? @map("held_at")
+  releasedAt    DateTime? @map("released_at")
+  refundedAt    DateTime? @map("refunded_at")
+  refundAmount  Float?    @map("refund_amount")
   createdAt     DateTime  @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  settlement  Settlement?
 
   @@index([userId])
   @@index([status])
   @@index([referenceId])
+  @@index([reservationId])
   @@map("payments")
 }
 
@@ -494,4 +722,36 @@ model TripItem {
 
   @@index([tripDayId])
   @@map("trip_items")
+}
+
+model TravelerPhoto {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  imageUrl    String   @map("image_url")
+  title       String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes TravelerPhotoLike[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("traveler_photos")
+}
+
+model TravelerPhotoLike {
+  id        String   @id @default(cuid())
+  photoId   String   @map("photo_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  photo TravelerPhoto @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([photoId, userId])
+  @@index([photoId])
+  @@index([userId])
+  @@map("traveler_photo_likes")
 }
