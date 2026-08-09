@@ -287,6 +287,33 @@ class PlacePreviewSheet extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 10),
+                // Reservar — filled emerald full width (solo si el lugar ofrece reservas)
+                if (place.canReserve)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.push('/places/${place.id}/reserve', extra: {
+                          'placeName': place.name,
+                          'priceLevel': place.priceLevel,
+                        });
+                      },
+                      icon: const Icon(Icons.event_available_rounded, size: 18),
+                      label: const Text('Reservar con pago QR'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        textStyle: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

@@ -11,6 +11,8 @@ class MapPlace {
   final int ratingCount;
   final Map<String, dynamic>? category;
   final String? primaryPhoto;
+  final int? priceLevel;
+  final bool canReserve;
 
   MapPlace({
     required this.id,
@@ -22,6 +24,8 @@ class MapPlace {
     this.ratingCount = 0,
     this.category,
     this.primaryPhoto,
+    this.priceLevel,
+    this.canReserve = false,
   });
 
   static double _parseDouble(dynamic value) {
@@ -57,6 +61,10 @@ class MapPlace {
   }
 
   factory MapPlace.fromJson(Map<String, dynamic> json) {
+    final count = json['_count'];
+    final reservableFromCount = count is Map<String, dynamic>
+        ? (count['products'] is int ? count['products'] > 0 : false)
+        : false;
     return MapPlace(
       id: (json['id'] ?? '').toString(),
       name: json['name'] ?? '',
@@ -67,6 +75,12 @@ class MapPlace {
       ratingCount: json['ratingCount'] ?? json['rating_count'] ?? 0,
       category: _parseCategory(json),
       primaryPhoto: _parsePrimaryPhoto(json),
+      priceLevel: json['priceLevel'] is int
+          ? json['priceLevel']
+          : (json['priceLevel'] != null ? int.tryParse(json['priceLevel'].toString()) : null),
+      canReserve: json['canReserve'] == true ||
+          json['can_reserve'] == true ||
+          reservableFromCount,
     );
   }
 
