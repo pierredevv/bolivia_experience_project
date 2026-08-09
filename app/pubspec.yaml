@@ -47,6 +47,7 @@ dependencies:
   share_plus: ^7.2.1
   pull_to_refresh: ^2.0.0
   image_picker: ^1.0.7
+  qr_flutter: ^4.1.0
 
   # Notifications
   firebase_messaging: ^14.7.15

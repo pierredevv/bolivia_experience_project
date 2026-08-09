@@ -1,123 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hive/hive.dart';
 import '../../../../config/colors.dart';
+import '../../data/notifications_service.dart';
+import '../providers/notifications_provider.dart';
 
-class NotificationsScreen extends StatefulWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  List<Map<String, dynamic>> _notifications = [];
-  bool _isLoading = true;
-
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    Future.microtask(() => ref.read(notificationsProvider.notifier).load());
   }
 
-  Future<void> _loadNotifications() async {
-    setState(() => _isLoading = true);
+  void _onTap(NotificationItem notification) {
+    ref.read(notificationsProvider.notifier).markAsRead(notification.id);
 
-    try {
-      final box = Hive.box('settings');
-      final stored = box.get('notifications', defaultValue: <dynamic>[]);
-      final List<Map<String, dynamic>> notifications = [];
-      for (final item in stored) {
-        if (item is Map) {
-          notifications.add(Map<String, dynamic>.from(item));
-        }
-      }
-
-      // If no stored notifications, show sample ones
-      if (notifications.isEmpty) {
-        notifications.addAll(_getSampleNotifications());
-      }
-
-      setState(() {
-        _notifications = notifications;
-        _isLoading = false;
-      });
-    } catch (_) {
-      setState(() {
-        _notifications = _getSampleNotifications();
-        _isLoading = false;
-      });
-    }
-  }
-
-  List<Map<String, dynamic>> _getSampleNotifications() {
-    return [
-      {
-        'id': '1',
-        'title': 'Bienvenido a BoliviaExperience',
-        'body': 'Explora los mejores lugares de Santa Cruz de la Sierra',
-        'type': 'welcome',
-        'timestamp': DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
-        'read': false,
-      },
-      {
-        'id': '2',
-        'title': 'Nuevos eventos disponibles',
-        'body': 'Descubre los eventos que tenemos para ti esta semana',
-        'type': 'events',
-        'timestamp': DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),
-        'read': false,
-      },
-      {
-        'id': '3',
-        'title': 'Promociones especiales',
-        'body': 'No te pierdas nuestras ofertas exclusivas en restaurantes y hoteles',
-        'type': 'promotions',
-        'timestamp': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-        'read': true,
-      },
-    ];
-  }
-
-  Future<void> _markAsRead(String id) async {
-    setState(() {
-      for (var i = 0; i < _notifications.length; i++) {
-        if (_notifications[i]['id'] == id) {
-          _notifications[i]['read'] = true;
-          break;
-        }
-      }
-    });
-
-    try {
-      final box = Hive.box('settings');
-      await box.put('notifications', _notifications);
-    } catch (_) {}
-  }
-
-  Future<void> _clearAll() async {
-    setState(() {
-      for (var i = 0; i < _notifications.length; i++) {
-        _notifications[i]['read'] = true;
-      }
-    });
-
-    try {
-      final box = Hive.box('settings');
-      await box.put('notifications', _notifications);
-    } catch (_) {}
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Todas las notificaciones marcadas como leídas')),
-      );
-    }
-  }
-
-  void _onTap(Map<String, dynamic> notification) {
-    _markAsRead(notification['id']);
-
-    final type = notification['type'];
+    final type = notification.type;
+    final data = notification.parsedData;
     switch (type) {
       case 'events':
         context.push('/events');
@@ -126,16 +32,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         context.push('/promotions');
         break;
       case 'place':
-        final placeId = notification['placeId'];
+        final placeId = data['placeId'];
         if (placeId != null) {
           context.push('/places/$placeId');
         }
         break;
       case 'event':
-        final eventId = notification['eventId'];
+        final eventId = data['eventId'];
         if (eventId != null) {
           context.push('/events/$eventId');
         }
+        break;
+      case 'reservation':
+      case 'reservation_confirmed':
+      case 'reservation_rejected':
+      case 'reservation_expired':
+      case 'reservation_completed':
+      case 'reservation_no_show':
+      case 'reservation_request':
+      case 'reservation_cancelled':
+        context.push('/reservations');
         break;
       default:
         // Welcome or unknown type - stay on screen
@@ -155,6 +71,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.place;
       case 'event':
         return Icons.event_available;
+      case 'reservation':
+      case 'reservation_confirmed':
+      case 'reservation_request':
+      case 'reservation_cancelled':
+        return Icons.event_note;
+      case 'reservation_rejected':
+      case 'reservation_expired':
+      case 'reservation_no_show':
+        return Icons.notifications_off_outlined;
+      case 'reservation_completed':
+        return Icons.check_circle_outline;
       default:
         return Icons.notifications;
     }
@@ -170,54 +97,91 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return AppColors.secondary700;
       case 'place':
         return AppColors.error700;
+      case 'reservation_confirmed':
+      case 'reservation_completed':
+        return AppColors.brandEmerald;
+      case 'reservation_rejected':
+      case 'reservation_expired':
+      case 'reservation_no_show':
+        return AppColors.error500;
+      case 'reservation':
+      case 'reservation_request':
+      case 'reservation_cancelled':
+        return AppColors.brandGold;
       default:
         return AppColors.neutral600;
     }
   }
 
-  String _formatTimestamp(String timestamp) {
-    try {
-      final date = DateTime.parse(timestamp);
-      final now = DateTime.now();
-      final difference = now.difference(date);
+  String _formatTimestamp(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
 
-      if (difference.inMinutes < 60) {
-        return 'Hace ${difference.inMinutes} min';
-      } else if (difference.inHours < 24) {
-        return 'Hace ${difference.inHours}h';
-      } else if (difference.inDays < 7) {
-        return 'Hace ${difference.inDays}d';
-      } else {
-        return '${date.day}/${date.month}/${date.year}';
-      }
-    } catch (_) {
-      return '';
-    }
+    if (difference.inMinutes < 1) return 'Recién';
+    if (difference.inMinutes < 60) return 'Hace ${difference.inMinutes} min';
+    if (difference.inHours < 24) return 'Hace ${difference.inHours}h';
+    if (difference.inDays < 7) return 'Hace ${difference.inDays}d';
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(notificationsProvider);
+    final notifications = state.notifications;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notificaciones'),
         actions: [
-          if (_notifications.any((n) => n['read'] == false))
+          if (notifications.any((n) => !n.isRead))
             TextButton(
-              onPressed: _clearAll,
+              onPressed: () => ref.read(notificationsProvider.notifier).markAllAsRead(),
               child: const Text('Marcar todo leído'),
             ),
         ],
       ),
-      body: _buildBody(),
+      body: _buildBody(state),
     );
   }
 
-  Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+  Widget _buildBody(NotificationsState state) {
+    if (state.status == NotificationsStatus.initial ||
+        state.status == NotificationsStatus.loading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.brandDark));
     }
 
-    if (_notifications.isEmpty) {
+    if (state.status == NotificationsStatus.error && state.notifications.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.notifications_off_outlined, size: 64, color: AppColors.neutral400),
+              const SizedBox(height: 16),
+              Text(
+                'No se pudieron cargar las notificaciones',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Revisá tu conexión e intentá de nuevo',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.read(notificationsProvider.notifier).load(),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.brandDark),
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (state.notifications.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -232,7 +196,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Las notificaciones de eventos y promociones aparecerán aquí',
+                'Las notificaciones de reservas, eventos y promociones aparecerán aquí',
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -243,15 +207,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadNotifications,
+      onRefresh: () => ref.read(notificationsProvider.notifier).load(),
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: _notifications.length,
+        itemCount: state.notifications.length,
         separatorBuilder: (_, __) => const Divider(height: 1),
         itemBuilder: (context, index) {
-          final notification = _notifications[index];
-          final isRead = notification['read'] == true;
-          final type = notification['type'] ?? 'default';
+          final notification = state.notifications[index];
+          final isRead = notification.isRead;
+          final type = notification.type;
 
           return ListTile(
             onTap: () => _onTap(notification),
@@ -269,9 +233,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             ),
             title: Text(
-              notification['title'] ?? '',
+              notification.title,
               style: TextStyle(
                 fontWeight: isRead ? FontWeight.normal : FontWeight.w600,
+                color: AppColors.brandDark,
               ),
             ),
             subtitle: Column(
@@ -279,14 +244,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               children: [
                 const SizedBox(height: 4),
                 Text(
-                  notification['body'] ?? '',
+                  notification.body,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _formatTimestamp(notification['timestamp'] ?? ''),
+                  _formatTimestamp(notification.createdAt),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.neutral500,
                   ),
