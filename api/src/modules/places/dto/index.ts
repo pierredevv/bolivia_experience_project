@@ -9,19 +9,19 @@ import {
   Max,
   IsArray,
   ValidateNested,
-} from 'class-validator';
-import { Transform, Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { PaginationDto } from '../../../common/dto/pagination.dto';
+} from "class-validator";
+import { Transform, Type } from "class-transformer";
+import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
+import { PaginationDto } from "../../../common/dto/pagination.dto";
 
 export class PlacePhotoDto {
-  @ApiProperty({ example: 'https://example.com/photo.jpg' })
+  @ApiProperty({ example: "https://example.com/photo.jpg" })
   @IsString()
   url: string;
 }
 
 export class CreatePlaceDto {
-  @ApiProperty({ example: 'Bioparque Güembé' })
+  @ApiProperty({ example: "Bioparque Güembé" })
   @IsString()
   @MaxLength(255)
   name: string;
@@ -36,7 +36,7 @@ export class CreatePlaceDto {
   @IsString()
   descriptionEn?: string;
 
-  @ApiProperty({ example: 'Km 7, Ruta a Cotoca' })
+  @ApiProperty({ example: "Km 7, Ruta a Cotoca" })
   @IsString()
   @MaxLength(500)
   address: string;
@@ -93,32 +93,56 @@ export class CreatePlaceDto {
   @IsBoolean()
   isFeatured?: boolean;
 
-@ApiPropertyOptional({ description: 'Whether the place is urban (true) or rural (false)' })
+  @ApiPropertyOptional({
+    description: "Whether the place is urban (true) or rural (false)",
+  })
   @IsOptional()
   @IsBoolean()
   isUrban?: boolean;
 
-  @ApiPropertyOptional({ description: 'Price level 1-4 (1=cheapest, 4=most expensive). null = not verified.' })
+  @ApiPropertyOptional({
+    description:
+      "Price level 1-4 (1=cheapest, 4=most expensive). null = not verified.",
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Max(4)
   priceLevel?: number;
 
-  @ApiPropertyOptional({ description: 'User ID of the empresa that proposed the price level' })
+  @ApiPropertyOptional({
+    description: "User ID of the empresa that proposed the price level",
+  })
   @IsOptional()
   @IsString()
   priceProposedBy?: string;
 
   @ApiPropertyOptional({
     type: [PlacePhotoDto],
-    description: 'Optional array of photos to associate with the place. When provided during update, replaces all existing photos.',
+    description:
+      "Optional array of photos to associate with the place. When provided during update, replaces all existing photos.",
   })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PlacePhotoDto)
   photos?: PlacePhotoDto[];
+
+  @ApiPropertyOptional({
+    description:
+      "Destacado especial del establecimiento (hoteles: p.ej. 'Piscina', 'Vista panorámica')",
+  })
+  @IsOptional()
+  @IsString()
+  specialFeature?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Tipo de cocina para restaurantes (p.ej. 'Cruceña', 'Italiana')",
+  })
+  @IsOptional()
+  @IsString()
+  cuisineType?: string;
 }
 
 export class UpdatePlaceDto extends PartialType(CreatePlaceDto) {}
@@ -129,10 +153,20 @@ export class QueryPlacesDto extends PaginationDto {
   @IsString()
   categoryId?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by category slug (resolved to categoryId internally)' })
+  @ApiPropertyOptional({
+    description: "Filter by category slug (resolved to categoryId internally)",
+  })
   @IsOptional()
   @IsString()
   categorySlug?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Exclude places belonging to this category slug (resolved internally). e.g. notCategorySlug=hoteles for 'Cosas que Hacer'.",
+  })
+  @IsOptional()
+  @IsString()
+  notCategorySlug?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -144,93 +178,106 @@ export class QueryPlacesDto extends PaginationDto {
   @IsBoolean()
   isFeatured?: boolean;
 
-  @ApiPropertyOptional({ description: 'Filter by active status. Admin can see all.' })
+  @ApiPropertyOptional({
+    description: "Filter by active status. Admin can see all.",
+  })
   @IsOptional()
   @Transform(({ obj }) => {
     const value = obj.isActive;
     if (value === undefined || value === null) return undefined;
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") return value.toLowerCase() === "true";
     return Boolean(value);
   })
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional({ description: 'If true, return all places regardless of active status.' })
+  @ApiPropertyOptional({
+    description: "If true, return all places regardless of active status.",
+  })
   @IsOptional()
   @Transform(({ obj }) => {
     const value = obj.allStatuses;
     if (value === undefined || value === null) return undefined;
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") return value.toLowerCase() === "true";
     return Boolean(value);
   })
   @IsBoolean()
   allStatuses?: boolean;
 
-  @ApiPropertyOptional({ description: 'Minimum rating (1-5)' })
+  @ApiPropertyOptional({ description: "Minimum rating (1-5)" })
   @IsOptional()
-  @Transform(({ obj }) => obj.minRating ? Number(obj.minRating) : undefined)
+  @Transform(({ obj }) => (obj.minRating ? Number(obj.minRating) : undefined))
   @IsNumber()
   @Min(1)
   @Max(5)
   minRating?: number;
 
-  @ApiPropertyOptional({ description: 'Maximum distance in meters from user location' })
+  @ApiPropertyOptional({
+    description: "Maximum distance in meters from user location",
+  })
   @IsOptional()
-  @Transform(({ obj }) => obj.maxDistance ? Number(obj.maxDistance) : undefined)
+  @Transform(({ obj }) =>
+    obj.maxDistance ? Number(obj.maxDistance) : undefined,
+  )
   @IsNumber()
   maxDistance?: number;
 
-  @ApiPropertyOptional({ description: 'User latitude for distance filter' })
+  @ApiPropertyOptional({ description: "User latitude for distance filter" })
   @IsOptional()
-  @Transform(({ obj }) => obj.latitude ? Number(obj.latitude) : undefined)
+  @Transform(({ obj }) => (obj.latitude ? Number(obj.latitude) : undefined))
   @IsNumber()
   latitude?: number;
 
-  @ApiPropertyOptional({ description: 'User longitude for distance filter' })
+  @ApiPropertyOptional({ description: "User longitude for distance filter" })
   @IsOptional()
-  @Transform(({ obj }) => obj.longitude ? Number(obj.longitude) : undefined)
+  @Transform(({ obj }) => (obj.longitude ? Number(obj.longitude) : undefined))
   @IsNumber()
   longitude?: number;
 
-  @ApiPropertyOptional({ description: 'Filter by open now status' })
+  @ApiPropertyOptional({ description: "Filter by open now status" })
   @IsOptional()
   @Transform(({ obj }) => {
     const value = obj.isOpenNow;
     if (value === undefined || value === null) return undefined;
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") return value.toLowerCase() === "true";
     return Boolean(value);
   })
   @IsBoolean()
   isOpenNow?: boolean;
 
-  @ApiPropertyOptional({ description: 'Sort by: rating, distance, name' })
+  @ApiPropertyOptional({ description: "Sort by: rating, distance, name" })
   @IsOptional()
   @IsString()
   sortBy?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by city: santa-cruz, la-paz, cochabamba' })
+  @ApiPropertyOptional({
+    description: "Filter by city: santa-cruz, la-paz, cochabamba",
+  })
   @IsOptional()
   @IsString()
   city?: string;
 }
 
 export class QueryScoredPlacesDto extends QueryPlacesDto {
-  @ApiPropertyOptional({ description: 'Trip ID to get preferences from' })
+  @ApiPropertyOptional({ description: "Trip ID to get preferences from" })
   @IsOptional()
   @IsString()
   tripId?: string;
 
-  @ApiPropertyOptional({ description: 'Direct budget type: low_cost, medio, premium, luxury' })
+  @ApiPropertyOptional({
+    description: "Direct budget type: low_cost, medio, premium, luxury",
+  })
   @IsOptional()
   @IsString()
   budgetType?: string;
 
-  @ApiPropertyOptional({ description: 'Direct tourism type: urbano, rural, ambos' })
+  @ApiPropertyOptional({
+    description: "Direct tourism type: urbano, rural, ambos",
+  })
   @IsOptional()
   @IsString()
   tourismType?: string;
 }
-
