@@ -324,6 +324,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         _VerticalDivider(),
                         _StatItem(
+                          value: '${profile?.points ?? 0}',
+                          label: 'Puntos',
+                          icon: Icons.emoji_events_rounded,
+                          iconColor: _brandGold,
+                        ),
+                        _VerticalDivider(),
+                        _StatItem(
                           value: state.averageRating > 0
                               ? state.averageRating.toStringAsFixed(1)
                               : '-',
@@ -358,6 +365,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icons.rate_review_outlined,
                   title: 'Mis Reseñas (${state.totalReviews})',
                   onTap: () => context.push('/profile/reviews'),
+                ),
+                _MenuItem(
+                  icon: Icons.emoji_events_outlined,
+                  title: 'Mis Logros',
+                  subtitle:
+                      '${profile?.points ?? 0} pts · ${profile?.badgeCount ?? 0} insignias',
+                  onTap: () => context.push('/profile/gamification'),
                 ),
               ],
             ),

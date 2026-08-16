@@ -11,6 +11,7 @@ class TripsState {
   final Map<String, dynamic>? selectedTrip;
   final bool isLoadingDetail;
   final bool isCreating;
+  final bool isGenerating;
   final String? errorMessage;
 
   const TripsState({
@@ -19,6 +20,7 @@ class TripsState {
     this.selectedTrip,
     this.isLoadingDetail = false,
     this.isCreating = false,
+    this.isGenerating = false,
     this.errorMessage,
   });
 
@@ -28,6 +30,7 @@ class TripsState {
     Map<String, dynamic>? selectedTrip,
     bool? isLoadingDetail,
     bool? isCreating,
+    bool? isGenerating,
     String? errorMessage,
   }) {
     return TripsState(
@@ -36,6 +39,7 @@ class TripsState {
       selectedTrip: selectedTrip ?? this.selectedTrip,
       isLoadingDetail: isLoadingDetail ?? this.isLoadingDetail,
       isCreating: isCreating ?? this.isCreating,
+      isGenerating: isGenerating ?? this.isGenerating,
       errorMessage: errorMessage,
     );
   }
@@ -197,6 +201,40 @@ class TripsNotifier extends StateNotifier<TripsState> {
     } catch (_) {
       if (!mounted) return;
       state = state.copyWith(errorMessage: 'Error inesperado');
+    }
+  }
+
+  Future<String?> generateItinerary(String tripId) async {
+    if (!mounted) return null;
+    state = state.copyWith(isGenerating: true, errorMessage: null);
+    try {
+      final trip = await _tripsService.generateItinerary(tripId);
+      if (!mounted) return null;
+      state = state.copyWith(
+        isGenerating: false,
+        selectedTrip: trip,
+      );
+      return null;
+    } on DioException catch (e) {
+      if (!mounted) return null;
+      state = state.copyWith(isGenerating: false);
+      String message = 'No se pudo generar el itinerario';
+      if (e.response != null) {
+        final statusCode = e.response?.statusCode;
+        if (statusCode == 400) {
+          message = 'No hay lugares disponibles para generar el itinerario';
+        } else if (statusCode == 500) {
+          message = 'Error del servidor. Intenta mas tarde.';
+        }
+      } else if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.unknown) {
+        message = 'Sin conexion a internet. Verifica tu red.';
+      }
+      return message;
+    } catch (_) {
+      if (!mounted) return null;
+      state = state.copyWith(isGenerating: false);
+      return 'Error inesperado. Intenta de nuevo.';
     }
   }
 }

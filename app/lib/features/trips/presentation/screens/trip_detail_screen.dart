@@ -34,6 +34,13 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
         actions: [
           if (trip != null) ...[
             IconButton(
+              icon: const Icon(Icons.auto_awesome),
+              tooltip: 'Generar itinerario',
+              onPressed: tripsState.isGenerating
+                  ? null
+                  : () => _generateItinerary(context, ref),
+            ),
+            IconButton(
               icon: const Icon(Icons.share),
               onPressed: () => _shareTrip(trip),
             ),
@@ -133,13 +140,34 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
-                      onPressed: () => _addDay(context, ref),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Agregar dia'),
+                      onPressed: state.isGenerating
+                          ? null
+                          : () => _generateItinerary(context, ref),
+                      icon: state.isGenerating
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.auto_awesome),
+                      label: Text(
+                        state.isGenerating
+                            ? 'Generando...'
+                            : 'Generar itinerario',
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary700,
                         foregroundColor: Colors.white,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => _addDay(context, ref),
+                      icon: const Icon(Icons.add),
+                      label: const Text('O crear manualmente'),
                     ),
                   ],
                 ),
@@ -574,6 +602,50 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Compartir viaje: $name - $destination')),
     );
+  }
+
+  Future<void> _generateItinerary(
+      BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Generar itinerario'),
+        content: const Text(
+            'Esto creará un itinerario automático según tus preferencias y fechas. ¿Deseas continuar?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary700,
+            ),
+            child: const Text('Generar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final error = await ref
+        .read(tripsProvider.notifier)
+        .generateItinerary(widget.tripId);
+    if (!context.mounted) return;
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Itinerario generado correctamente'),
+        ),
+      );
+    }
   }
 
   String _getBudgetLabel(String? type) {

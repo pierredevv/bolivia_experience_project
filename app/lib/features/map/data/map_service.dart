@@ -92,6 +92,93 @@ class MapPlace {
       categorySlug == 'compras';
 }
 
+class MapSafetyZone {
+  final String id;
+  final String name;
+  final double latitude;
+  final double longitude;
+  final double radioKm;
+  final String nivelRiesgo;
+  final String? description;
+  final String? city;
+
+  MapSafetyZone({
+    required this.id,
+    required this.name,
+    required this.latitude,
+    required this.longitude,
+    required this.radioKm,
+    required this.nivelRiesgo,
+    this.description,
+    this.city,
+  });
+
+  factory MapSafetyZone.fromJson(Map<String, dynamic> json) {
+    return MapSafetyZone(
+      id: (json['id'] ?? '').toString(),
+      name: json['name'] ?? '',
+      latitude: _parseNum(json['latitude']),
+      longitude: _parseNum(json['longitude']),
+      radioKm: _parseNum(json['radioKm'] ?? json['radio_km']),
+      nivelRiesgo: json['nivelRiesgo'] ?? json['nivel_riesgo'] ?? 'bajo',
+      description: json['description'],
+      city: json['city'],
+    );
+  }
+
+  static double _parseNum(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0;
+  }
+}
+
+class MapEvent {
+  final String id;
+  final String name;
+  final double latitude;
+  final double longitude;
+  final DateTime? dateStart;
+  final DateTime? dateEnd;
+  final String? category;
+  final String? location;
+
+  MapEvent({
+    required this.id,
+    required this.name,
+    required this.latitude,
+    required this.longitude,
+    this.dateStart,
+    this.dateEnd,
+    this.category,
+    this.location,
+  });
+
+  factory MapEvent.fromJson(Map<String, dynamic> json) {
+    return MapEvent(
+      id: (json['id'] ?? '').toString(),
+      name: json['name'] ?? '',
+      latitude: _parseNum(json['latitude']),
+      longitude: _parseNum(json['longitude']),
+      dateStart: _parseDate(json['dateStart'] ?? json['date_start']),
+      dateEnd: _parseDate(json['dateEnd'] ?? json['date_end']),
+      category: json['category'],
+      location: json['location'],
+    );
+  }
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
+  }
+
+  static double _parseNum(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0;
+  }
+}
+
 class MapService {
   final Dio _dio;
 
@@ -152,6 +239,78 @@ class MapService {
     return items
         .whereType<Map<String, dynamic>>()
         .map((json) => MapPlace.fromJson(json))
+        .toList();
+  }
+
+  Future<List<MapSafetyZone>> getSafetyZones({
+    double? neLat,
+    double? neLng,
+    double? swLat,
+    double? swLng,
+  }) async {
+    final queryParams = <String, dynamic>{};
+    if (neLat != null &&
+        neLng != null &&
+        swLat != null &&
+        swLng != null) {
+      queryParams['neLat'] = neLat;
+      queryParams['neLng'] = neLng;
+      queryParams['swLat'] = swLat;
+      queryParams['swLng'] = swLng;
+    }
+
+    final response = await _dio.get(
+      ApiConstants.mapSafetyZones,
+      queryParameters: queryParams,
+    );
+
+    final data = response.data;
+    final inner = data is Map<String, dynamic> ? data['data'] : data;
+    final List items = (inner is List) ? inner : [];
+    return items
+        .whereType<Map<String, dynamic>>()
+        .map((json) => MapSafetyZone.fromJson(json))
+        .toList();
+  }
+
+  Future<bool> isInDangerZone({
+    required double lat,
+    required double lng,
+  }) async {
+    final response = await _dio.get(
+      ApiConstants.mapSafetyCheck,
+      queryParameters: {'lat': lat, 'lng': lng},
+    );
+    final data = response.data;
+    final inner = data is Map<String, dynamic> ? data['data'] : data;
+    if (inner is Map<String, dynamic>) {
+      return inner['inDangerZone'] == true;
+    }
+    return false;
+  }
+
+  Future<List<MapEvent>> getMapEvents({
+    required double neLat,
+    required double neLng,
+    required double swLat,
+    required double swLng,
+  }) async {
+    final response = await _dio.get(
+      ApiConstants.mapEvents,
+      queryParameters: {
+        'neLat': neLat,
+        'neLng': neLng,
+        'swLat': swLat,
+        'swLng': swLng,
+      },
+    );
+
+    final data = response.data;
+    final inner = data is Map<String, dynamic> ? data['data'] : data;
+    final List items = (inner is List) ? inner : [];
+    return items
+        .whereType<Map<String, dynamic>>()
+        .map((json) => MapEvent.fromJson(json))
         .toList();
   }
 }

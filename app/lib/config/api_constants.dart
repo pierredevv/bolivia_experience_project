@@ -70,6 +70,9 @@ class ApiConstants {
   static const mapNearby = '/map/nearby';
   static const mapCluster = '/map/cluster';
   static const mapBounds = '/map/bounds';
+  static const mapSafetyZones = '/map/safety-zones';
+  static const mapEvents = '/map/events';
+  static const mapSafetyCheck = '/map/safety-zones/check';
 
   // Search
   static const search = '/search';
@@ -108,6 +111,23 @@ class ApiConstants {
   static String paymentById(String id) => '/payments/$id';
   static String confirmPayment(String id) => '/payments/$id/confirm';
 
+  // Stripe (Fase B)
+  // Clave pública (no secreta) de Stripe. Se inyecta en build con:
+  //   --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_...
+  static const stripePublishableKey = String.fromEnvironment(
+    'STRIPE_PUBLISHABLE_KEY',
+    defaultValue: 'pk_test_PLACEHOLDER',
+  );
+
   // Traveler Photos
   static const travelerPhotos = '/traveler-photos';
+
+  // Recommendations
+  static String recommendationsPersonalized({int limit = 10}) =>
+      '/recommendations/personalized?limit=$limit';
+  static const recommendationsTrending = '/recommendations/trending';
+
+  // Gamification
+  static const gamificationMe = '/gamification/me';
+  static const gamificationBadges = '/gamification/badges';
 }

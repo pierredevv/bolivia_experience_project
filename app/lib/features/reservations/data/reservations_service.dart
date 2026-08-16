@@ -165,6 +165,7 @@ class ReservationsService {
     required String description,
     required String type,
     required String referenceId,
+    String? provider,
   }) async {
     final response = await _dio.post(
       ApiConstants.payments,
@@ -174,6 +175,7 @@ class ReservationsService {
         'description': description,
         'type': type,
         'referenceId': referenceId,
+        if (provider != null && provider.isNotEmpty) 'provider': provider,
       },
     );
     return _unwrap(response.data);

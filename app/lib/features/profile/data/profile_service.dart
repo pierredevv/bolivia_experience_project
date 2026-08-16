@@ -9,6 +9,8 @@ class UserProfile {
   final String? country;
   final String? language;
   final String? createdAt;
+  final int points;
+  final int badgeCount;
 
   UserProfile({
     required this.id,
@@ -18,9 +20,12 @@ class UserProfile {
     this.country,
     this.language,
     this.createdAt,
+    this.points = 0,
+    this.badgeCount = 0,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    final count = json['_count'];
     return UserProfile(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
@@ -29,6 +34,8 @@ class UserProfile {
       country: json['country'],
       language: json['language'],
       createdAt: json['created_at'],
+      points: json['points'] ?? 0,
+      badgeCount: (count is Map) ? (count['userBadges'] ?? 0) : 0,
     );
   }
 }

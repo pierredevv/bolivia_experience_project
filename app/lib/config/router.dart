@@ -28,7 +28,8 @@ import '../features/trips/presentation/screens/trip_detail_screen.dart';
 import '../features/trips/presentation/screens/create_trip_screen.dart';
 import '../features/events/presentation/screens/events_screen.dart';
 import '../features/promotions/presentation/screens/promotions_screen.dart';
-import '../features/promotions/presentation/screens/promotion_detail_screen.dart';
+
+import '../features/gamification/presentation/screens/gamification_screen.dart';import '../features/promotions/presentation/screens/promotion_detail_screen.dart';
 import '../features/notifications/presentation/screens/notifications_screen.dart';
 import '../features/places/data/places_service.dart';
 import '../features/reservations/presentation/screens/create_reservation_screen.dart';
@@ -39,6 +40,7 @@ import '../features/traveler_photos/data/traveler_photos_service.dart';
 import '../features/traveler_photos/presentation/screens/traveler_photo_detail_screen.dart';
 import '../features/traveler_photos/presentation/screens/traveler_photos_grid_screen.dart';
 import '../features/traveler_photos/presentation/screens/create_traveler_photo_screen.dart';
+import '../features/recommendations/presentation/screens/recommendations_screen.dart';
 import '../features/home/data/home_experience.dart';
 import '../features/home/presentation/screens/experience_detail_screen.dart';
 import '../features/hotels/presentation/screens/hotels_screen.dart';
@@ -60,7 +62,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/splash' ||
           state.matchedLocation == '/onboarding';
 
-      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/profile/reviews', '/settings', '/reservations', '/traveler-photos/create'];
+      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/profile/reviews', '/profile/gamification', '/settings', '/reservations', '/traveler-photos/create'];
       final isProtectedRoute = protectedRoutes.any((r) => state.matchedLocation.startsWith(r));
       final isReviewRoute = state.matchedLocation.contains('/review');
       final isReserveRoute = state.matchedLocation.contains('/reserve');
@@ -187,6 +189,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MyReviewsScreen(),
       ),
       GoRoute(
+        path: '/profile/gamification',
+        builder: (context, state) => const GamificationScreen(),
+      ),
+      GoRoute(
         path: '/profile/privacy',
         builder: (context, state) => const PrivacyPolicyScreen(),
       ),
@@ -267,6 +273,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             time: extra['time']?.toString() ?? '',
             paymentId: extra['paymentId']?.toString() ?? '',
             qrData: extra['qrData']?.toString(),
+            provider: extra['provider']?.toString(),
+            clientSecret: extra['clientSecret']?.toString(),
             expiresAt: DateTime.tryParse(extra['expiresAt']?.toString() ?? ''),
           );
         },
@@ -293,6 +301,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             initialPhoto: initial is TravelerPhoto ? initial : null,
           );
         },
+      ),
+      GoRoute(
+        path: '/recommendations',
+        builder: (context, state) => const RecommendationsScreen(),
       ),
     ],
   );

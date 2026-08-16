@@ -7,6 +7,7 @@ import '../../data/home_experience.dart';
 import '../../../weather/presentation/widgets/weather_widget.dart';
 import '../../../traveler_photos/presentation/providers/traveler_photos_provider.dart';
 import '../../../traveler_photos/presentation/widgets/traveler_photos_carousel.dart';
+import '../../../recommendations/presentation/providers/recommendations_provider.dart';
 
 // ── Brand tokens (shared across all private widgets) ──────────────────────────
 const _brandDark = Color(0xFF0F172A);
@@ -374,6 +375,9 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
 
+          // ── Recomendado para ti ─────────────────────────────────────────
+          const _RecommendedSection(),
+
           // ── Hoteles ────────────────────────────────────────────────────────
           if (state.hotels.isNotEmpty)
             SliverToBoxAdapter(
@@ -663,6 +667,69 @@ class _TravelerPhotosSection extends ConsumerWidget {
     return TravelerPhotosCarousel(
       photos: state.photos,
       loading: loading,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Recomendado para ti — carrusel con recomendaciones personalizadas
+// ─────────────────────────────────────────────────────────────────────────────
+class _RecommendedSection extends ConsumerStatefulWidget {
+  const _RecommendedSection();
+
+  @override
+  ConsumerState<_RecommendedSection> createState() =>
+      _RecommendedSectionState();
+}
+
+class _RecommendedSectionState extends ConsumerState<_RecommendedSection> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => ref.read(recommendationsProvider.notifier).loadRecommendations(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(recommendationsProvider);
+    final recs = state.data?.recommendations ?? [];
+
+    // Hide section while loading, on error, or with no data
+    if (state.status == RecommendationsStatus.initial ||
+        state.status == RecommendationsStatus.loading ||
+        state.status == RecommendationsStatus.error ||
+        recs.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverToBoxAdapter(
+      child: Column(
+        children: [
+          _SectionHeader(
+            title: 'Recomendado para ti',
+            onSeeAll: () => context.push('/recommendations'),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 240,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: recs.length,
+              itemBuilder: (context, index) {
+                final place = recs[index];
+                return _PlaceCard(
+                  place: place,
+                  onTap: () => context.push('/places/${place['id']}'),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 28),
+        ],
+      ),
     );
   }
 }

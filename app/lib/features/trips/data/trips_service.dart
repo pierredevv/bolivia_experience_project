@@ -64,6 +64,12 @@ class TripsService {
     return data is Map<String, dynamic> ? data['data'] : data;
   }
 
+  Future<Map<String, dynamic>> generateItinerary(String tripId) async {
+    final response = await _dio.post('${ApiConstants.trips}/$tripId/generate');
+    final data = response.data;
+    return data is Map<String, dynamic> ? data['data'] : data;
+  }
+
   Future<Map<String, dynamic>> addItem(
     String dayId, {
     required String title,

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../config/colors.dart';
 import '../../data/pricing.dart';
 import '../providers/reservations_provider.dart';
@@ -16,6 +18,8 @@ class PaymentScreen extends ConsumerStatefulWidget {
   final String time;
   final String paymentId;
   final String? qrData;
+  final String? provider;
+  final String? clientSecret;
   final DateTime? expiresAt;
 
   const PaymentScreen({
@@ -28,6 +32,8 @@ class PaymentScreen extends ConsumerStatefulWidget {
     required this.time,
     required this.paymentId,
     this.qrData,
+    this.provider,
+    this.clientSecret,
     this.expiresAt,
   });
 
@@ -43,11 +49,24 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   Timer? _pollTimer;
   int _secondsLeft = 900; // 15 min por defecto
 
+  // Estado mutable del pago actual (se actualiza al recrear con otro proveedor).
+  late String _paymentId;
+  String? _provider;
+  String? _qrData;
+  String? _clientSecret;
+  String? _payUrl;
+  bool _recreating = false;
+
   static const _paidStatuses = {'held', 'released', 'completed', 'refunded'};
 
   @override
   void initState() {
     super.initState();
+    _paymentId = widget.paymentId;
+    _provider = widget.provider;
+    _qrData = widget.qrData;
+    _clientSecret = widget.clientSecret;
+    _payUrl = null;
     _initCountdown();
     _startPolling();
   }
@@ -69,17 +88,17 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   }
 
   void _startPolling() {
-    if (widget.paymentId.isEmpty) {
+    if (_paymentId.isEmpty) {
       _phase = _PaymentPhase.error;
       _error = 'No se pudo iniciar el pago. Intentá de nuevo.';
       return;
     }
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-      if (widget.paymentId.isEmpty || !mounted) return;
+      if (_paymentId.isEmpty || !mounted) return;
       try {
         final service = ref.read(reservationsServiceProvider);
-        final status = await service.getPaymentStatus(widget.paymentId);
+        final status = await service.getPaymentStatus(_paymentId);
         if (!mounted) return;
         final paymentStatus = status['status']?.toString() ?? 'pending';
         setState(() {
@@ -95,10 +114,10 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   }
 
   Future<void> _markPaid() async {
-    if (widget.paymentId.isEmpty) return;
+    if (_paymentId.isEmpty) return;
     try {
       final service = ref.read(reservationsServiceProvider);
-      await service.confirmPayment(widget.paymentId);
+      await service.confirmPayment(_paymentId);
       if (!mounted) return;
       _pollTimer?.cancel();
       setState(() => _phase = _PaymentPhase.completed);
@@ -108,6 +127,83 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       setState(() {
         _error = 'No se pudo confirmar el pago. Revisá la conexión e intentá de nuevo.';
       });
+    }
+  }
+
+  bool get _isStripe =>
+      _provider == 'stripe' && (_clientSecret?.isNotEmpty ?? false);
+
+  bool get _isPayPal => _provider == 'paypal' && (_payUrl?.isNotEmpty ?? false);
+
+  Future<void> _payWithStripe() async {
+    if (_paymentId.isEmpty || _clientSecret == null) return;
+    try {
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: _clientSecret!,
+          merchantDisplayName: 'BoliviaExperience',
+        ),
+      );
+      await Stripe.instance.presentPaymentSheet();
+      // El cliente finalizó la sheet. El servidor valida contra Stripe (retrieve)
+      // antes de marcar held, por lo que el aviso del cliente NO es fuente de verdad.
+      await _markPaid();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'No se pudo completar el pago. Si ya pagaste, esperá la confirmación.';
+      });
+    }
+  }
+
+  Future<void> _payWithPayPal() async {
+    final url = _payUrl;
+    if (url == null || url.isEmpty) return;
+    final ok = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir PayPal. Intentá de nuevo.')),
+      );
+    }
+  }
+
+  Future<void> _switchProvider(String provider) async {
+    if (_recreating || provider == _provider) return;
+    setState(() => _recreating = true);
+    try {
+      final service = ref.read(reservationsServiceProvider);
+      final result = await service.createPayment(
+        amount: widget.amount,
+        currency: 'BOB',
+        description: 'Reserva en ${widget.placeName}',
+        type: 'reservation',
+        referenceId: widget.reservationId,
+        provider: provider,
+      );
+      if (!mounted) return;
+      _pollTimer?.cancel();
+      setState(() {
+        _paymentId = result['paymentId']?.toString() ?? _paymentId;
+        _provider = result['provider']?.toString() ?? provider;
+        _qrData = result['qrData']?.toString();
+        _clientSecret = result['clientSecret']?.toString();
+        _payUrl = result['payUrl']?.toString();
+        _secondsLeft = 900;
+        _recreating = false;
+      });
+      _startPolling();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _recreating = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo cambiar el método de pago. Intentá de nuevo.'),
+        ),
+      );
     }
   }
 
@@ -125,7 +221,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.brandDark,
         foregroundColor: Colors.white,
-        title: const Text('Pagar con QR'),
+        title: const Text('Pagar'),
         elevation: 0,
       ),
       body: _buildBody(),
@@ -175,7 +271,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   }
 
   Widget _buildQrView() {
-    final qrData = widget.qrData;
+    final qrData = _qrData;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -271,32 +367,205 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                   ),
                 const SizedBox(height: 16),
 
-                const Text(
-                  'Escaneá el código con la app de tu banco para pagar. El pago se confirma automáticamente.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-                ),
+                if (_isStripe || _isPayPal)
+                  const Text(
+                    'Completá el pago con tu método elegido. Se confirma automáticamente.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                  )
+                else
+                  const Text(
+                    'Escaneá el código con la app de tu banco para pagar. El pago se confirma automáticamente.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                  ),
                 const SizedBox(height: 20),
 
-                // Demo: simulate confirmed payment
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: FilledButton.icon(
-                    onPressed: _markPaid,
-                    icon: const Icon(Icons.check_circle_outline, size: 18),
-                    label: const Text('Simular pago confirmado'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.brandEmerald,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                // Acción de pago según el proveedor activo
+                if (_isStripe)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: FilledButton.icon(
+                      onPressed: _payWithStripe,
+                      icon: const Icon(Icons.credit_card, size: 18),
+                      label: const Text('Pagar con tarjeta'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brandDark,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  )
+                else if (_isPayPal)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: FilledButton.icon(
+                      onPressed: _payWithPayPal,
+                      icon: const Icon(Icons.account_balance_wallet, size: 18),
+                      label: const Text('Pagar con PayPal'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brandDark,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  )
+                else
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: FilledButton.icon(
+                      onPressed: _markPaid,
+                      icon: const Icon(Icons.check_circle_outline, size: 18),
+                      label: const Text('Simular pago confirmado'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brandEmerald,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
                     ),
                   ),
-                ),
+
+                const SizedBox(height: 24),
+                _buildProviderSelector(),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProviderSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Método de pago',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: AppColors.brandDark,
+          ),
+        ),
+        const SizedBox(height: 10),
+        _providerOption(
+          key: 'stripe',
+          label: 'Tarjeta de crédito / débito',
+          subtitle: 'Pago seguro con Stripe',
+          icon: Icons.credit_card,
+          enabled: true,
+        ),
+        const SizedBox(height: 8),
+        _providerOption(
+          key: 'paypal',
+          label: 'PayPal',
+          subtitle: 'Paga con tu cuenta de PayPal',
+          icon: Icons.account_balance_wallet,
+          enabled: true,
+        ),
+        const SizedBox(height: 8),
+        _providerOption(
+          key: 'qr_banco_local',
+          label: 'QR bancario',
+          subtitle: 'Escaneá con la app de tu banco',
+          icon: Icons.qr_code_2,
+          enabled: false,
+        ),
+      ],
+    );
+  }
+
+  Widget _providerOption({
+    required String key,
+    required String label,
+    required String subtitle,
+    required IconData icon,
+    required bool enabled,
+  }) {
+    final selected = _provider == key;
+    final onTap = enabled ? () => _switchProvider(key) : null;
+    return Opacity(
+      opacity: enabled ? 1 : 0.55,
+      child: Material(
+        color: selected ? AppColors.brandDark.withValues(alpha: 0.06) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: selected ? AppColors.brandDark : AppColors.borderSubtle,
+                width: selected ? 1.6 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 24,
+                  color: selected ? AppColors.brandDark : AppColors.textSecondary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.brandDark,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (enabled)
+                  Icon(
+                    selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                    size: 20,
+                    color: selected ? AppColors.brandDark : AppColors.textSecondary,
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.borderSubtle,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Próximamente',
+                      style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
+                    ),
+                  ),
+                if (_recreating && _provider == key)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

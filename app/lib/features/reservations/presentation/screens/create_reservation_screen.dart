@@ -181,6 +181,10 @@ class _CreateReservationScreenState extends ConsumerState<CreateReservationScree
             'time': reservation['time']?.toString() ?? _formatTime(_selectedTime!),
             'paymentId': payment is Map ? payment['id']?.toString() : null,
             'qrData': payment is Map ? payment['qrData']?.toString() : null,
+            'provider': payment is Map ? payment['provider']?.toString() : null,
+            'clientSecret': payment is Map
+                ? payment['paymentIntentClientSecret']?.toString()
+                : null,
             'expiresAt': deadline,
           },
         );

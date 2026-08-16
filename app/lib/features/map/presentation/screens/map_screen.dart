@@ -52,6 +52,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   List<MapPlace>? _lastProcessedPlaces;
   bool _showSearchThisArea = false;
 
+  // Event markers layer (fecha/hora)
+  Set<Marker> _eventMarkers = {};
+  List<MapEvent>? _lastProcessedEvents;
+
   // Santa Cruz de la Sierra center
   static const CameraPosition _santaCruz = CameraPosition(
     target: LatLng(-17.7833, -63.1821),
@@ -83,6 +87,53 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     if (identical(places, _lastProcessedPlaces)) return;
     _lastProcessedPlaces = places;
     _generateCustomMarkers(places);
+  }
+
+  void _updateEventMarkersIfNeeded(List<MapEvent> events) {
+    if (identical(events, _lastProcessedEvents)) return;
+    _lastProcessedEvents = events;
+    _generateEventMarkers(events);
+  }
+
+  Future<void> _generateEventMarkers(List<MapEvent> events) async {
+    final Set<Marker> newMarkers = {};
+    for (final event in events) {
+      try {
+        final bitmap = await _createEventMarkerBitmap(event);
+        if (!mounted) return;
+        newMarkers.add(
+          Marker(
+            markerId: MarkerId('event-${event.id}'),
+            position: LatLng(event.latitude, event.longitude),
+            icon: bitmap,
+            anchor: const Offset(0.5, 0.36),
+            infoWindow: InfoWindow(
+              title: event.name,
+              snippet: _eventDateLabel(event),
+              onTap: () => _showEventPreview(event),
+            ),
+          ),
+        );
+      } catch (_) {
+        if (!mounted) return;
+        newMarkers.add(
+          Marker(
+            markerId: MarkerId('event-${event.id}'),
+            position: LatLng(event.latitude, event.longitude),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueRose,
+            ),
+            infoWindow: InfoWindow(
+              title: event.name,
+              snippet: _eventDateLabel(event),
+            ),
+          ),
+        );
+      }
+    }
+    if (mounted) {
+      setState(() => _eventMarkers = newMarkers);
+    }
   }
 
   Future<void> _generateCustomMarkers(List<MapPlace> places) async {
@@ -328,6 +379,144 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
   }
 
+  // ── Event marker bitmap (calendar pin + fecha) ────────────────────────────
+  Future<BitmapDescriptor> _createEventMarkerBitmap(MapEvent event) async {
+    const double canvasWidth = 200.0;
+    const double canvasHeight = 110.0;
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+
+    const Offset circleCenter = Offset(100.0, 38.0);
+    const double radius = 22.0;
+    const Color eventColor = Color(0xFFEC4899);
+
+    final Paint shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.18)
+      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5.0);
+    canvas.drawCircle(circleCenter.translate(0, 3), radius, shadowPaint);
+
+    final Paint fillPaint = Paint()..color = eventColor;
+    canvas.drawCircle(circleCenter, radius, fillPaint);
+
+    final Paint borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawCircle(circleCenter, radius, borderPaint);
+
+    const IconData iconData = Icons.event_rounded;
+    final TextPainter iconPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(iconData.codePoint),
+        style: TextStyle(
+          fontSize: 22.0,
+          fontFamily: iconData.fontFamily,
+          package: iconData.fontPackage,
+          color: Colors.white,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    iconPainter.layout();
+    iconPainter.paint(
+      canvas,
+      Offset(
+        circleCenter.dx - iconPainter.width / 2,
+        circleCenter.dy - iconPainter.height / 2,
+      ),
+    );
+
+    final TextPainter labelPainter = TextPainter(
+      text: TextSpan(
+        text: _eventDayLabel(event),
+        style: const TextStyle(
+          fontSize: 12.0,
+          fontWeight: FontWeight.w800,
+          color: _brandDark,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    labelPainter.layout();
+
+    final double labelWidth = labelPainter.width + 16.0;
+    const double labelHeight = 22.0;
+    const Offset labelCenter = Offset(100.0, 76.0);
+    final Rect labelRect = Rect.fromCenter(
+      center: labelCenter,
+      width: labelWidth,
+      height: labelHeight,
+    );
+    final RRect labelRRect = RRect.fromRectAndRadius(
+      labelRect,
+      const Radius.circular(11.0),
+    );
+
+    final Paint labelShadow = Paint()
+      ..color = Colors.black.withValues(alpha: 0.14)
+      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 4.0);
+    canvas.drawRRect(labelRRect.shift(const Offset(0, 2)), labelShadow);
+
+    final Paint labelFill = Paint()..color = Colors.white;
+    canvas.drawRRect(labelRRect, labelFill);
+
+    final Paint labelBorder = Paint()
+      ..color = const Color(0xFFE2E8F0)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawRRect(labelRRect, labelBorder);
+
+    labelPainter.paint(
+      canvas,
+      Offset(
+        labelCenter.dx - labelPainter.width / 2,
+        labelCenter.dy - labelPainter.height / 2,
+      ),
+    );
+
+    final ui.Image image = await recorder.endRecording().toImage(
+      canvasWidth.toInt(),
+      canvasHeight.toInt(),
+    );
+    final ByteData? byteData = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    return BitmapDescriptor.bytes(byteData!.buffer.asUint8List());
+  }
+
+  String _eventDateLabel(MapEvent event) {
+    final start = event.dateStart;
+    final location = event.location;
+    final where = location != null && location.isNotEmpty ? location : 'Evento';
+    if (start == null) return where;
+    final time =
+        '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
+    return '$where • ${_eventDayLabel(event)} • $time';
+  }
+
+  String _eventDayLabel(MapEvent event) {
+    final start = event.dateStart;
+    if (start == null) return 'Evento';
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final date = DateTime(start.year, start.month, start.day);
+    if (date == today) return 'HOY';
+    const months = [
+      'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+      'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+    ];
+    return '${start.day} ${months[start.month - 1]}';
+  }
+
+  void _showEventPreview(MapEvent event) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EventPreviewSheet(event: event, dateLabel: _eventDateLabel(event)),
+    );
+  }
+
   // ── Map actions ───────────────────────────────────────────────────────────
   void _loadMarkersForCurrentView() async {
     if (_lastBounds == null) return;
@@ -440,6 +629,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     // Trigger reactive generation of custom markers whenever places update
     _updateCustomMarkersIfNeeded(mapState.places);
+    _updateEventMarkersIfNeeded(mapState.events);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -449,8 +639,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           GoogleMap(
             initialCameraPosition: _santaCruz,
             markers: _customMarkers.isNotEmpty
-                ? _customMarkers
+                ? {..._customMarkers, ..._eventMarkers}
                 : mapState.markers,
+            circles: mapState.safetyCircles,
             myLocationEnabled: true,
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
@@ -662,6 +853,41 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
             ),
 
+          // ── Safety zones legend ─────────────────────────────────────────
+          if (mapState.safetyZones.isNotEmpty)
+            Positioned(
+              bottom: 140,
+              left: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: _borderSubtle),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.07),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _RiskLegendDot(color: Color(0xFF10B981), label: 'Bajo'),
+                    SizedBox(width: 10),
+                    _RiskLegendDot(color: Color(0xFFF59E0B), label: 'Medio'),
+                    SizedBox(width: 10),
+                    _RiskLegendDot(color: Color(0xFFEF4444), label: 'Alto'),
+                  ],
+                ),
+              ),
+            ),
+
           // ── Place count badge ────────────────────────────────────────────
           if (mapState.status == MapStatus.loaded)
             Positioned(
@@ -826,6 +1052,157 @@ class _MapControlButton extends StatelessWidget {
             ],
           ),
           child: Icon(icon, size: 20, color: _brandDark),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Safety legend dot (riesgo bajo/medio/alto)
+// ─────────────────────────────────────────────────────────────────────────────
+class _RiskLegendDot extends StatelessWidget {
+  const _RiskLegendDot({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _brandDark),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Event preview bottom sheet
+// ─────────────────────────────────────────────────────────────────────────────
+class _EventPreviewSheet extends StatelessWidget {
+  const _EventPreviewSheet({required this.event, required this.dateLabel});
+
+  final MapEvent event;
+  final String dateLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: _borderSubtle,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEC4899).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.event_rounded,
+                    color: Color(0xFFEC4899),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        event.name,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: _brandDark,
+                        ),
+                      ),
+                      if (event.category != null && event.category!.isNotEmpty)
+                        Text(
+                          event.category!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _textSecondary,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(
+                  Icons.calendar_month_rounded,
+                  size: 16,
+                  color: _textSecondary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    dateLabel,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: _brandDark,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (event.location != null && event.location!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.place_rounded,
+                    size: 16,
+                    color: _textSecondary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      event.location!,
+                      style: const TextStyle(fontSize: 13, color: _brandDark),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
         ),
       ),
     );
