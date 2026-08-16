@@ -34,6 +34,8 @@ void main() async {
 Future<void> _initStripe() async {
   try {
     Stripe.publishableKey = ApiConstants.stripePublishableKey;
+    Stripe.urlScheme = 'boliviaexperience';
+    Stripe.setReturnUrlSchemeOnAndroid = true;
     await Stripe.instance.applySettings();
   } catch (e) {
     debugPrint('Stripe no inicializado: $e');

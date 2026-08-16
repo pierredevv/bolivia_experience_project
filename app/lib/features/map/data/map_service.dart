@@ -44,6 +44,7 @@ class MapPlace {
         'id': json['category_id'] ?? '',
         'name': json['category_name'],
         'icon': json['category_icon'] ?? 'place',
+        'slug': json['category_slug'] ?? '',
       };
     }
     return null;
@@ -88,8 +89,8 @@ class MapPlace {
   String? get categorySlug => category?['slug'];
   bool get isUrban => categorySlug == 'restaurantes' ||
       categorySlug == 'hoteles' ||
-      categorySlug == 'vida-nocturna' ||
-      categorySlug == 'compras';
+      categorySlug == 'bares' ||
+      categorySlug == 'centros-comerciales';
 }
 
 class MapSafetyZone {

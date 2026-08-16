@@ -1,3 +1,5 @@
+import '../../../core/currency/currency.dart';
+
 /// Tramo de precio por tamaño de grupo (definido por el socio).
 class PriceTramo {
   final int min;
@@ -114,21 +116,20 @@ class Tour {
     return pricePerAdult ?? price;
   }
 
-  /// Rango de precio legible según los tramos, ej. "Bs 320 - 400 por persona".
+  /// Rango de precio legible según los tramos, ej. "US$ 320 - 400 por persona".
   String? priceRangeText() {
     if (tramosPrecio.isEmpty) {
       final p = pricePerAdult ?? price;
       if (p <= 0) return null;
-      return '${currency == 'USD' ? 'US\$' : 'Bs'} ${p.toStringAsFixed(0)} por persona';
+      return '${formatPrice(p)} por persona';
     }
     final ordered = [...tramosPrecio]..sort((a, b) => a.precio.compareTo(b.precio));
     final minP = ordered.first.precio;
     final maxP = ordered.last.precio;
-    final prefix = currency == 'USD' ? 'US\$' : 'Bs';
     if (minP == maxP) {
-      return '$prefix ${minP.toStringAsFixed(0)} por persona';
+      return '${formatPrice(minP)} por persona';
     }
-    return '$prefix ${minP.toStringAsFixed(0)} - ${maxP.toStringAsFixed(0)} por persona';
+    return '${formatPriceRange(minP, maxP)} por persona';
   }
 }
 

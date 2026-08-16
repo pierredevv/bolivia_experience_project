@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/colors.dart';
+import '../../../../core/currency/currency.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/hotel.dart';
 import '../../data/hotel_catalogs.dart';
@@ -184,7 +185,7 @@ class HotelCard extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'Bs ${hotel.minPrice.round()}',
+                        formatPrice(hotel.minPrice.round()),
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,

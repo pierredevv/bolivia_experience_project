@@ -14,6 +14,7 @@ export interface NearbyPlace {
   rating_count: number;
   category_name: string;
   category_icon: string;
+  category_slug: string;
   primary_photo: string | null;
   distance_meters: number;
   can_reserve: boolean;
@@ -102,7 +103,7 @@ export class GeoRepository {
     const places = await this.prisma.place.findMany({
       where,
       include: {
-        category: { select: { name: true, icon: true } },
+        category: { select: { name: true, icon: true, slug: true } },
         photos: { take: 1, orderBy: { displayOrder: "asc" } },
         _count: {
           select: {
@@ -127,6 +128,7 @@ export class GeoRepository {
         rating_count: place.ratingCount,
         category_name: place.category?.name || "",
         category_icon: place.category?.icon || "",
+        category_slug: place.category?.slug || "",
         primary_photo: place.photos[0]?.url || null,
         distance_meters: this.calculateDistance(
           latitude,
@@ -165,6 +167,7 @@ export class GeoRepository {
         p.rating_count,
         c.name as category_name,
         c.icon as category_icon,
+        c.slug as category_slug,
         (
           SELECT url FROM place_photos 
           WHERE place_id = p.id 
@@ -347,7 +350,7 @@ export class GeoRepository {
     const places = await this.prisma.place.findMany({
       where,
       include: {
-        category: { select: { name: true, icon: true } },
+        category: { select: { name: true, icon: true, slug: true } },
         photos: { take: 1, orderBy: { displayOrder: "asc" } },
         _count: {
           select: {
@@ -373,6 +376,7 @@ export class GeoRepository {
       rating_count: place.ratingCount,
       category_name: place.category?.name || "",
       category_icon: place.category?.icon || "",
+      category_slug: place.category?.slug || "",
       primary_photo: place.photos[0]?.url || null,
       distance_meters: 0,
       can_reserve: (place._count?.products ?? 0) > 0,
@@ -401,6 +405,7 @@ export class GeoRepository {
         p.rating_count,
         c.name as category_name,
         c.icon as category_icon,
+        c.slug as category_slug,
         (
           SELECT url FROM place_photos 
           WHERE place_id = p.id 

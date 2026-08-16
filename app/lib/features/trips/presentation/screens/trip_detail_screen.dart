@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
+import '../../../../core/currency/currency.dart';
 import '../providers/trips_provider.dart';
 import '../widgets/trip_day_card.dart';
 
@@ -672,12 +673,18 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
   }
 
   String _budgetSummary(dynamic min, dynamic max) {
-    if (min != null && max != null) {
-      return 'Bs. $min - $max';
-    } else if (min != null) {
-      return 'Desde Bs. $min';
-    } else if (max != null) {
-      return 'Hasta Bs. $max';
+    final num? minNum = min is num
+        ? min
+        : (min != null ? num.tryParse(min.toString()) : null);
+    final num? maxNum = max is num
+        ? max
+        : (max != null ? num.tryParse(max.toString()) : null);
+    if (minNum != null && maxNum != null) {
+      return formatPriceRange(minNum.round(), maxNum.round());
+    } else if (minNum != null) {
+      return 'Desde ${formatPrice(minNum.round())}';
+    } else if (maxNum != null) {
+      return 'Hasta ${formatPrice(maxNum.round())}';
     }
     return '';
   }

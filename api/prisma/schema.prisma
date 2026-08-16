@@ -671,6 +671,7 @@ model Payment {
   idempotencyKey  String   @unique @map("idempotency_key")
   providerTransactionId String? @unique @map("provider_transaction_id")
   paymentIntentClientSecret String? @map("payment_intent_client_secret")
+  payUrl        String?   @map("pay_url")
   paymentMethodType String?  @map("payment_method_type")
   // Tasa BOB/USD fijada al momento de la transacción (reservado; 1.0 por ahora)
   exchangeRateSnapshot Decimal? @map("exchange_rate_snapshot")

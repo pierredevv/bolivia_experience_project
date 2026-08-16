@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../../../../config/colors.dart';
 import '../../../../config/router.dart';
+import '../../../../core/currency/currency.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -16,6 +17,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late bool _sound;
   late bool _location;
   late String _language;
+  late String _currency;
 
   @override
   void initState() {
@@ -25,6 +27,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _sound = box.get('sound', defaultValue: true) as bool;
     _location = box.get('location', defaultValue: true) as bool;
     _language = box.get('language', defaultValue: 'Español') as String;
+    _currency = effectiveCurrencyCode();
+  }
+
+  void _selectCurrency(String code) {
+    if (code == 'BOB') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No disponible por el momento debido a la fluctuación de la moneda',
+          ),
+        ),
+      );
+      return;
+    }
+    if (code == _currency) return;
+    setState(() => _currency = code);
+    Hive.box('settings').put(kCurrencyPreferenceKey, code);
   }
 
   void _showLanguagePicker() {
@@ -159,6 +178,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const Divider(),
 
+          // Currency
+          const _SectionHeader(title: 'Moneda'),
+          for (final c in supportedCurrencies)
+            _CurrencyTile(
+              currency: c,
+              selected: c.code == _currency,
+              onTap: c.comingSoon
+                  ? null
+                  : () => _selectCurrency(c.code),
+            ),
+
+          const Divider(),
+
           // Language
           const _SectionHeader(title: 'Idioma'),
           ListTile(
@@ -223,5 +255,67 @@ class _SectionHeader extends StatelessWidget {
             ),
       ),
     );
+  }
+}
+
+class _CurrencyTile extends StatelessWidget {
+  final SupportedCurrency currency;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  const _CurrencyTile({
+    required this.currency,
+    required this.selected,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final content = ListTile(
+      enabled: onTap != null,
+      leading: Opacity(
+        opacity: onTap == null ? 0.5 : 1,
+        child: Text(
+          currencySymbol(currency.code),
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.brandDark,
+          ),
+        ),
+      ),
+      title: Text(
+        currency.label,
+        style: TextStyle(
+          color: onTap == null ? AppColors.textSecondary : null,
+        ),
+      ),
+      trailing: selected
+          ? const Icon(Icons.check_circle_rounded, color: AppColors.brandEmerald)
+          : (currency.comingSoon
+              ? Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.textSecondary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    'Próximamente',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                )
+              : null),
+      onTap: onTap,
+    );
+
+    if (onTap == null) {
+      return Opacity(opacity: 0.55, child: content);
+    }
+    return content;
   }
 }

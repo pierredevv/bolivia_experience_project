@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../config/colors.dart';
+import '../../../../core/currency/currency.dart';
 
 /// Card de un item de "Experiencias imprescindibles". Mismo patrón vertical
 /// que las cards de las demás secciones (ExperienceCard/PlaceCard): foto arriba
@@ -204,10 +205,7 @@ class EssentialCard extends StatelessWidget {
     final price = item['pricePerAdult'];
     final fallbackPrice = item['price'];
     final p = (price is num ? price : fallbackPrice);
-    final currency = item['currency']?.toString() ?? 'BOB';
-    final priceStr = (p is num && p > 0)
-        ? '${currency == 'USD' ? 'US\$' : 'Bs'} ${p.toInt()}'
-        : null;
+    final priceStr = (p is num && p > 0) ? formatPrice(p.toInt()) : null;
     final cat = (experienceCategory != null && experienceCategory.isNotEmpty)
         ? experienceCategory
         : 'Experiencia';

@@ -275,6 +275,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             qrData: extra['qrData']?.toString(),
             provider: extra['provider']?.toString(),
             clientSecret: extra['clientSecret']?.toString(),
+            payUrl: extra['payUrl']?.toString(),
             expiresAt: DateTime.tryParse(extra['expiresAt']?.toString() ?? ''),
           );
         },

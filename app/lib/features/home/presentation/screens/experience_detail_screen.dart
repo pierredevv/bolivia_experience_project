@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/experience_detail.dart';
 import '../../data/home_experience.dart';
 import '../providers/experience_detail_provider.dart';
+import '../../../../core/currency/currency.dart';
 
 // ── Brand tokens ─────────────────────────────────────────────────────────────
 const _brandDark = Color(0xFF0F172A);
@@ -268,9 +269,7 @@ class _ExperienceDetailScreenState
   Widget _buildDetail(BuildContext context, ExperienceDetail detail) {
     final photoUrl = detail.photoUrl;
     final price = detail.displayPrice;
-    final priceStr = price > 0
-        ? '${detail.currency == 'USD' ? 'US\$' : 'Bs'} ${price.toStringAsFixed(0)}'
-        : 'Gratis';
+    final priceStr = price > 0 ? formatPrice(price) : 'Gratis';
     final badge = detail.recommended
         ? (detail.recommendedReason ?? 'Recomendado')
         : null;

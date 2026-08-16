@@ -1,3 +1,5 @@
+import '../../../core/currency/currency.dart';
+
 /// Mapea el nivel de precio de un lugar (1..4) a un monto base por persona
 /// en BOB para la reserva con pago QR demo.
 double estimatePricePerPerson(int? priceLevel) {
@@ -15,6 +17,11 @@ double estimatePricePerPerson(int? priceLevel) {
   }
 }
 
-String formatCurrency(double amount, {String currency = 'BOB'}) {
-  return '$currency ${amount.toStringAsFixed(amount == amount.roundToDouble() ? 0 : 2)}';
+/// Formatea un monto con la moneda efectiva del usuario. Si se pasa una
+/// moneda explícita (ej. la del pago), respeta esa; si no, usa la preferencia
+/// (hoy siempre USD).
+String formatCurrency(double amount, {String? currency}) {
+  final code = currency ?? effectiveCurrencyCode();
+  final symbol = currencySymbol(code);
+  return '$symbol ${amount.toStringAsFixed(amount == amount.roundToDouble() ? 0 : 2)}';
 }

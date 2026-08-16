@@ -133,6 +133,7 @@ class _ReservationsTab extends StatelessWidget {
       'qrData': payment?['qrData']?.toString(),
       'provider': payment?['provider']?.toString(),
       'clientSecret': payment?['paymentIntentClientSecret']?.toString(),
+      'payUrl': payment?['payUrl']?.toString(),
       'expiresAt': r.responseDeadline?.toIso8601String(),
     });
   }

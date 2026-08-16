@@ -29,7 +29,19 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Deep link de retorno para el flujo de pago Stripe (3DS/redirect) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="boliviaexperience"/>
+            </intent-filter>
         </activity>
+        <!-- Actividad de pago de Stripe (PaymentSheet / redirect de métodos de pago) -->
+        <activity
+            android:name="com.stripe.android.stripe.StripeActivity"
+            android:exported="true"
+            android:theme="@style/StripeDefaultTheme"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

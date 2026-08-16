@@ -297,7 +297,7 @@ describe("PaymentsService", () => {
   });
 
   describe("createPayment - idempotencia por proveedor (C.4)", () => {
-    it("cancela el pago anterior y crea uno nuevo si cambia de proveedor", async () => {
+    it("reutiliza el registro existente (sin duplicar por reservationId) si cambia de proveedor", async () => {
       mockPrisma.reservation.findUnique.mockResolvedValue({
         id: "res-1",
         userId: "user-1",
@@ -312,10 +312,6 @@ describe("PaymentsService", () => {
       });
       mockPrisma.payment.update.mockResolvedValue({
         id: "PAY-STRIPE",
-        status: "cancelled",
-      });
-      mockPrisma.payment.create.mockResolvedValue({
-        id: "PAY-PAYPAL",
         userId: "user-1",
         amount: 21.55,
         currency: "USD",
@@ -335,15 +331,11 @@ describe("PaymentsService", () => {
       expect(mockPrisma.payment.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: "PAY-STRIPE" },
-          data: { status: "cancelled" },
-        }),
-      );
-      expect(mockPrisma.payment.create).toHaveBeenCalledWith(
-        expect.objectContaining({
           data: expect.objectContaining({ provider: "paypal" }),
         }),
       );
-      expect(result.paymentId).toBe("PAY-PAYPAL");
+      expect(mockPrisma.payment.create).not.toHaveBeenCalled();
+      expect(result.paymentId).toBe("PAY-STRIPE");
     });
 
     it("devuelve el pago existente sin duplicar si es del mismo proveedor", async () => {

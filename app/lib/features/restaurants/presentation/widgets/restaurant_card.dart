@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/colors.dart';
+import '../../../../core/currency/currency.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../hotels/data/hotel_distance.dart';
 import '../../data/restaurant.dart';
@@ -253,7 +254,7 @@ class RestaurantCard extends ConsumerWidget {
                       Text(
                         restaurant.priceFrom.round() <= 0
                             ? ''
-                            : 'Bs ${restaurant.priceFrom.round()}',
+                            : formatPrice(restaurant.priceFrom.round()),
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,

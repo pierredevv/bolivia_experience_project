@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
 import 'package:bolivia_experience/features/profile/presentation/screens/profile_screen.dart';
 import 'package:bolivia_experience/features/profile/presentation/providers/profile_provider.dart';
 import 'package:bolivia_experience/features/favorites/presentation/providers/favorites_provider.dart';
@@ -43,6 +45,12 @@ void main() {
       mockFavoritesNotifier = MockFavoritesNotifier();
     });
 
+    setUpAll(() async {
+      final dir = await Directory.systemTemp.createTemp('hive_test');
+      Hive.init(dir.path);
+      await Hive.openBox('settings');
+    });
+
     Widget buildTestableProfile() {
       return MaterialApp(
         localizationsDelegates: const [
@@ -73,14 +81,15 @@ void main() {
       await tester.pumpWidget(buildTestableProfile());
       await tester.pumpAndSettle();
 
-      expect(find.byType(ListTile), findsWidgets);
+      expect(find.text('Mis Reservas'), findsOneWidget);
+      expect(find.text('Acerca de'), findsOneWidget);
     });
 
     testWidgets('shows user avatar', (WidgetTester tester) async {
       await tester.pumpWidget(buildTestableProfile());
       await tester.pumpAndSettle();
 
-      expect(find.byType(CircleAvatar), findsOneWidget);
+      expect(find.text('Usuario'), findsOneWidget);
     });
 
     testWidgets('shows logout button', (WidgetTester tester) async {

@@ -217,7 +217,7 @@ class PlaceDetailScreen extends ConsumerWidget {
                       }),
                       icon: const Icon(Icons.event_available_outlined, size: 20),
                       label: const Text(
-                        'Reservar con pago QR',
+                        'Reservar',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                       ),
                       style: FilledButton.styleFrom(

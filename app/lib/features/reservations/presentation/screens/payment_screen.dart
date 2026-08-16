@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -20,6 +21,7 @@ class PaymentScreen extends ConsumerStatefulWidget {
   final String? qrData;
   final String? provider;
   final String? clientSecret;
+  final String? payUrl;
   final DateTime? expiresAt;
 
   const PaymentScreen({
@@ -34,6 +36,7 @@ class PaymentScreen extends ConsumerStatefulWidget {
     this.qrData,
     this.provider,
     this.clientSecret,
+    this.payUrl,
     this.expiresAt,
   });
 
@@ -66,7 +69,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     _provider = widget.provider;
     _qrData = widget.qrData;
     _clientSecret = widget.clientSecret;
-    _payUrl = null;
+    _payUrl = widget.payUrl;
     _initCountdown();
     _startPolling();
   }
@@ -117,15 +120,27 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     if (_paymentId.isEmpty) return;
     try {
       final service = ref.read(reservationsServiceProvider);
-      await service.confirmPayment(_paymentId);
+      final result = await service.confirmPayment(_paymentId);
       if (!mounted) return;
-      _pollTimer?.cancel();
-      setState(() => _phase = _PaymentPhase.completed);
-      ref.read(reservationsProvider.notifier).loadAll();
+      final status = result['status']?.toString() ?? 'pending';
+      if (_paidStatuses.contains(status)) {
+        _pollTimer?.cancel();
+        setState(() => _phase = _PaymentPhase.completed);
+        ref.read(reservationsProvider.notifier).loadAll();
+      } else {
+        // El proveedor aún no confirma el cargo (p.ej. 3DS pendiente o la sheet
+        // se cerró sin completar). El polling lo detectará automáticamente.
+        setState(() {
+          _phase = _PaymentPhase.awaiting;
+          _error = null;
+        });
+        _startPolling();
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'No se pudo confirmar el pago. Revisá la conexión e intentá de nuevo.';
+        _phase = _PaymentPhase.error;
+        _error = 'No se pudo confirmar el pago: ${_httpErrorMessage(e)}';
       });
     }
   }
@@ -142,6 +157,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: _clientSecret!,
           merchantDisplayName: 'BoliviaExperience',
+          returnURL: 'boliviaexperience://stripe',
         ),
       );
       await Stripe.instance.presentPaymentSheet();
@@ -150,11 +166,57 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       await _markPaid();
     } catch (e) {
       if (!mounted) return;
+      debugPrint('[Stripe] _payWithStripe error: ${e.runtimeType}: $e');
+      if (_isSheetCanceledOrTimeout(e)) {
+        // El usuario cerró la sheet sin completar el pago: volver al estado de
+        // espera sin alarmar. El polling seguirá detectando la confirmación.
+        setState(() {
+          _phase = _PaymentPhase.awaiting;
+          _error = null;
+        });
+        return;
+      }
       setState(() {
+        _phase = _PaymentPhase.error;
         _error =
-            'No se pudo completar el pago. Si ya pagaste, esperá la confirmación.';
+            'No se pudo completar el pago. Si ya pagaste, esperá la confirmación.\n\n'
+            'Detalle: ${_stripeErrorDetail(e)}';
       });
     }
+  }
+
+  bool _isSheetCanceledOrTimeout(Object e) {
+    if (e is StripeException) {
+      return e.error.code == FailureCode.Canceled ||
+          e.error.code == FailureCode.Timeout;
+    }
+    return false;
+  }
+
+  String _stripeErrorDetail(Object e) {
+    if (e is StripeException) {
+      final detail = e.error.localizedMessage ?? e.error.message;
+      final code = e.error.stripeErrorCode;
+      final suffix = (code != null && code.isNotEmpty) ? ' ($code)' : '';
+      if (detail != null && detail.isNotEmpty) {
+        return '$detail$suffix';
+      }
+      return 'StripeException code=${e.error.code} sin mensaje';
+    }
+    // Cualquier otra excepción (PlatformException del SDK, etc.): mostrarla tal
+    // cual para poder diagnosticar sin adivinar.
+    return '${e.runtimeType}: $e';
+  }
+
+  String _httpErrorMessage(Object e) {
+    if (e is DioException) {
+      final data = e.response?.data;
+      if (data is Map && data['message'] != null) {
+        return data['message'].toString();
+      }
+      return e.message ?? 'Error de conexión';
+    }
+    return e.toString();
   }
 
   Future<void> _payWithPayPal() async {
@@ -178,7 +240,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       final service = ref.read(reservationsServiceProvider);
       final result = await service.createPayment(
         amount: widget.amount,
-        currency: 'BOB',
+        currency: 'USD',
         description: 'Reserva en ${widget.placeName}',
         type: 'reservation',
         referenceId: widget.reservationId,
@@ -200,8 +262,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       if (!mounted) return;
       setState(() => _recreating = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo cambiar el método de pago. Intentá de nuevo.'),
+        SnackBar(
+          content: Text('No se pudo cambiar el método de pago: ${_httpErrorMessage(e)}'),
         ),
       );
     }
@@ -231,29 +293,33 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   Widget _buildBody() {
     switch (_phase) {
       case _PaymentPhase.error:
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error_outline, size: 56, color: AppColors.error500),
-                const SizedBox(height: 16),
-                Text(_error ?? 'Error', textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _phase = _PaymentPhase.awaiting;
-                      _error = null;
-                    });
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 56, color: AppColors.error500),
+              const SizedBox(height: 16),
+              Text(_error ?? 'Error', textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _phase = _PaymentPhase.awaiting;
+                    _error = null;
+                  });
+                  if (_isStripe) {
+                    _payWithStripe();
+                  } else if (_isPayPal) {
+                    _payWithPayPal();
+                  } else {
                     _startPolling();
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.brandDark, foregroundColor: Colors.white),
-                  child: const Text('Reintentar'),
-                ),
-              ],
-            ),
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.brandDark, foregroundColor: Colors.white),
+                child: const Text('Reintentar'),
+              ),
+            ],
           ),
         );
       case _PaymentPhase.completed:

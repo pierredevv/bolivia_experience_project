@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../config/colors.dart';
+import '../../../../core/currency/currency.dart';
 import '../../../home/data/home_experience.dart';
 
 /// Card de experiencia (mismo diseño que la del home): imagen 130px con score,
@@ -16,9 +17,7 @@ class ExperienceCard extends StatelessWidget {
     final photoUrl = experience.photoUrl;
     final ratingStr = experience.ratingAvg.toStringAsFixed(1);
     final price = experience.pricePerAdult ?? experience.price;
-    final priceStr = price > 0
-        ? '${experience.currency == 'USD' ? 'US\$' : 'Bs'} ${price.toStringAsFixed(0)}'
-        : null;
+    final priceStr = price > 0 ? formatPrice(price) : null;
     final badge = experience.verified
         ? 'Verificado'
         : (experience.recommended ? 'Recomendado' : null);

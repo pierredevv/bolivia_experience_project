@@ -112,11 +112,13 @@ class ApiConstants {
   static String confirmPayment(String id) => '/payments/$id/confirm';
 
   // Stripe (Fase B)
-  // Clave pública (no secreta) de Stripe. Se inyecta en build con:
+  // Clave pública (no secreta) de Stripe. Default = clave de prueba del entorno
+  // (pública por definición). Se puede sobreescribir en build con:
   //   --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_...
   static const stripePublishableKey = String.fromEnvironment(
     'STRIPE_PUBLISHABLE_KEY',
-    defaultValue: 'pk_test_PLACEHOLDER',
+    defaultValue:
+        'pk_test_51U4lvsGcoyR410ye0gte8iOir4V22I9PZ3ryzafkZMB2epx7rxAYEZwRXXFtNjUdTsll4XRXbPBFA6z5qyHdXspe00jhJhOja5',
   );
 
   // Traveler Photos

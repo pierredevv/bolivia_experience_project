@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/colors.dart';
+import '../../../../core/currency/currency.dart';
 import '../providers/hotels_provider.dart';
 
 /// Rango de precio por noche. El máximo es dinámico:
@@ -56,7 +57,7 @@ class _HotelPriceSheetState extends ConsumerState<HotelPriceSheet> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Bs 0 – ${_value.round()}',
+            '${currencySymbol(effectiveCurrencyCode())} 0 – ${_value.round()}',
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -75,9 +76,9 @@ class _HotelPriceSheetState extends ConsumerState<HotelPriceSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Bs 0',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-              Text('Bs ${_max.round()}',
+              Text('${currencySymbol(effectiveCurrencyCode())} 0',
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              Text('${currencySymbol(effectiveCurrencyCode())} ${_max.round()}',
                   style: const TextStyle(
                       fontSize: 12, color: AppColors.textSecondary)),
             ],

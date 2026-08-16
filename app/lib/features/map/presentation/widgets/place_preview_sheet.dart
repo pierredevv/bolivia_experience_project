@@ -302,7 +302,7 @@ class PlacePreviewSheet extends StatelessWidget {
                         });
                       },
                       icon: const Icon(Icons.event_available_rounded, size: 18),
-                      label: const Text('Reservar con pago QR'),
+                      label: const Text('Reservar'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF10B981),
                         foregroundColor: Colors.white,

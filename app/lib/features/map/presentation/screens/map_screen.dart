@@ -22,7 +22,7 @@ const _quickFilters = [
   _QuickFilter(label: 'Todos', slug: null),
   _QuickFilter(label: 'Restaurantes', slug: 'restaurantes'),
   _QuickFilter(label: 'Hoteles', slug: 'hoteles'),
-  _QuickFilter(label: 'Cultura', slug: 'cultura'),
+  _QuickFilter(label: 'Cultura', slug: 'museos'),
   _QuickFilter(label: 'Parques', slug: 'parques'),
 ];
 
@@ -204,7 +204,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     canvas.drawCircle(circleCenter, radius, borderPaint);
 
     // 3. Category icon inside circle
-    final IconData iconData = _getCategoryIconData(place.categorySlug);
+    final String? slug = place.categorySlug;
+    final IconData iconData = (slug != null && slug.isNotEmpty)
+        ? _getCategoryIconData(slug)
+        : _getCategoryIconFromString(place.category?['icon'] as String?);
     final TextPainter iconPainter = TextPainter(
       text: TextSpan(
         text: String.fromCharCode(iconData.codePoint),
@@ -364,16 +367,49 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         return Icons.hotel_rounded;
       case 'cafeterias':
         return Icons.local_cafe_rounded;
-      case 'naturaleza':
+      case 'atracciones':
         return Icons.landscape_rounded;
       case 'parques':
         return Icons.park_rounded;
-      case 'compras':
+      case 'centros-comerciales':
         return Icons.shopping_bag_rounded;
-      case 'vida-nocturna':
+      case 'bares':
         return Icons.nightlife_rounded;
-      case 'cultura':
+      case 'museos':
         return Icons.museum_rounded;
+      case 'deportes':
+        return Icons.sports_soccer_rounded;
+      case 'gastronomia':
+        return Icons.restaurant_menu_rounded;
+      default:
+        return Icons.place_rounded;
+    }
+  }
+
+  // Mapea el string de ícono enviado por el backend (campo category_icon)
+  // como fallback cuando el slug no está disponible.
+  IconData _getCategoryIconFromString(String? icon) {
+    switch (icon) {
+      case 'restaurant':
+        return Icons.restaurant_rounded;
+      case 'hotel':
+        return Icons.hotel_rounded;
+      case 'nightlife':
+        return Icons.nightlife_rounded;
+      case 'coffee':
+        return Icons.local_cafe_rounded;
+      case 'landscape':
+        return Icons.landscape_rounded;
+      case 'park':
+        return Icons.park_rounded;
+      case 'museum':
+        return Icons.museum_rounded;
+      case 'shopping_bag':
+        return Icons.shopping_bag_rounded;
+      case 'sports_soccer':
+        return Icons.sports_soccer_rounded;
+      case 'restaurant_menu':
+        return Icons.restaurant_menu_rounded;
       default:
         return Icons.place_rounded;
     }

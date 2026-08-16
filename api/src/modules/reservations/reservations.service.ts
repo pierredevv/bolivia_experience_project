@@ -465,6 +465,7 @@ export class ReservationsService {
             currency: true,
             provider: true,
             paymentIntentClientSecret: true,
+            payUrl: true,
             qrData: true,
           },
           orderBy: { createdAt: "asc" },

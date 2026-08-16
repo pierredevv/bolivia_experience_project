@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../config/colors.dart';
+import '../../../../core/currency/currency.dart';
 import '../../data/hotel_catalogs.dart';
 import '../../data/hotel_filters.dart';
 import '../providers/hotels_provider.dart';
@@ -64,7 +65,7 @@ class HotelsFilterBar extends ConsumerWidget {
           _FilterPill(
             icon: Icons.payments_rounded,
             label: f.maxPrice != null
-                ? 'Hasta Bs ${f.maxPrice!.round()}'
+                ? 'Hasta ${formatPrice(f.maxPrice!.round())}'
                 : 'Precio',
             active: f.maxPrice != null,
             onTap: () => _openPrice(context, ref),

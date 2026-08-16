@@ -84,6 +84,7 @@ export class PaymentsService {
     let subtotal = dto.amount;
     let commissionRate = 0;
     let commissionAmount = 0;
+    let existing: any = null;
 
     if (dto.type === "reservation") {
       const reservation = await this.prisma.reservation.findUnique({
@@ -100,21 +101,17 @@ export class PaymentsService {
       }
 
       // Idempotencia POR PROVEEDOR: devolver el pago activo si es del mismo
-      // proveedor; si cambió de método, cancelar el anterior y crear uno nuevo.
-      const existing = await this.prisma.payment.findFirst({
+      // proveedor; si cambió de método, se REUTILIZA el mismo registro
+      // (la reserva tiene @@unique([reservationId])) actualizando sus datos,
+      // en lugar de cancelar y crear otro que violaría la unicidad.
+      existing = await this.prisma.payment.findFirst({
         where: {
           reservationId: reservation.id,
           status: { in: ["pending", "held", "processing"] },
         },
       });
-      if (existing) {
-        if (existing.provider === providerName) {
-          return this.serializePayment(existing);
-        }
-        await this.prisma.payment.update({
-          where: { id: existing.id },
-          data: { status: "cancelled" },
-        });
+      if (existing && existing.provider === providerName) {
+        return this.serializePayment(existing);
       }
 
       subtotal = Number(reservation.totalAmount ?? dto.amount);
@@ -126,9 +123,10 @@ export class PaymentsService {
     const converted = await this.convertToProviderAmount(subtotal, currency);
     const providerAmount = converted.providerAmount;
 
-    const paymentId = `PAY-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 10)}`;
+    // Si ya existía un pago activo de otro proveedor, se reutiliza su id
+    // para no chocar con la unicidad de reservation_id.
+    const paymentId =
+      existing?.id ?? `PAY-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const amountCents = Math.round(providerAmount * 100);
 
     const intent = await provider.createPaymentIntent({
@@ -143,26 +141,46 @@ export class PaymentsService {
       },
     });
 
+    const paymentData = {
+      type: dto.type,
+      referenceId: dto.referenceId,
+      provider: providerName,
+      amount: providerAmount,
+      currency,
+      description: dto.description,
+      providerTransactionId: intent.providerTransactionId,
+      paymentIntentClientSecret: intent.clientSecret,
+      payUrl: intent.payUrl,
+      paymentMethodType: intent.currency === "BOB" ? "qr" : null,
+      subtotal,
+      commissionRate,
+      commissionAmount,
+      idempotencyKey,
+      exchangeRateSnapshot: converted.exchangeRateSnapshot ?? 1,
+      status: "pending",
+    };
+
+    if (existing) {
+      // Al reutilizar el registro hay que LIMPIAR los campos específicos del
+      // proveedor anterior: Prisma ignora `undefined`, así que se setean a null.
+      const updated = await this.prisma.payment.update({
+        where: { id: existing.id },
+        data: {
+          ...paymentData,
+          paymentIntentClientSecret: intent.clientSecret ?? null,
+          payUrl: intent.payUrl ?? null,
+          qrData: null,
+        },
+      });
+      return this.serializePayment(updated, intent.payUrl);
+    }
+
     const payment = await this.prisma.payment.create({
       data: {
         id: paymentId,
         userId,
         reservationId: dto.type === "reservation" ? dto.referenceId : null,
-        amount: providerAmount,
-        currency,
-        description: dto.description,
-        type: dto.type,
-        referenceId: dto.referenceId,
-        provider: providerName,
-        idempotencyKey,
-        providerTransactionId: intent.providerTransactionId,
-        paymentIntentClientSecret: intent.clientSecret,
-        paymentMethodType: intent.currency === "BOB" ? "qr" : null,
-        subtotal,
-        commissionRate,
-        commissionAmount,
-        status: "pending",
-        exchangeRateSnapshot: converted.exchangeRateSnapshot ?? 1,
+        ...paymentData,
       },
     });
 
@@ -188,6 +206,7 @@ export class PaymentsService {
       currency: payment.currency,
       provider: payment.provider,
       providerTransactionId: payment.providerTransactionId,
+      payUrl: payment.payUrl,
       paidAt: payment.paidAt,
       heldAt: payment.heldAt,
       releasedAt: payment.releasedAt,
