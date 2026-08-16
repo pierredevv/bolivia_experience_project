@@ -56,6 +56,11 @@ export class TripsController {
     return this.tripsService.addDay(tripId, user.id, body);
   }
 
+  @Post(":id/generate")
+  generateItinerary(@Param("id") id: string, @CurrentUser() user: any) {
+    return this.tripsService.generateItinerary(id, user.id);
+  }
+
   @Post(":dayId/items")
   addItem(
     @Param("dayId") dayId: string,

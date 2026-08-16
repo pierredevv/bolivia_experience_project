@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { RecommendationsService } from "./recommendations.service";
 import { PrismaService } from "../../prisma/prisma.service";
+import { PlacesScoringService } from "../places/places-scoring.service";
 
 describe("RecommendationsService", () => {
   let service: RecommendationsService;
@@ -16,6 +17,9 @@ describe("RecommendationsService", () => {
     searchHistory: {
       findMany: jest.fn(),
     },
+    trip: {
+      findFirst: jest.fn(),
+    },
     place: {
       findMany: jest.fn(),
       findUnique: jest.fn(),
@@ -26,6 +30,7 @@ describe("RecommendationsService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RecommendationsService,
+        PlacesScoringService,
         { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
@@ -80,6 +85,56 @@ describe("RecommendationsService", () => {
       const result = await service.getPersonalized("user-1", 5);
 
       expect(result.recommendations).toBeDefined();
+    });
+
+    it("should use the most recent trip preferences and score places", async () => {
+      mockPrisma.favorite.findMany.mockResolvedValue([]);
+      mockPrisma.review.findMany.mockResolvedValue([]);
+      mockPrisma.searchHistory.findMany.mockResolvedValue([]);
+      mockPrisma.trip.findFirst.mockResolvedValue({
+        budgetType: "luxury",
+        tourismType: "urbano",
+      });
+      mockPrisma.place.findMany.mockResolvedValue([
+        {
+          id: "p-urban-luxury",
+          priceLevel: 4,
+          isUrban: true,
+          photos: [],
+          category: { id: "cat-1", name: "Restaurantes", icon: "🍽️" },
+        },
+        {
+          id: "p-rural-cheap",
+          priceLevel: 1,
+          isUrban: false,
+          photos: [],
+          category: { id: "cat-2", name: "Naturaleza", icon: "🌿" },
+        },
+      ]);
+
+      const result = await service.getPersonalized("user-1");
+
+      expect(result.basedOn.preferences.source).toBe("trip");
+      expect(result.basedOn.preferences.budgetType).toBe("luxury");
+      expect(result.recommendations[0].id).toBe("p-urban-luxury");
+      expect(result.recommendations[0].matchScore).toBeGreaterThan(
+        result.recommendations[1].matchScore,
+      );
+    });
+
+    it("should prioritize explicit query preferences over the trip", async () => {
+      mockPrisma.favorite.findMany.mockResolvedValue([]);
+      mockPrisma.review.findMany.mockResolvedValue([]);
+      mockPrisma.searchHistory.findMany.mockResolvedValue([]);
+      mockPrisma.place.findMany.mockResolvedValue([]);
+
+      const result = await service.getPersonalized("user-1", 5, {
+        budgetType: "low_cost",
+        tourismType: "rural",
+      });
+
+      expect(result.basedOn.preferences.source).toBe("query");
+      expect(result.basedOn.preferences.budgetType).toBe("low_cost");
     });
   });
 

@@ -21,6 +21,13 @@ describe("AdminService", () => {
     event: {
       count: jest.fn(),
     },
+    safetyZone: {
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      findUnique: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -188,6 +195,82 @@ describe("AdminService", () => {
       expect(result.stats.totalEvents).toBe(8);
       expect(result.recentReviews).toBeDefined();
       expect(result.recentUsers).toBeDefined();
+    });
+  });
+
+  describe("Safety zones", () => {
+    const zone = {
+      id: "zone-1",
+      name: "Plan 3000",
+      latitude: -17.84,
+      longitude: -63.09,
+      radioKm: 2.5,
+      nivelRiesgo: "alto",
+      description: "Zona periférica",
+      city: "Santa Cruz de la Sierra",
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it("should list safety zones", async () => {
+      mockPrisma.safetyZone.findMany.mockResolvedValue([zone]);
+
+      const result = await service.listSafetyZones();
+
+      expect(result).toEqual([zone]);
+      expect(mockPrisma.safetyZone.findMany).toHaveBeenCalled();
+    });
+
+    it("should create a safety zone", async () => {
+      mockPrisma.safetyZone.create.mockResolvedValue(zone);
+
+      const result = await service.createSafetyZone({
+        name: "Plan 3000",
+        latitude: -17.84,
+        longitude: -63.09,
+        radioKm: 2.5,
+        nivelRiesgo: "alto",
+      });
+
+      expect(result).toEqual(zone);
+      expect(mockPrisma.safetyZone.create).toHaveBeenCalled();
+    });
+
+    it("should update a safety zone", async () => {
+      mockPrisma.safetyZone.findUnique.mockResolvedValue(zone);
+      mockPrisma.safetyZone.update.mockResolvedValue({ ...zone, name: "Plan 3000 Norte" });
+
+      const result = await service.updateSafetyZone("zone-1", { name: "Plan 3000 Norte" });
+
+      expect(result.name).toBe("Plan 3000 Norte");
+      expect(mockPrisma.safetyZone.update).toHaveBeenCalled();
+    });
+
+    it("should throw NotFound when updating a missing zone", async () => {
+      mockPrisma.safetyZone.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.updateSafetyZone("missing", { name: "X" }),
+      ).rejects.toThrow("Safety zone not found");
+    });
+
+    it("should delete a safety zone", async () => {
+      mockPrisma.safetyZone.findUnique.mockResolvedValue(zone);
+      mockPrisma.safetyZone.delete.mockResolvedValue(zone);
+
+      const result = await service.removeSafetyZone("zone-1");
+
+      expect(result).toEqual(zone);
+      expect(mockPrisma.safetyZone.delete).toHaveBeenCalledWith({ where: { id: "zone-1" } });
+    });
+
+    it("should throw NotFound when deleting a missing zone", async () => {
+      mockPrisma.safetyZone.findUnique.mockResolvedValue(null);
+
+      await expect(service.removeSafetyZone("missing")).rejects.toThrow(
+        "Safety zone not found",
+      );
     });
   });
 });

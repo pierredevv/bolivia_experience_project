@@ -5,9 +5,12 @@ import {
   ForbiddenException,
 } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { PlatformConfigService } from "../platform-config/platform-config.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { GamificationService } from "../gamification/gamification.service";
+import { PaymentProviderRegistry } from "../payments/providers/payment-provider-registry.service";
 import { CreateReservationDto } from "./dto";
 
 type Tx = any;
@@ -18,6 +21,8 @@ export class ReservationsService {
     private prisma: PrismaService,
     private config: PlatformConfigService,
     private notifications: NotificationsService,
+    private gamification: GamificationService,
+    private paymentRegistry: PaymentProviderRegistry,
   ) {}
 
   // Expira automáticamente solicitudes sin responder y pagos no completados.
@@ -65,8 +70,8 @@ export class ReservationsService {
 
   // Libera el pago retenido y crea la liquidación al socio.
   private async releaseAndSettle(tx: Tx, reservation: any, payment: any) {
-    const gross = payment.subtotal || payment.amount;
-    const commission = payment.commissionAmount ?? 0;
+    const gross = Number(payment.subtotal || payment.amount);
+    const commission = Number(payment.commissionAmount ?? 0);
     const net = Math.round((gross - commission) * 100) / 100;
     const product = await tx.product.findUnique({
       where: { id: reservation.productId! },
@@ -132,6 +137,63 @@ export class ReservationsService {
     return dt;
   }
 
+  private isSqlite(): boolean {
+    return (process.env.DATABASE_URL ?? "").startsWith("file:");
+  }
+
+  // Ejecuta el callback dentro de una transacción atómica para el chequeo de cupo.
+  // Postgres: isolation Serializable + retry en P2034 (serialization failure) para
+  // eliminar la race condition read-then-write del conteo de reservas.
+  // SQLite: serializa escrituras a nivel de archivo, la transacción interactiva basta.
+  private async withAtomicTx<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+    if (this.isSqlite()) {
+      return this.prisma.$transaction(fn);
+    }
+    const maxAttempts = 3;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await this.prisma.$transaction(fn, {
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+          maxWait: 2000,
+          timeout: 10000,
+        });
+      } catch (e: any) {
+        if (e?.code === "P2034" && attempt < maxAttempts - 1) continue;
+        throw e;
+      }
+    }
+  }
+
+  // Valida cupo de un producto para fecha/hora.
+  // capacity null o 0 = sin límite (no restringe).
+  // mode "before-create": cuenta reservas existentes, rechaza si booked >= capacity.
+  // mode "before-confirm": la reserva a confirmar ya está en "pending" y se cuenta a sí misma;
+  //   rechaza si booked > capacity (evita sobre-confirmar más allá del cupo).
+  private async assertCapacity(
+    tx: Tx,
+    product: any,
+    serviceDate: Date,
+    time: string,
+    mode: "before-create" | "before-confirm" = "before-create",
+  ) {
+    if (!product.capacity || product.capacity <= 0) return;
+    const booked = await tx.reservation.count({
+      where: {
+        productId: product.id,
+        date: serviceDate,
+        time,
+        status: { in: ["pending", "confirmed"] },
+      },
+    });
+    const exceed =
+      mode === "before-create"
+        ? booked >= product.capacity
+        : booked > product.capacity;
+    if (exceed) {
+      throw new BadRequestException("Sin cupo disponible para ese horario");
+    }
+  }
+
   // ---------- create ----------
 
   async create(userId: string, dto: CreateReservationDto) {
@@ -156,21 +218,17 @@ export class ReservationsService {
     );
     const totalAmount = Math.round(product.price * dto.partySize * 100) / 100;
     const escrow = await this.computeEscrow(totalAmount);
+    // Monto de cobro en USD del proveedor (productos en BOB → USD).
+    const usdRate = await this.config.getFloat("exchange_rate_usd_bob", 1);
+    const providerAmountUSD =
+      usdRate > 0 ? Math.round((totalAmount / usdRate) * 100) / 100 : totalAmount;
+    const paymentId = `PAY-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const idempotencyKey = `stripe:${product.id}:${Date.now()}:${Math.random()
+      .toString(36)
+      .slice(2, 10)}`;
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      if (product.capacity !== null && product.capacity !== undefined) {
-        const booked = await tx.reservation.count({
-          where: {
-            productId: product.id,
-            date: serviceDate,
-            time: dto.time,
-            status: { in: ["pending", "confirmed"] },
-          },
-        });
-        if (booked >= product.capacity) {
-          throw new BadRequestException("Sin cupo disponible para ese horario");
-        }
-      }
+    const result = await this.withAtomicTx(async (tx) => {
+      await this.assertCapacity(tx, product, serviceDate, dto.time, "before-create");
 
       const reservation = await tx.reservation.create({
         data: {
@@ -189,40 +247,39 @@ export class ReservationsService {
         },
       });
 
-      const paymentId = `PAY-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-      const qrData = JSON.stringify({
-        version: "01",
-        merchant: "BoliviaExperience",
-        amount: totalAmount,
-        currency: product.currency || "BOB",
-        reference: paymentId,
-        timestamp: new Date().toISOString(),
-      });
-
       const payment = await tx.payment.create({
         data: {
           id: paymentId,
           userId,
           reservationId: reservation.id,
-          amount: totalAmount,
-          currency: product.currency || "BOB",
+          amount: providerAmountUSD,
+          currency: "USD",
           description: `Reserva: ${product.name}`,
           type: "reservation",
           referenceId: reservation.id,
+          provider: "stripe",
+          idempotencyKey,
           subtotal: escrow.subtotal,
           commissionRate: escrow.commissionRate,
           commissionAmount: escrow.commissionAmount,
+          exchangeRateSnapshot: usdRate > 0 ? usdRate : 1,
           status: "pending",
-          qrData,
         },
       });
 
       return this.serializeReservation(reservation, payment);
     });
 
+    await this.provisionInstantaneaIntent(paymentId, {
+      amountCents: Math.round(providerAmountUSD * 100),
+      description: `Reserva: ${product.name}`,
+      reservationId: result.id,
+      productId: product.id,
+    });
+
     await this.notifications.notify(userId, {
       title: "Reserva generada",
-      body: `Tu reserva en ${product.name} quedó pendiente de pago. Completá el pago con el QR para confirmarla.`,
+      body: `Tu reserva en ${product.name} quedó pendiente de pago. Completá el pago para confirmarla.`,
       type: "reservation",
       data: JSON.stringify({
         reservationId: result.id,
@@ -232,7 +289,77 @@ export class ReservationsService {
       }),
     });
 
-    return result;
+    const freshPayment = await this.prisma.payment.findUnique({
+      where: { id: paymentId },
+    });
+    return { ...result, payment: freshPayment };
+  }
+
+  // Crea el PaymentIntent en el proveedor (Stripe) fuera de la transacción y
+  // le asocia el clientSecret. Si Stripe no está configurado, el pago queda
+  // con provider qr_banco_local y el QR simulado como fallback de desarrollo.
+  private async provisionInstantaneaIntent(
+    paymentId: string,
+    opts: {
+      amountCents: number;
+      description: string;
+      reservationId: string;
+      productId: string;
+    },
+  ) {
+    const provider = await this.paymentRegistry
+      .getProviderIfAvailable("stripe")
+      .catch(() => null);
+    if (!provider) {
+      const qrData = JSON.stringify({
+        version: "01",
+        merchant: "BoliviaExperience",
+        amount: opts.amountCents / 100,
+        currency: "USD",
+        reference: paymentId,
+        timestamp: new Date().toISOString(),
+      });
+      await this.prisma.payment.update({
+        where: { id: paymentId },
+        data: { provider: "qr_banco_local", qrData },
+      });
+      return;
+    }
+    try {
+      const intent = await provider.createPaymentIntent({
+        amountCents: opts.amountCents,
+        currency: "USD",
+        idempotencyKey: `instantanea:${paymentId}`,
+        description: opts.description,
+        metadata: {
+          paymentId,
+          reservationId: opts.reservationId,
+          productId: opts.productId,
+          type: "reservation",
+        },
+      });
+      await this.prisma.payment.update({
+        where: { id: paymentId },
+        data: {
+          provider: "stripe",
+          providerTransactionId: intent.providerTransactionId,
+          paymentIntentClientSecret: intent.clientSecret,
+        },
+      });
+    } catch {
+      const qrData = JSON.stringify({
+        version: "01",
+        merchant: "BoliviaExperience",
+        amount: opts.amountCents / 100,
+        currency: "USD",
+        reference: paymentId,
+        timestamp: new Date().toISOString(),
+      });
+      await this.prisma.payment.update({
+        where: { id: paymentId },
+        data: { provider: "qr_banco_local", qrData },
+      });
+    }
   }
 
   private async createSolicitud(
@@ -336,6 +463,8 @@ export class ReservationsService {
             status: true,
             amount: true,
             currency: true,
+            provider: true,
+            paymentIntentClientSecret: true,
             qrData: true,
           },
           orderBy: { createdAt: "asc" },
@@ -411,7 +540,15 @@ export class ReservationsService {
       Math.round(product.price * reservation.partySize * 100) / 100;
     const escrow = await this.computeEscrow(totalAmount);
 
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await this.withAtomicTx(async (tx) => {
+      await this.assertCapacity(
+        tx,
+        product,
+        reservation.date,
+        reservation.time,
+        "before-confirm",
+      );
+
       const updated = await tx.reservation.update({
         where: { id },
         data: {
@@ -517,17 +654,37 @@ export class ReservationsService {
       return { ...updated, settlement };
     });
 
+    const points = await this.gamification.grantReservationPoints(
+      reservation.userId,
+      Number(reservation.totalAmount ?? 0),
+    );
+    const earnedBadges = await this.gamification.evaluateBadges(
+      reservation.userId,
+    );
+
     await this.notifications.notify(reservation.userId, {
       title: "Visita completada",
-      body: `Tu reserva en ${reservation.product!.name} fue marcada como completada. ¡Gracias por tu visita!`,
+      body: `Tu reserva en ${reservation.product!.name} fue marcada como completada. ¡Ganaste ${points} pts!`,
       type: "reservation_completed",
       data: JSON.stringify({
         reservationId: result.id,
         placeId: reservation.product!.placeId,
+        points,
       }),
     });
 
-    return result;
+    if (earnedBadges.length > 0) {
+      await this.notifications.notify(reservation.userId, {
+        title: "¡Nueva insignia desbloqueada!",
+        body: `Has desbloqueado “${earnedBadges[0].name}”.`,
+        type: "badge_earned",
+        data: JSON.stringify({
+          badgeKey: earnedBadges[0].key,
+        }),
+      });
+    }
+
+    return { ...result, pointsEarned: points, badgesEarned: earnedBadges };
   }
 
   async noShow(socioId: string, id: string) {
@@ -596,7 +753,8 @@ export class ReservationsService {
       let refundAmount: number | null = null;
       if (payment) {
         if (payment.status === "held") {
-          refundAmount = Math.round(payment.subtotal * refundRate * 100) / 100;
+          refundAmount =
+            Math.round(Number(payment.subtotal) * refundRate * 100) / 100;
           await tx.payment.update({
             where: { id: payment.id },
             data: {

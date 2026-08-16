@@ -1,11 +1,46 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
+import {
+  PlacesScoringService,
+  TripPreferences,
+} from "../places/places-scoring.service";
 
 @Injectable()
 export class RecommendationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly scoringService: PlacesScoringService,
+  ) {}
 
-  async getPersonalized(userId: string, limit: number = 10) {
+  async getPersonalized(
+    userId: string,
+    limit: number = 10,
+    queryPreferences?: TripPreferences,
+  ) {
+    // Resolve preferences: explicit query params > most recent trip > none
+    let prefsSource: "query" | "trip" | "none" =
+      queryPreferences?.budgetType || queryPreferences?.tourismType
+        ? "query"
+        : "none";
+    let preferences: TripPreferences = {};
+
+    if (prefsSource === "none") {
+      const latestTrip = await this.prisma.trip.findFirst({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        select: { budgetType: true, tourismType: true },
+      });
+      if (latestTrip?.budgetType || latestTrip?.tourismType) {
+        preferences = {
+          budgetType: latestTrip.budgetType,
+          tourismType: latestTrip.tourismType,
+        };
+        prefsSource = "trip";
+      }
+    } else {
+      preferences = queryPreferences ?? {};
+    }
+
     // Get user's favorites and reviews to understand preferences
     const [favorites, reviews, searchHistory] = await Promise.all([
       this.prisma.favorite.findMany({
@@ -74,29 +109,41 @@ export class RecommendationsService {
       take: limit,
     });
 
+    // Score and reorder by match against trip/query preferences
+    const scored = this.scoringService.scoreAndSort(recommended, preferences);
+
     // If not enough recommendations, fill with popular places
-    if (recommended.length < limit) {
+    if (scored.length < limit) {
       const additional = await this.prisma.place.findMany({
         where: {
           isActive: true,
-          id: { notIn: [...excludePlaceIds, ...recommended.map((r) => r.id)] },
+          id: { notIn: [...excludePlaceIds, ...scored.map((r) => r.id)] },
         },
         include: {
           category: { select: { id: true, name: true, icon: true } },
           photos: { take: 1, orderBy: { displayOrder: "asc" } },
         },
         orderBy: { ratingAvg: "desc" },
-        take: limit - recommended.length,
+        take: limit - scored.length,
       });
-      recommended.push(...additional);
+      const additionalScored = this.scoringService.scoreAndSort(
+        additional,
+        preferences,
+      );
+      scored.push(...additionalScored);
     }
 
     return {
-      recommendations: recommended,
+      recommendations: scored,
       basedOn: {
         favoriteCategories: sortedCategories,
         totalFavorites: favorites.length,
         totalReviews: reviews.length,
+        preferences: {
+          budgetType: preferences.budgetType ?? null,
+          tourismType: preferences.tourismType ?? null,
+          source: prefsSource,
+        },
       },
     };
   }

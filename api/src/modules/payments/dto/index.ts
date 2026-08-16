@@ -7,12 +7,17 @@ export class CreatePaymentDto {
   @Min(0.01)
   amount: number;
 
-  @ApiPropertyOptional({ enum: ["BOB", "USD"], example: "BOB" })
+  @ApiPropertyOptional({ enum: ["USD", "BOB"], example: "USD" })
   @IsOptional()
-  @IsString()
+  @IsIn(["USD", "BOB"])
   currency?: string;
 
-  @ApiProperty({ example: "Reserva - Bioparque Güembé" })
+  @ApiPropertyOptional({ enum: ["stripe", "paypal", "qr_banco_local"] })
+  @IsOptional()
+  @IsIn(["stripe", "paypal", "qr_banco_local"])
+  provider?: string;
+
+  @ApiProperty({ example: "Reserva - Bioparque Guembé" })
   @IsString()
   description: string;
 

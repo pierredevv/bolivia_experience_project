@@ -48,6 +48,7 @@ model User {
   travelerPhotos      TravelerPhoto[]
   travelerPhotoLikes  TravelerPhotoLike[]
   productReviews      ProductReview[]
+  userBadges          UserBadge[]
 
   @@map("users")
 }
@@ -223,6 +224,55 @@ model Event {
   @@map("events")
 }
 
+model Badge {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  nameEn      String?  @map("name_en")
+  description String?
+  descriptionEn String? @map("description_en")
+  icon        String   @default("emoji_events")
+  condition   String   @map("condition")
+  points      Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  badgeId   String   @map("badge_id")
+  earnedAt  DateTime @default(now()) @map("earned_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@map("user_badges")
+}
+
+model SafetyZone {
+  id          String   @id @default(cuid())
+  name        String
+  latitude    Float
+  longitude   Float
+  radioKm     Float    @map("radio_km")
+  nivelRiesgo String   @map("nivel_riesgo")
+  description String?
+  city        String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([city])
+  @@map("safety_zones")
+}
+
 model Promotion {
   id                 String   @id @default(cuid())
   placeId            String   @map("place_id")
@@ -351,7 +401,7 @@ model Reservation {
   completedAt   DateTime? @map("completed_at")
   cancelReason  String?   @map("cancel_reason")
   // Monto acordado al confirmar (sin comisión)
-  totalAmount   Float?    @map("total_amount")
+  totalAmount   Decimal? @map("total_amount")
   notes         String?
   contactPhone  String?   @map("contact_phone")
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -525,9 +575,9 @@ model Settlement {
   id               String    @id @default(cuid())
   paymentId        String    @unique @map("payment_id")
   socioId          String    @map("socio_id")
-  grossAmount      Float     @map("gross_amount")
-  commissionAmount Float     @map("commission_amount")
-  netAmount        Float     @map("net_amount")
+  grossAmount      Decimal   @map("gross_amount")
+  commissionAmount Decimal   @map("commission_amount")
+  netAmount        Decimal   @map("net_amount")
   // pending | released
   status           String    @default("pending")
   releasedAt       DateTime? @map("released_at")
@@ -592,16 +642,24 @@ model Payment {
   id            String    @id
   userId        String    @map("user_id")
   reservationId String?   @map("reservation_id")
-  amount        Float
-  currency      String    @default("BOB")
+  amount        Decimal
+  currency      String    @default("USD")
   description   String
   type          String
   referenceId   String    @map("reference_id")
+  // Proveedor de pago: qr_banco_local | stripe | paypal
+  provider        String   @default("stripe")
+  idempotencyKey  String   @unique @map("idempotency_key")
+  providerTransactionId String? @unique @map("provider_transaction_id")
+  paymentIntentClientSecret String? @map("payment_intent_client_secret")
+  paymentMethodType String?  @map("payment_method_type")
+  // Tasa BOB/USD fijada al momento de la transacción (reservado; 1.0 por ahora)
+  exchangeRateSnapshot Decimal? @map("exchange_rate_snapshot")
   // Escrow: retenido hasta que se presta el servicio
-  subtotal        Float   @default(0)
-  commissionRate  Float   @default(0) @map("commission_rate")
-  commissionAmount Float  @default(0) @map("commission_amount")
-  // Ciclo de vida: pending | held | released | refunded | cancelled
+  subtotal        Decimal   @default(0)
+  commissionRate  Float     @default(0) @map("commission_rate")
+  commissionAmount Decimal  @default(0) @map("commission_amount")
+  // Ciclo de vida: pending | processing | held | released | refunded | cancelled | failed
   status        String    @default("pending")
   transactionId String?   @map("transaction_id")
   qrData        String?   @map("qr_data")
@@ -609,7 +667,8 @@ model Payment {
   heldAt        DateTime? @map("held_at")
   releasedAt    DateTime? @map("released_at")
   refundedAt    DateTime? @map("refunded_at")
-  refundAmount  Float?    @map("refund_amount")
+  refundAmount  Decimal?  @map("refund_amount")
+  failureReason String?   @map("failure_reason")
   createdAt     DateTime  @default(now()) @map("created_at")
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -620,7 +679,26 @@ model Payment {
   @@index([status])
   @@index([referenceId])
   @@index([reservationId])
+  @@index([provider])
+  @@index([idempotencyKey])
+  @@unique([reservationId])
   @@map("payments")
+}
+
+model PaymentWebhookEvent {
+  id             String    @id @default(cuid())
+  provider       String    @map("provider")
+  eventType      String    @map("event_type")
+  eventId        String?   @map("event_id")
+  payload        String
+  signatureValid Boolean   @default(false) @map("signature_valid")
+  processedAt    DateTime? @map("processed_at")
+  failureReason  String?   @map("failure_reason")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([provider, createdAt])
+  @@index([eventId])
+  @@map("payment_webhook_events")
 }
 
 model ChatConversation {

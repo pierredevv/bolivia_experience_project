@@ -17,11 +17,13 @@ export class UsersService {
         country: true,
         language: true,
         role: true,
+        points: true,
         createdAt: true,
         _count: {
           select: {
             reviews: true,
             favorites: true,
+            userBadges: true,
           },
         },
       },

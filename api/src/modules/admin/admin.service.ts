@@ -5,6 +5,8 @@ import {
   AdminReviewsDto,
   UpdateProductCashbackDto,
   UpdateProductPremiadoDto,
+  CreateSafetyZoneDto,
+  UpdateSafetyZoneDto,
 } from "./dto";
 import { PaginatedResponse } from "../../common/dto/pagination.dto";
 import { ReviewStatus } from "../../common/constants/review-status";
@@ -282,6 +284,30 @@ export class AdminService {
       data: { premiado: dto.premiado ?? !product.premiado },
       select: { id: true, name: true, premiado: true },
     });
+  }
+
+  async listSafetyZones() {
+    return this.prisma.safetyZone.findMany({
+      orderBy: { name: "asc" },
+    });
+  }
+
+  async createSafetyZone(dto: CreateSafetyZoneDto) {
+    return this.prisma.safetyZone.create({ data: dto });
+  }
+
+  async updateSafetyZone(id: string, dto: UpdateSafetyZoneDto) {
+    const zone = await this.prisma.safetyZone.findUnique({ where: { id } });
+    if (!zone) throw new NotFoundException("Safety zone not found");
+
+    return this.prisma.safetyZone.update({ where: { id }, data: dto });
+  }
+
+  async removeSafetyZone(id: string) {
+    const zone = await this.prisma.safetyZone.findUnique({ where: { id } });
+    if (!zone) throw new NotFoundException("Safety zone not found");
+
+    return this.prisma.safetyZone.delete({ where: { id } });
   }
 
   // In-memory settings for MVP - can be migrated to DB later

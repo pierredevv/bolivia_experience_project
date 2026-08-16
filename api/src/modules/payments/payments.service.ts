@@ -7,12 +7,17 @@ import {
 import { PrismaService } from "../../prisma/prisma.service";
 import { PlatformConfigService } from "../platform-config/platform-config.service";
 import { CreatePaymentDto } from "./dto";
+import { PaymentProviderRegistry } from "./providers/payment-provider-registry.service";
+import { PaymentProvider, PaymentCurrency } from "./providers/payment-provider.interface";
+
+const TERMINAL_PAYMENT_STATUSES = ["held", "released", "refunded", "cancelled"];
 
 @Injectable()
 export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     private config: PlatformConfigService,
+    private registry: PaymentProviderRegistry,
   ) {}
 
   private async computeEscrow(amount: number) {
@@ -21,24 +26,60 @@ export class PaymentsService {
     return { subtotal: amount, commissionRate: rate, commissionAmount };
   }
 
-  private generateQRData(data: {
-    amount: number;
-    currency: string;
-    merchantName: string;
-    reference: string;
-  }): string {
-    return JSON.stringify({
-      version: "01",
-      merchant: data.merchantName,
-      amount: data.amount,
-      currency: data.currency,
-      reference: data.reference,
-      timestamp: new Date().toISOString(),
-    });
+  private generateIdempotencyKey(referenceId: string, provider: string) {
+    const rand = Math.random().toString(36).slice(2, 10);
+    return `${provider}:${referenceId}:${Date.now()}:${rand}`;
+  }
+
+  /**
+   * Convierte un monto de negocio (BOB) a la moneda de cobro del proveedor.
+   * - Proveedores USD (stripe/paypal): usa la tasa configurable exchange_rate_usd_bob.
+   * - Moneda BOB (qr_banco_local): no convierte, devuelve el monto tal cual.
+   */
+  private async convertToProviderAmount(
+    subtotalBOB: number,
+    currency: string,
+  ): Promise<{ providerAmount: number; exchangeRateSnapshot: number | null }> {
+    if (currency === "USD") {
+      const rate = await this.config.getFloat("exchange_rate_usd_bob", 1);
+      if (!Number.isFinite(rate) || rate <= 0) {
+        throw new BadRequestException(
+          "Tasa de cambio BOB→USD inválida. Configurá exchange_rate_usd_bob.",
+        );
+      }
+      const providerAmount = Math.round((subtotalBOB / rate) * 100) / 100;
+      return { providerAmount, exchangeRateSnapshot: rate };
+    }
+    return { providerAmount: subtotalBOB, exchangeRateSnapshot: null };
+  }
+
+  private serializePayment(payment: any, payUrl?: string | null) {
+    return {
+      paymentId: payment.id,
+      amount: Number(payment.amount),
+      currency: payment.currency,
+      provider: payment.provider,
+      clientSecret: payment.paymentIntentClientSecret,
+      payUrl: payUrl ?? payment.payUrl ?? undefined,
+      qrData: payment.qrData ?? undefined,
+      status: payment.status,
+      expiresAt: payment.createdAt,
+    };
   }
 
   async createPayment(userId: string, dto: CreatePaymentDto) {
-    const paymentId = `PAY-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const providerName = dto.provider || "stripe";
+    const provider: PaymentProvider =
+      await this.registry.getProvider(providerName);
+
+    const currency = dto.currency || "USD";
+    if (!["USD", "BOB"].includes(currency)) {
+      throw new BadRequestException("Moneda no soportada");
+    }
+    const idempotencyKey = this.generateIdempotencyKey(
+      dto.referenceId,
+      providerName,
+    );
 
     let subtotal = dto.amount;
     let commissionRate = 0;
@@ -53,38 +94,53 @@ export class PaymentsService {
         throw new ForbiddenException("La reserva no pertenece al usuario");
       }
       if (reservation.status !== "pending") {
-        throw new BadRequestException("La reserva no está pendiente de pago");
+        throw new BadRequestException(
+          "La reserva no está pendiente de pago",
+        );
       }
 
-      // Idempotencia: si la reserva ya tiene un pago activo, devolverlo en vez de crear uno duplicado.
+      // Idempotencia POR PROVEEDOR: devolver el pago activo si es del mismo
+      // proveedor; si cambió de método, cancelar el anterior y crear uno nuevo.
       const existing = await this.prisma.payment.findFirst({
         where: {
           reservationId: reservation.id,
-          status: { in: ["pending", "held"] },
+          status: { in: ["pending", "held", "processing"] },
         },
       });
       if (existing) {
-        return {
-          paymentId: existing.id,
-          amount: existing.amount,
-          currency: existing.currency,
-          qrData: existing.qrData,
-          status: existing.status,
-          expiresAt: existing.createdAt,
-        };
+        if (existing.provider === providerName) {
+          return this.serializePayment(existing);
+        }
+        await this.prisma.payment.update({
+          where: { id: existing.id },
+          data: { status: "cancelled" },
+        });
       }
 
-      subtotal = reservation.totalAmount ?? dto.amount;
+      subtotal = Number(reservation.totalAmount ?? dto.amount);
       const escrow = await this.computeEscrow(subtotal);
       commissionRate = escrow.commissionRate;
       commissionAmount = escrow.commissionAmount;
     }
 
-    const qrData = this.generateQRData({
-      amount: subtotal,
-      currency: dto.currency || "BOB",
-      merchantName: "BoliviaExperience",
-      reference: paymentId,
+    const converted = await this.convertToProviderAmount(subtotal, currency);
+    const providerAmount = converted.providerAmount;
+
+    const paymentId = `PAY-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 10)}`;
+    const amountCents = Math.round(providerAmount * 100);
+
+    const intent = await provider.createPaymentIntent({
+      amountCents,
+      currency: currency as PaymentCurrency,
+      idempotencyKey,
+      description: dto.description,
+      metadata: {
+        paymentId,
+        reservationId: dto.type === "reservation" ? dto.referenceId : "",
+        type: dto.type,
+      },
     });
 
     const payment = await this.prisma.payment.create({
@@ -92,27 +148,25 @@ export class PaymentsService {
         id: paymentId,
         userId,
         reservationId: dto.type === "reservation" ? dto.referenceId : null,
-        amount: subtotal,
-        currency: dto.currency || "BOB",
+        amount: providerAmount,
+        currency,
         description: dto.description,
         type: dto.type,
         referenceId: dto.referenceId,
+        provider: providerName,
+        idempotencyKey,
+        providerTransactionId: intent.providerTransactionId,
+        paymentIntentClientSecret: intent.clientSecret,
+        paymentMethodType: intent.currency === "BOB" ? "qr" : null,
         subtotal,
         commissionRate,
         commissionAmount,
         status: "pending",
-        qrData,
+        exchangeRateSnapshot: converted.exchangeRateSnapshot ?? 1,
       },
     });
 
-    return {
-      paymentId: payment.id,
-      amount: payment.amount,
-      currency: payment.currency,
-      qrData: payment.qrData,
-      status: payment.status,
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-    };
+    return this.serializePayment(payment, intent.payUrl);
   }
 
   async getPaymentStatus(paymentId: string, userId: string) {
@@ -132,6 +186,8 @@ export class PaymentsService {
       subtotal: payment.subtotal,
       commissionAmount: payment.commissionAmount,
       currency: payment.currency,
+      provider: payment.provider,
+      providerTransactionId: payment.providerTransactionId,
       paidAt: payment.paidAt,
       heldAt: payment.heldAt,
       releasedAt: payment.releasedAt,
@@ -141,40 +197,88 @@ export class PaymentsService {
     };
   }
 
-  // Usuario paga: el monto queda retenido (escrow) hasta la fecha del servicio.
-  async confirmPayment(
-    paymentId: string,
-    userId: string,
-    transactionId?: string,
-  ) {
+  /**
+   * Camino disparado por el cliente ("ya presenté la sheet").
+   * SOLO marca held si el proveedor confirma que el PaymentIntent está succeeded.
+   * Nunca trata el aviso del cliente como confirmación por sí mismo.
+   */
+  async confirmPayment(paymentId: string, userId: string) {
     const payment = await this.prisma.payment.findUnique({
       where: { id: paymentId },
     });
-
     if (!payment) throw new NotFoundException("Pago no encontrado");
     if (payment.userId !== userId)
       throw new ForbiddenException("No tienes acceso a este pago");
-    if (payment.status !== "pending")
-      throw new BadRequestException("El pago ya fue procesado");
+    if (TERMINAL_PAYMENT_STATUSES.includes(payment.status)) {
+      return { paymentId, status: payment.status };
+    }
+
+    const provider = await this.registry.getProvider(payment.provider);
+    const intentStatus = await provider.retrievePaymentIntent(
+      payment.providerTransactionId!,
+    );
+    if (intentStatus.status === "succeeded") {
+      return this.applyHeld(payment.id);
+    }
+    return { paymentId, status: "pending", requiresAction: true };
+  }
+
+  /**
+   * Camino del webhook (fuente de verdad en producción).
+   * Idempotente: verifica el estado actual antes de escribir.
+   */
+  async markHeldByProviderTransactionId(providerTransactionId: string) {
+    const payment = await this.prisma.payment.findFirst({
+      where: { providerTransactionId },
+    });
+    if (!payment) {
+      throw new NotFoundException(
+        `Payment no encontrado para ${providerTransactionId}`,
+      );
+    }
+    if (TERMINAL_PAYMENT_STATUSES.includes(payment.status)) {
+      return { paymentId: payment.id, status: payment.status };
+    }
+    return this.applyHeld(payment.id);
+  }
+
+  /**
+   * Actualiza el pago a held + confirma la reserva de forma idempotente.
+   * Reutilizado por ambos caminos (retrieve del cliente y webhook).
+   */
+  private async applyHeld(paymentId: string) {
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: paymentId },
+    });
+    if (!payment) throw new NotFoundException("Pago no encontrado");
+    // Guard idempotente: si ya fue procesado, no duplicar efectos.
+    if (TERMINAL_PAYMENT_STATUSES.includes(payment.status)) {
+      return { paymentId, status: payment.status };
+    }
 
     const updated = await this.prisma.payment.update({
       where: { id: paymentId },
       data: {
         status: "held",
-        transactionId,
         paidAt: new Date(),
         heldAt: new Date(),
       },
     });
 
-    if (payment.type === "reservation") {
-      await this.prisma.reservation.update({
+    if (payment.type === "reservation" && payment.referenceId) {
+      const res = await this.prisma.reservation.findUnique({
         where: { id: payment.referenceId },
-        data: { status: "confirmed", confirmedAt: new Date() },
       });
+      // Solo confirmar si sigue pendiente — evita regresiones si otro camino ya confirmó.
+      if (res && res.status === "pending") {
+        await this.prisma.reservation.update({
+          where: { id: payment.referenceId },
+          data: { status: "confirmed", confirmedAt: new Date() },
+        });
+      }
     }
 
-    return updated;
+    return { paymentId, status: "held" };
   }
 
   async findByUser(userId: string) {

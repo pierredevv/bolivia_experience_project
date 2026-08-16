@@ -43,4 +43,38 @@ export class MapController {
   ) {
     return this.mapService.findByBounds(neLat, neLng, swLat, swLng, categoryId);
   }
+
+  @Get("safety-zones")
+  @ApiOperation({ summary: "List active safety zones (optionally within bounds)" })
+  @ApiResponse({ status: 200, description: "Safety zones list" })
+  async findSafetyZones(
+    @Query("neLat") neLat?: number,
+    @Query("neLng") neLng?: number,
+    @Query("swLat") swLat?: number,
+    @Query("swLng") swLng?: number,
+  ) {
+    return this.mapService.findSafetyZones(neLat, neLng, swLat, swLng);
+  }
+
+  @Get("safety-zones/check")
+  @ApiOperation({ summary: "Check if a point falls inside any safety zone (Haversine)" })
+  @ApiResponse({ status: 200, description: "Zones containing the point" })
+  async checkSafetyZone(
+    @Query("lat") lat: number,
+    @Query("lng") lng: number,
+  ) {
+    return this.mapService.checkSafetyZone(lat, lng);
+  }
+
+  @Get("events")
+  @ApiOperation({ summary: "Find active events within map bounds" })
+  @ApiResponse({ status: 200, description: "Events within bounds" })
+  async findMapEvents(
+    @Query("neLat") neLat: number,
+    @Query("neLng") neLng: number,
+    @Query("swLat") swLat: number,
+    @Query("swLng") swLng: number,
+  ) {
+    return this.mapService.findMapEvents(neLat, neLng, swLat, swLng);
+  }
 }

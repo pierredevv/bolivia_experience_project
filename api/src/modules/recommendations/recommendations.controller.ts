@@ -18,8 +18,13 @@ export class RecommendationsController {
   async getPersonalized(
     @CurrentUser("id") userId: string,
     @Query("limit") limit?: number,
+    @Query("budgetType") budgetType?: string,
+    @Query("tourismType") tourismType?: string,
   ) {
-    return this.recommendationsService.getPersonalized(userId, limit || 10);
+    return this.recommendationsService.getPersonalized(userId, limit || 10, {
+      budgetType: budgetType || undefined,
+      tourismType: tourismType || undefined,
+    });
   }
 
   @Get("trending")

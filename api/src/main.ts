@@ -11,7 +11,9 @@ import { TransformInterceptor } from "./common/interceptors/transform.intercepto
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
   const configService = app.get(ConfigService);
 
   // Validate JWT_SECRET is set and not default

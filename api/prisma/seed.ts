@@ -34,7 +34,10 @@ async function main() {
   await prisma.placeHour.deleteMany();
   await prisma.place.deleteMany();
   await prisma.event.deleteMany();
+  await prisma.safetyZone.deleteMany();
   await prisma.category.deleteMany();
+  await prisma.userBadge.deleteMany();
+  await prisma.badge.deleteMany();
   await prisma.user.deleteMany();
   console.log('Cleaned existing data');
 
@@ -892,6 +895,83 @@ async function main() {
     }),
   ]);
   console.log(`Created ${events.length} events`);
+
+  // ── Safety Zones (Santa Cruz de la Sierra) ─────────────────
+  const safetyZones = await Promise.all([
+    prisma.safetyZone.create({
+      data: {
+        name: 'Plan 3000',
+        latitude: -17.8400,
+        longitude: -63.0900,
+        radioKm: 2.5,
+        nivelRiesgo: 'alto',
+        description: 'Zona periférica con alta incidencia de delitos. Se recomienda evitar caminar de noche.',
+        city: 'Santa Cruz de la Sierra',
+        isActive: true,
+      },
+    }),
+    prisma.safetyZone.create({
+      data: {
+        name: 'Mercado La Ramada',
+        latitude: -17.7740,
+        longitude: -63.1900,
+        radioKm: 1.0,
+        nivelRiesgo: 'alto',
+        description: 'Zona comercial con riesgo de carterismo en horas pico.',
+        city: 'Santa Cruz de la Sierra',
+        isActive: true,
+      },
+    }),
+    prisma.safetyZone.create({
+      data: {
+        name: 'Villa Primero de Mayo',
+        latitude: -17.7400,
+        longitude: -63.2100,
+        radioKm: 2.0,
+        nivelRiesgo: 'alto',
+        description: 'Zona periférica con calles poco iluminadas.',
+        city: 'Santa Cruz de la Sierra',
+        isActive: true,
+      },
+    }),
+    prisma.safetyZone.create({
+      data: {
+        name: 'Centro - Vida Nocturna',
+        latitude: -17.7830,
+        longitude: -63.1790,
+        radioKm: 1.2,
+        nivelRiesgo: 'medio',
+        description: 'Zona céntrica con bares y locales nocturnos. Precaución en horarios tardíos.',
+        city: 'Santa Cruz de la Sierra',
+        isActive: true,
+      },
+    }),
+    prisma.safetyZone.create({
+      data: {
+        name: 'Zona Norte - Av. Banzer',
+        latitude: -17.7550,
+        longitude: -63.1820,
+        radioKm: 1.5,
+        nivelRiesgo: 'bajo',
+        description: 'Avenida principal bien iluminada y con alta concurrencia.',
+        city: 'Santa Cruz de la Sierra',
+        isActive: true,
+      },
+    }),
+    prisma.safetyZone.create({
+      data: {
+        name: 'Equipetrol - Zona Sur',
+        latitude: -17.7770,
+        longitude: -63.1690,
+        radioKm: 1.0,
+        nivelRiesgo: 'bajo',
+        description: 'Zona residencial y gastronómica con buenas condiciones de seguridad.',
+        city: 'Santa Cruz de la Sierra',
+        isActive: true,
+      },
+    }),
+  ]);
+  console.log(`Created ${safetyZones.length} safety zones`);
 
   // ── Promotions ─────────────────────────────────────────────
   const futureEnd = new Date(now.getTime() + 30 * 86400000);
@@ -2237,6 +2317,62 @@ async function main() {
     }
   }
   console.log(`Updated photos for ${Object.keys(placePhotoOverride).length} places`);
+
+  // ── Gamificación ──────────────────────────────────────────
+  const badgeDefs = [
+    { key: 'explorador', name: 'Explorador', nameEn: 'Explorer', description: 'Completa tu primera reserva', descriptionEn: 'Complete your first booking', icon: 'explore', condition: 'reservations>=1', points: 100 },
+    { key: 'viajero-frecuente', name: 'Viajero Frecuente', nameEn: 'Frequent Traveler', description: 'Completa 5 reservas', descriptionEn: 'Complete 5 bookings', icon: 'flight', condition: 'reservations>=5', points: 250 },
+    { key: 'aventurero', name: 'Aventurero', nameEn: 'Adventurer', description: 'Completa 10 reservas', descriptionEn: 'Complete 10 bookings', icon: 'hiking', condition: 'reservations>=10', points: 500 },
+    { key: 'reviewer', name: 'Crítico Turístico', nameEn: 'Travel Critic', description: 'Publica 3 reseñas', descriptionEn: 'Publish 3 reviews', icon: 'rate_review', condition: 'reviews>=3', points: 150 },
+    { key: 'coleccionista', name: 'Coleccionista', nameEn: 'Collector', description: 'Guarda 5 favoritos', descriptionEn: 'Save 5 favorites', icon: 'favorite', condition: 'favorites>=5', points: 100 },
+  ];
+  const badges = await Promise.all(
+    badgeDefs.map((b) =>
+      prisma.badge.upsert({
+        where: { key: b.key },
+        update: b,
+        create: b,
+      }),
+    ),
+  );
+  const badgeByKey = Object.fromEntries(badges.map((b) => [b.key, b]));
+
+  await prisma.userBadge.createMany({
+    data: [
+      { userId: usuario1.id, badgeId: badgeByKey.explorador.id },
+      { userId: usuario1.id, badgeId: badgeByKey.reviewer.id },
+      { userId: usuario1.id, badgeId: badgeByKey.coleccionista.id },
+      { userId: usuario2.id, badgeId: badgeByKey.explorador.id },
+      { userId: usuario2.id, badgeId: badgeByKey.reviewer.id },
+      { userId: usuario3.id, badgeId: badgeByKey.explorador.id },
+    ],
+  });
+  await prisma.user.updateMany({
+    where: { id: { in: [usuario1.id, usuario2.id, usuario3.id] } },
+    data: { points: { increment: 350 } },
+  });
+  console.log(`Created ${badges.length} badges`);
+
+  // ── Configuración de plataforma ─────────────────────────────
+  const platformConfigs = [
+    // Tasa de conversión BOB → USD para cobros con proveedores en USD
+    // (stripe / paypal). El QR del banco opera en BOB y no usa esta tasa.
+    { key: 'exchange_rate_usd_bob', value: '6.96' },
+    { key: 'commission_rate', value: '0.1' },
+    { key: 'instantanea_payment_minutes', value: '15' },
+    // Feature flags de proveedores de pago (default: stripe=true, resto=false)
+    { key: 'payments_provider_stripe_enabled', value: 'true' },
+    { key: 'payments_provider_paypal_enabled', value: 'true' },
+    { key: 'payments_provider_qr_banco_local_enabled', value: 'false' },
+  ];
+  for (const cfg of platformConfigs) {
+    await prisma.platformConfig.upsert({
+      where: { key: cfg.key },
+      update: { value: cfg.value },
+      create: { key: cfg.key, value: cfg.value },
+    });
+  }
+  console.log(`Seeded ${platformConfigs.length} platform configs`);
 
   console.log('Seed completed successfully!');
 }

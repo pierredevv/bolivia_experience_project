@@ -8,6 +8,8 @@ import {
   BadRequestException,
   ForbiddenException,
 } from "@nestjs/common";
+import { GamificationService } from "../gamification/gamification.service";
+import { PaymentProviderRegistry } from "../payments/providers/payment-provider-registry.service";
 
 describe("ReservationsService", () => {
   let service: ReservationsService;
@@ -22,6 +24,16 @@ describe("ReservationsService", () => {
 
   const mockNotifications = {
     notify: jest.fn().mockResolvedValue({}),
+  };
+
+  const mockGamification = {
+    grantReservationPoints: jest.fn().mockResolvedValue(100),
+    evaluateBadges: jest.fn().mockResolvedValue([]),
+  };
+
+  const mockPaymentRegistry = {
+    getProviderIfAvailable: jest.fn().mockResolvedValue(null),
+    getProvider: jest.fn(),
   };
 
   const mockTx = {
@@ -62,6 +74,7 @@ describe("ReservationsService", () => {
       update: jest.fn(),
       updateMany: jest.fn(),
       findFirst: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({ id: "PAY" }),
     },
     platformConfig: { findUnique: jest.fn() },
   };
@@ -73,6 +86,8 @@ describe("ReservationsService", () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: PlatformConfigService, useValue: mockConfig },
         { provide: NotificationsService, useValue: mockNotifications },
+        { provide: GamificationService, useValue: mockGamification },
+        { provide: PaymentProviderRegistry, useValue: mockPaymentRegistry },
       ],
     }).compile();
 
@@ -203,6 +218,110 @@ describe("ReservationsService", () => {
         BadRequestException,
       );
     });
+
+    it("should NOT block bookings when capacity is 0 (treated as no limit)", async () => {
+      mockPrisma.product.findUnique.mockResolvedValue({
+        id: "prod-1",
+        name: "Hotel",
+        price: 150,
+        currency: "BOB",
+        placeId: "place-1",
+        isActive: true,
+        modalidadReserva: "instantanea",
+        capacity: 0,
+      });
+      mockTx.reservation.count.mockResolvedValue(50);
+      mockTx.reservation.create.mockResolvedValue({
+        id: "res-1",
+        status: "pending",
+        modalidad: "instantanea",
+        responseDeadline: new Date(),
+      });
+      mockTx.payment.create.mockResolvedValue({
+        id: "PAY-1",
+        status: "pending",
+        amount: 300,
+        currency: "BOB",
+        qrData: "{}",
+      });
+
+      const result = await service.create("user-1", dto);
+      expect(result.id).toBe("res-1");
+      expect(mockTx.reservation.count).not.toHaveBeenCalled();
+    });
+
+    it("should NOT block bookings when capacity is null (no limit)", async () => {
+      mockPrisma.product.findUnique.mockResolvedValue({
+        id: "prod-1",
+        name: "Hotel",
+        price: 150,
+        currency: "BOB",
+        placeId: "place-1",
+        isActive: true,
+        modalidadReserva: "instantanea",
+        capacity: null,
+      });
+      mockTx.reservation.create.mockResolvedValue({
+        id: "res-1",
+        status: "pending",
+        modalidad: "instantanea",
+        responseDeadline: new Date(),
+      });
+      mockTx.payment.create.mockResolvedValue({
+        id: "PAY-1",
+        status: "pending",
+        amount: 300,
+        currency: "BOB",
+        qrData: "{}",
+      });
+
+      const result = await service.create("user-1", dto);
+      expect(result.id).toBe("res-1");
+    });
+
+    it("should retry the atomic transaction on P2034 serialization conflict", async () => {
+      const originalUrl = process.env.DATABASE_URL;
+      process.env.DATABASE_URL = "postgresql://user:pass@localhost/db";
+
+      mockPrisma.product.findUnique.mockResolvedValue({
+        id: "prod-1",
+        name: "Hotel",
+        price: 150,
+        currency: "BOB",
+        placeId: "place-1",
+        isActive: true,
+        modalidadReserva: "instantanea",
+        capacity: 5,
+      });
+      mockTx.reservation.count.mockResolvedValue(0);
+      mockTx.reservation.create.mockResolvedValue({
+        id: "res-1",
+        status: "pending",
+        modalidad: "instantanea",
+        responseDeadline: new Date(),
+      });
+      mockTx.payment.create.mockResolvedValue({
+        id: "PAY-1",
+        status: "pending",
+        amount: 300,
+        currency: "BOB",
+        qrData: "{}",
+      });
+
+      const conflict = new Error("serialization conflict");
+      (conflict as any).code = "P2034";
+      mockPrisma.$transaction
+        .mockImplementationOnce(() => Promise.reject(conflict))
+        .mockImplementationOnce((cb: any) => cb(mockTx));
+
+      try {
+        const result = await service.create("user-1", dto);
+        expect(result.id).toBe("res-1");
+        expect(mockPrisma.$transaction).toHaveBeenCalledTimes(2);
+      } finally {
+        process.env.DATABASE_URL = originalUrl;
+      }
+    });
   });
 
   describe("findByUser", () => {
@@ -275,6 +394,32 @@ describe("ReservationsService", () => {
 
       await expect(service.confirm("socio-1", "res-1")).rejects.toThrow(
         ForbiddenException,
+      );
+    });
+
+    it("should throw BadRequestException when confirming exceeds capacity", async () => {
+      mockPrisma.reservation.findUnique.mockResolvedValue({
+        id: "res-1",
+        productId: "prod-1",
+        userId: "user-1",
+        partySize: 2,
+        status: "pending",
+        modalidad: "solicitud",
+        date: new Date("2026-08-15"),
+        time: "19:00",
+        product: {
+          id: "prod-1",
+          socioId: "socio-1",
+          name: "Tour",
+          price: 100,
+          currency: "BOB",
+          capacity: 1,
+        },
+      });
+      mockTx.reservation.count.mockResolvedValue(2);
+
+      await expect(service.confirm("socio-1", "res-1")).rejects.toThrow(
+        BadRequestException,
       );
     });
   });

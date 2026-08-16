@@ -1,8 +1,10 @@
 import {
   Controller,
   Get,
+  Post,
   Put,
   Patch,
+  Delete,
   Query,
   Param,
   Body,
@@ -20,10 +22,14 @@ import {
   AdminReviewsDto,
   UpdateProductCashbackDto,
   UpdateProductPremiadoDto,
+  CreateSafetyZoneDto,
+  UpdateSafetyZoneDto,
+  UpdateExchangeRateDto,
 } from "./dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
+import { PlatformConfigService } from "../platform-config/platform-config.service";
 
 @ApiTags("admin")
 @Controller("admin")
@@ -31,7 +37,10 @@ import { Roles } from "../../common/decorators/roles.decorator";
 @Roles("admin")
 @ApiBearerAuth()
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly platformConfig: PlatformConfigService,
+  ) {}
 
   @Get("users")
   @ApiOperation({ summary: "List all users (admin only)" })
@@ -118,5 +127,58 @@ export class AdminController {
   @ApiResponse({ status: 200, description: "Settings updated" })
   async updateSettings(@Body() body: Record<string, any>) {
     return this.adminService.updateSettings(body);
+  }
+
+  @Get("config/exchange-rate-usd-bob")
+  @ApiOperation({ summary: "Get the BOB to USD exchange rate used for USD providers" })
+  @ApiResponse({ status: 200, description: "Current exchange rate" })
+  async getExchangeRate() {
+    const rate = await this.platformConfig.getFloat(
+      "exchange_rate_usd_bob",
+      1,
+    );
+    return { exchangeRateUsdBob: rate };
+  }
+
+  @Put("config/exchange-rate-usd-bob")
+  @ApiOperation({ summary: "Update the BOB to USD exchange rate used for USD providers" })
+  @ApiResponse({ status: 200, description: "Exchange rate updated" })
+  async updateExchangeRate(@Body() dto: UpdateExchangeRateDto) {
+    await this.platformConfig.set(
+      "exchange_rate_usd_bob",
+      String(dto.rate),
+    );
+    return { exchangeRateUsdBob: dto.rate };
+  }
+
+  @Get("safety-zones")
+  @ApiOperation({ summary: "List all safety zones (admin only)" })
+  @ApiResponse({ status: 200, description: "Safety zones list" })
+  async listSafetyZones() {
+    return this.adminService.listSafetyZones();
+  }
+
+  @Post("safety-zones")
+  @ApiOperation({ summary: "Create a safety zone (admin only)" })
+  @ApiResponse({ status: 201, description: "Safety zone created" })
+  async createSafetyZone(@Body() dto: CreateSafetyZoneDto) {
+    return this.adminService.createSafetyZone(dto);
+  }
+
+  @Put("safety-zones/:id")
+  @ApiOperation({ summary: "Update a safety zone (admin only)" })
+  @ApiResponse({ status: 200, description: "Safety zone updated" })
+  async updateSafetyZone(
+    @Param("id") id: string,
+    @Body() dto: UpdateSafetyZoneDto,
+  ) {
+    return this.adminService.updateSafetyZone(id, dto);
+  }
+
+  @Delete("safety-zones/:id")
+  @ApiOperation({ summary: "Delete a safety zone (admin only)" })
+  @ApiResponse({ status: 200, description: "Safety zone deleted" })
+  async removeSafetyZone(@Param("id") id: string) {
+    return this.adminService.removeSafetyZone(id);
   }
 }
