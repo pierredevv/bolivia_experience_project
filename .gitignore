@@ -76,3 +76,7 @@ nginx/ssl/*.key
 # Logs
 *.log
 npm-debug.log*
+
+# Server runtime logs
+api/server_log.txt
+api/server_log_err.txt
