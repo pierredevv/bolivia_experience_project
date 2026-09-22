@@ -18,6 +18,9 @@ export class UsersService {
         language: true,
         role: true,
         points: true,
+        budgetType: true,
+        tourismType: true,
+        interests: true,
         createdAt: true,
         _count: {
           select: {
@@ -33,13 +36,28 @@ export class UsersService {
       throw new NotFoundException("User not found");
     }
 
-    return user;
+    return {
+      ...user,
+      interests: user.interests ? JSON.parse(user.interests) : [],
+    };
   }
 
   async updateProfile(userId: string, dto: UpdateUserDto) {
-    return this.prisma.user.update({
+    const data: Record<string, unknown> = {
+      name: dto.name,
+      photoUrl: dto.photoUrl,
+      country: dto.country,
+      language: dto.language,
+      budgetType: dto.budgetType,
+      tourismType: dto.tourismType,
+    };
+    if (dto.interests !== undefined) {
+      data.interests = JSON.stringify(dto.interests);
+    }
+
+    const user = await this.prisma.user.update({
       where: { id: userId },
-      data: dto,
+      data,
       select: {
         id: true,
         email: true,
@@ -47,8 +65,16 @@ export class UsersService {
         photoUrl: true,
         country: true,
         language: true,
+        budgetType: true,
+        tourismType: true,
+        interests: true,
       },
     });
+
+    return {
+      ...user,
+      interests: user.interests ? JSON.parse(user.interests) : [],
+    };
   }
 
   async getUserById(userId: string) {

@@ -3,7 +3,21 @@
 **Fecha**: 22 de septiembre, 2026
 **Agente**: opencode (build agent)
 **Rama**: develop
-**Commit**: `02e7452` (último; push aplicado — `origin/develop` en sincronía `0/0`)
+**Commit**: `302f1ab` (Módulo 7; push aplicado — `origin/develop` en sincronía `0/0`)
+
+---
+
+## Módulo 8 — Onboarding con preferencias (ampliación) (sesión)
+
+**Fecha**: 22 de septiembre, 2026
+**Estado**: completado; verificado (gates abajo).
+
+- **Schemas** (`model User`): `budgetType`/`tourismType`/`interests` (`String?` con `@map`; `interests` guarda JSON string de slugs — sqlite no soporta scalars clusters). `schema.sqlite.prisma` y `schema.prisma` byte-iguales; `schema.postgres.prisma` con `@db.VarChar(20)`/`@db.Text`. `prisma validate` OK ×3 (postgres solo falla por `DATABASE_URL` ambiental) + gen + `db push` a `dev.db`.
+- **Backend**: `users/dto/index.ts` — `UpdateUserDto` ahora acepta `budgetType` (`mochilero/medio/premium`), `tourismType` (`aventura/cultura/gastronomia/naturaleza/relax`), `interests` (array de slugs). `users.service.ts` — `getProfile`/`updateProfile` serialize/parse de `interests` JSON ↔ array.
+- **Motor de recomendación** (`recommendations.service.ts`): prefsSource `query > user > trip > none`; nuevo `user` lee `User.budgetType/tourismType/interests`; boost de categorías por intereses + tourism temático (vía `PlacesScoringService.resolveTourismCategories`); `parseInterests`. `places-scoring.service.ts`: alias `mochilero → low_cost` en `BUDGET_PRICE_MAP` y tourism temático puntúa neutral. `recommendations.service.spec.ts` +3 tests.
+- **App Flutter**: `onboarding_prefs_page.dart` (paso final: chips tipo de turismo + presupuesto, checkboxes de intereses), `onboarding_preferences.dart` (modelo + persistencia en `SharedPreferences`), sync a `PUT /users/me` post-login/google/registro en `auth_provider.dart` (`_syncOnboardingPreferences` best-effort, limpia copia local). `profile_service.dart` `updateProfile` extendido con los 3 campos.
+- **Tracking**: `plans/plan.md` Módulo 8 → ✅ con evidencia archivo:línea.
+- **Verificación**: API `npm run build` OK · `npm test` **228/228** (22 suites) · `dart analyze lib` limpio · `flutter test` **50/50** · `prisma validate` OK ×2 (+postgres solo ambiental).
 
 ---
 

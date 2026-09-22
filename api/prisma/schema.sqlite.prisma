@@ -21,6 +21,9 @@ model User {
   businessName   String?  @map("business_name")
   businessPhone  String?  @map("business_phone")
   approvalStatus String   @default("none") @map("approval_status")
+  budgetType     String?  @map("budget_type")
+  tourismType    String?  @map("tourism_type")
+  interests      String?  @map("interests")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 

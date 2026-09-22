@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, MaxLength } from "class-validator";
+import { IsString, IsOptional, IsIn, MaxLength, IsArray, Max } from "class-validator";
 import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class UpdateUserDto {
@@ -23,4 +23,30 @@ export class UpdateUserDto {
   @IsOptional()
   @IsIn(["es", "en", "pt"])
   language?: string;
+
+  @ApiPropertyOptional({
+    enum: ["mochilero", "medio", "premium"],
+    description: "Rango de presupuesto del usuario (Módulo 8)",
+  })
+  @IsOptional()
+  @IsIn(["mochilero", "medio", "premium"])
+  budgetType?: string;
+
+  @ApiPropertyOptional({
+    enum: ["aventura", "cultura", "gastronomia", "naturaleza", "relax"],
+    description: "Tipo de turismo preferido del usuario (Módulo 8)",
+  })
+  @IsOptional()
+  @IsIn(["aventura", "cultura", "gastronomia", "naturaleza", "relax"])
+  tourismType?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: "Intereses como slugs de categoría, ej. ['parques', 'museos']",
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Max(20, { each: true })
+  interests?: string[];
 }

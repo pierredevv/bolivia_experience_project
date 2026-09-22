@@ -17,6 +17,7 @@ import { Injectable } from "@nestjs/common";
 export interface TripPreferences {
   budgetType?: string | null;
   tourismType?: string | null;
+  interests?: string | null;
 }
 
 export interface ScoredPlace {
@@ -28,10 +29,24 @@ export interface ScoredPlace {
 // Budget type → which price levels are prioritized
 const BUDGET_PRICE_MAP: Record<string, number[]> = {
   low_cost: [1, 2],
+  mochilero: [1, 2], // onboarding alias for low_cost (Módulo 8)
   medio: [2, 3],
   premium: [3, 4],
   luxury: [3, 4], // alias for premium (used in existing seed data)
 };
+
+// Tourism type (onboarding Módulo 8) → preferred category slugs.
+// Used to translate thematic tourism preferences into category boosts for the
+// recommendation engine. urbano/rural/ambos are NOT mapped (they score via isUrban).
+const TOURISM_CATEGORY_MAP: Record<string, string[]> = {
+  aventura: ["deportes", "atracciones"],
+  cultura: ["museos", "atracciones"],
+  gastronomia: ["gastronomia", "restaurantes"],
+  naturaleza: ["parques", "atracciones"],
+  relax: ["cafeterias", "parques"],
+};
+
+const THEMATIC_TOURISM_TYPES = new Set(Object.keys(TOURISM_CATEGORY_MAP));
 
 // Score for exact match vs adjacent match
 const BUDGET_SCORE_EXACT = 60; // priceLevel is in the ideal range
@@ -114,6 +129,11 @@ export class PlacesScoringService {
     isUrban: boolean | undefined,
     tourismType: string | null | undefined,
   ): number {
+    // Thematic tourism types (aventura/cultura/gastronomia/naturaleza/relax) are
+    // handled via category boosts, not isUrban — score neutral here (Módulo 8).
+    if (tourismType && THEMATIC_TOURISM_TYPES.has(tourismType))
+      return TOURISM_SCORE_NEUTRAL;
+
     // No preference or "ambos" → neutral for all
     if (!tourismType || tourismType === "ambos") return TOURISM_SCORE_NEUTRAL;
 
@@ -122,6 +142,15 @@ export class PlacesScoringService {
 
     const wantsUrban = tourismType === "urbano";
     return wantsUrban === isUrban ? TOURISM_SCORE_MATCH : 0;
+  }
+
+  /**
+   * Resolve a thematic tourism type into preferred category slugs (Módulo 8).
+   * Returns [] for null, "urbano", "rural", "ambos" or unknown values.
+   */
+  resolveTourismCategories(tourismType?: string | null): string[] {
+    if (!tourismType) return [];
+    return TOURISM_CATEGORY_MAP[tourismType] ?? [];
   }
 
   /**

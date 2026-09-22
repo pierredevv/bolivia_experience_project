@@ -158,6 +158,8 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 2. Guardar respuestas en `/users/me` (nuevos campos `budgetType`, `tourismType` si no existen ya en `User`).
 3. Conectar esas preferencias como input directo al motor de recomendación (reemplazando o complementando el fallback de `Trip`).
 
+**Verificación (228/228 tests API + build OK, 50/50 tests Flutter + analyze OK)**: campos `budgetType`/`tourismType`/`interests` agregados a `User` en los 3 schemas (`schema.sqlite.prisma` `model User`, como `String?` con `@map("budget_type"/"tourism_type"/"interests")` — `interests` es JSON string porque sqlite no soporta scalars clusters; postgres con `@db.VarChar(20)`/`@db.Text`); `prisma validate` OK (postgres solo falla por `DATABASE_URL` ambiental) + `db push` aplicado a `dev.db`. `users.service.ts`: `getProfile`/`updateProfile` parsean `interests` JSON ↔ array. `UpdateUserDto` (`users/dto/index.ts`) acepta `budgetType` (`mochilero|medio|premium`), `tourismType` (`aventura|cultura|gastronomia|naturaleza|relax`), `interests` (array de slugs via `PUT /users/me`). Motor (`recommendations.service.ts`): prefSource resuelve `query > user > trip > none` (nuevo `user` lee `User.budgetType/tourismType/interests`); boost de categorías desde intereses + tourism temático vía `PlacesScoringService.resolveTourismCategories` (mapea aventura→deportes/atracciones, cultura→museos/atracciones, gastronomia→gastronomia/restaurantes, naturaleza→parques/atracciones, relax→cafeterias/parques) + `parseInterests`; `scoreAndSort` acepta alias `mochilero` = `low_cost` y tourism temático se puntúa neutral (no urbano/rural). `recommendations.service.spec.ts` +3 tests (user antes de trip, boost de categorías, fallback a trip). App Flutter: `onboarding_prefs_page.dart` (paso final del onboarding con chips de tipo de turismo/presupuesto + checkboxes de intereses), persistencia local en `onboarding_preferences.dart` (`SharedPreferences`), y sync automático a `PUT /users/me` tras login/google/registro en `auth_provider.dart` (`_syncOnboardingPreferences`, sin bloquear el login y limpiando la copia local). `dart analyze` sin issues.
+
 ---
 
 ## Módulo 9 — Eventos publicados por usuarios
@@ -278,7 +280,7 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 | Módulo 5 — Mapa mejorado + Zonas de seguridad | ✅ Completado | Modelo `SafetyZone` + seed 6 zonas; `GET /map/safety-zones` (±bounds), `GET /map/safety-zones/check` (Haversine), `GET /map/events`; admin CRUD `/admin/safety-zones`; mapa: markers por categoría, capa de eventos y círculos por riesgo (map_screen.dart) |
 | Módulo 6 — Gamificación | ✅ Completado | Puntos por reserva completada con `totalAmount` (`reservations.service.ts:complete`); modelo `Badge`/`UserBadge` (3 schemas) + seed 5 badges; lógica de asignación (`gamification.service.ts`); endpoints `GET /gamification/me` y `/gamification/badges`; `points`+`userBadges` en `users/me`; pantalla `gamification_screen.dart` + menú "Mis Logros" y puntos en `profile_screen.dart`. Smoke test: completar reserva de 160 BOB → +160 pts (350→510). 196 tests backend OK; flutter analyze limpio |
 | Módulo 7 — Soporte y resolución de conflictos | ✅ | Ver Módulo 7 abajo |
-| Módulo 8 — Onboarding con preferencias | ⏳ | — |
+| Módulo 8 — Onboarding con preferencias | ✅ | Ver Módulo 8 abajo |
 | Módulo 9 — Eventos publicados por usuarios | ⏳ | — |
 | Módulo 10 — Clima mejorado | ⏳ | — |
 | Módulo 11 — Perfil mejorado | ⏳ | — |

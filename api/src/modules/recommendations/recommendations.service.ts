@@ -17,12 +17,28 @@ export class RecommendationsService {
     limit: number = 10,
     queryPreferences?: TripPreferences,
   ) {
-    // Resolve preferences: explicit query params > most recent trip > none
-    let prefsSource: "query" | "trip" | "none" =
+    // Resolve preferences: explicit query > user profile > most recent trip > none
+    let prefsSource: "query" | "user" | "trip" | "none" =
       queryPreferences?.budgetType || queryPreferences?.tourismType
         ? "query"
         : "none";
     let preferences: TripPreferences = {};
+
+    if (prefsSource === "none") {
+      // Onboarding preferences stored on the user profile (Módulo 8)
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { budgetType: true, tourismType: true, interests: true },
+      });
+      if (user?.budgetType || user?.tourismType || user?.interests) {
+        preferences = {
+          budgetType: user.budgetType,
+          tourismType: user.tourismType,
+          interests: user.interests,
+        };
+        prefsSource = "user";
+      }
+    }
 
     if (prefsSource === "none") {
       const latestTrip = await this.prisma.trip.findFirst({
@@ -37,7 +53,7 @@ export class RecommendationsService {
         };
         prefsSource = "trip";
       }
-    } else {
+    } else if (prefsSource === "query") {
       preferences = queryPreferences ?? {};
     }
 
@@ -79,6 +95,23 @@ export class RecommendationsService {
         categoryScores[catId] = (categoryScores[catId] || 0) + weight;
       }
     });
+
+    // Onboarding preference boosts (Módulo 8): interests + thematic tourism type
+    // translate into preferred category slugs → look up ids and weight them.
+    const interestSlugs = this.parseInterests(preferences.interests);
+    const tourismSlugs = this.scoringService.resolveTourismCategories(
+      preferences.tourismType,
+    );
+    const boostSlugs = [...new Set([...interestSlugs, ...tourismSlugs])];
+    if (boostSlugs.length > 0) {
+      const boostCategories = await this.prisma.category.findMany({
+        where: { slug: { in: boostSlugs } },
+        select: { id: true },
+      });
+      boostCategories.forEach((cat) => {
+        categoryScores[cat.id] = (categoryScores[cat.id] || 0) + 2;
+      });
+    }
 
     // Get top categories
     const sortedCategories = Object.entries(categoryScores)
@@ -142,10 +175,28 @@ export class RecommendationsService {
         preferences: {
           budgetType: preferences.budgetType ?? null,
           tourismType: preferences.tourismType ?? null,
+          interests: this.parseInterests(preferences.interests),
           source: prefsSource,
         },
       },
     };
+  }
+
+  /**
+   * Parse the user's `interests` string (JSON array of category slugs) into a
+   * clean string list. Returns [] for null/malformed input.
+   */
+  private parseInterests(interests?: string | null): string[] {
+    if (!interests) return [];
+    try {
+      const parsed = JSON.parse(interests);
+      if (Array.isArray(parsed)) {
+        return parsed.map((i) => String(i)).filter(Boolean);
+      }
+    } catch {
+      // Ignore malformed JSON — treated as no interests.
+    }
+    return [];
   }
 
   async getTrending(limit: number = 10) {

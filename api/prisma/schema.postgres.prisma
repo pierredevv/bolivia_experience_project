@@ -49,6 +49,9 @@ model User {
   role      String   @default("usuario") @db.VarChar(20)
   isActive  Boolean  @default(true) @map("is_active")
   points    Int      @default(0)
+  budgetType     String?  @map("budget_type") @db.VarChar(20)
+  tourismType    String?  @map("tourism_type") @db.VarChar(20)
+  interests      String?  @map("interests") @db.Text
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 

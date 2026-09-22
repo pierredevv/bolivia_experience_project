@@ -5,6 +5,8 @@ import '../../data/auth_service.dart';
 import '../../../../core/network/dio_provider.dart';
 import '../../../../core/auth/token_manager.dart';
 import '../../../../config/api_constants.dart';
+import '../../../onboarding/data/onboarding_preferences.dart';
+import '../../../profile/data/profile_service.dart';
 export '../../data/auth_service.dart' show AuthException;
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
@@ -97,6 +99,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (token != null) {
         await TokenManager.save(token);
         state = AuthState(status: AuthStatus.authenticated, token: token);
+        _syncOnboardingPreferences();
       } else {
         state = state.copyWith(
           status: AuthStatus.error,
@@ -164,6 +167,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (token != null) {
         await TokenManager.save(token);
         state = AuthState(status: AuthStatus.authenticated, token: token);
+        _syncOnboardingPreferences();
       } else {
         state = state.copyWith(
           status: AuthStatus.error,
@@ -181,5 +185,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     await TokenManager.clear();
     state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  /// Sent onboarding preferences to the backend after authentication and clear
+  /// the local copy. Best-effort: failures never block the login flow.
+  Future<void> _syncOnboardingPreferences() async {
+    final prefs = await OnboardingPreferencesStore.load();
+    if (prefs.isEmpty) return;
+
+    try {
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: ApiConstants.baseUrl,
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+          headers: {'Authorization': 'Bearer ${TokenManager.token}'},
+        ),
+      );
+      final service = ProfileService(dio);
+      await service.updateProfile(
+        budgetType: prefs.budgetType,
+        tourismType: prefs.tourismType,
+        interests: prefs.interests,
+      );
+      await OnboardingPreferencesStore.clear();
+    } catch (_) {
+      // Ignore network/server errors — preferences stay local for next login.
+    }
   }
 }

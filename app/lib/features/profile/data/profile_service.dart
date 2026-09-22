@@ -51,11 +51,25 @@ class ProfileService {
     return UserProfile.fromJson(data['data'] ?? data);
   }
 
-  Future<UserProfile> updateProfile({String? name}) async {
+  Future<UserProfile> updateProfile({
+    String? name,
+    String? photoUrl,
+    String? country,
+    String? language,
+    String? budgetType,
+    String? tourismType,
+    List<String>? interests,
+  }) async {
     final response = await _dio.put(
       ApiConstants.userProfile,
       data: {
         if (name != null) 'name': name,
+        if (photoUrl != null) 'photoUrl': photoUrl,
+        if (country != null) 'country': country,
+        if (language != null) 'language': language,
+        if (budgetType != null) 'budgetType': budgetType,
+        if (tourismType != null) 'tourismType': tourismType,
+        if (interests != null) 'interests': interests,
       },
     );
     final data = response.data;

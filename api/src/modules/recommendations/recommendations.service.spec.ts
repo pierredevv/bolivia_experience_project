@@ -20,6 +20,12 @@ describe("RecommendationsService", () => {
     trip: {
       findFirst: jest.fn(),
     },
+    user: {
+      findUnique: jest.fn(),
+    },
+    category: {
+      findMany: jest.fn(),
+    },
     place: {
       findMany: jest.fn(),
       findUnique: jest.fn(),
@@ -135,6 +141,60 @@ describe("RecommendationsService", () => {
 
       expect(result.basedOn.preferences.source).toBe("query");
       expect(result.basedOn.preferences.budgetType).toBe("low_cost");
+    });
+
+    it("should use user profile preferences (onboarding) before the trip", async () => {
+      mockPrisma.favorite.findMany.mockResolvedValue([]);
+      mockPrisma.review.findMany.mockResolvedValue([]);
+      mockPrisma.searchHistory.findMany.mockResolvedValue([]);
+      mockPrisma.user.findUnique.mockResolvedValue({
+        budgetType: "mochilero",
+        tourismType: "naturaleza",
+        interests: '["parques", "museos"]',
+      });
+      mockPrisma.place.findMany.mockResolvedValue([]);
+      mockPrisma.category.findMany.mockResolvedValue([
+        { id: "cat-parques" },
+        { id: "cat-museos" },
+        { id: "cat-atracciones" },
+      ]);
+
+      const result = await service.getPersonalized("user-1", 5);
+
+      expect(result.basedOn.preferences.source).toBe("user");
+      expect(result.basedOn.preferences.budgetType).toBe("mochilero");
+      expect(result.basedOn.preferences.tourismType).toBe("naturaleza");
+      expect(result.basedOn.preferences.interests).toEqual(["parques", "museos"]);
+      // interests (parques, museos) + nature (parques, atracciones) boost categories
+      expect(mockPrisma.category.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { slug: { in: ["parques", "museos", "atracciones"] } },
+        }),
+      );
+      expect(result.basedOn.favoriteCategories).toEqual(
+        expect.arrayContaining(["cat-parques", "cat-museos"]),
+      );
+    });
+
+    it("should fall back to the trip when the user has no onboarding preferences", async () => {
+      mockPrisma.favorite.findMany.mockResolvedValue([]);
+      mockPrisma.review.findMany.mockResolvedValue([]);
+      mockPrisma.searchHistory.findMany.mockResolvedValue([]);
+      mockPrisma.user.findUnique.mockResolvedValue({
+        budgetType: null,
+        tourismType: null,
+        interests: null,
+      });
+      mockPrisma.trip.findFirst.mockResolvedValue({
+        budgetType: "premium",
+        tourismType: "urbano",
+      });
+      mockPrisma.place.findMany.mockResolvedValue([]);
+
+      const result = await service.getPersonalized("user-1", 5);
+
+      expect(result.basedOn.preferences.source).toBe("trip");
+      expect(result.basedOn.preferences.budgetType).toBe("premium");
     });
   });
 

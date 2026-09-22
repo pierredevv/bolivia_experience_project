@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../config/colors.dart';
+import '../../data/onboarding_preferences.dart';
 import '../widgets/onboarding_page.dart';
+import '../widgets/onboarding_prefs_page.dart';
 
 final onboardingCompletedProvider = StateProvider<bool>((ref) => false);
 
@@ -17,6 +19,10 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+
+  String? _tourismType;
+  String? _budgetType;
+  final Set<String> _interests = {};
 
   final List<OnboardingPageData> _pages = [
     const OnboardingPageData(
@@ -39,9 +45,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     ),
   ];
 
+  int get _lastPage => _pages.length; // preferencias como paso final
+
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_completed', true);
+    await OnboardingPreferencesStore.save(
+      OnboardingPreferences(
+        tourismType: _tourismType,
+        budgetType: _budgetType,
+        interests: _interests.toList(),
+      ),
+    );
     ref.read(onboardingCompletedProvider.notifier).state = true;
     if (mounted) {
       context.go('/login');
@@ -49,7 +64,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
+    if (_currentPage < _lastPage) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -74,13 +89,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                itemCount: _pages.length,
+                itemCount: _lastPage + 1,
                 onPageChanged: (index) {
                   setState(() {
                     _currentPage = index;
                   });
                 },
                 itemBuilder: (context, index) {
+                  if (index == _lastPage) {
+                    return OnboardingPrefsPage(
+                      tourismType: _tourismType,
+                      budgetType: _budgetType,
+                      selectedInterests: _interests.toList(),
+                      onTourismTypeChanged: (value) {
+                        setState(() => _tourismType = value);
+                      },
+                      onBudgetTypeChanged: (value) {
+                        setState(() => _budgetType = value);
+                      },
+                      onInterestToggled: (value) {
+                        setState(() {
+                          if (!_interests.add(value)) {
+                            _interests.remove(value);
+                          }
+                        });
+                      },
+                    );
+                  }
                   return OnboardingPage(data: _pages[index]);
                 },
               ),
@@ -92,7 +127,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
-                      _pages.length,
+                      _lastPage + 1,
                       (index) => Container(
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         width: _currentPage == index ? 24 : 8,
@@ -120,7 +155,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         ),
                       ),
                       child: Text(
-                        _currentPage == _pages.length - 1
+                        _currentPage == _lastPage
                             ? 'Empezar'
                             : 'Siguiente',
                         style: const TextStyle(
