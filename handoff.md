@@ -1,5 +1,50 @@
 # Handoff de Sesión — BoliviaExperience
 
+**Fecha**: 22 de septiembre, 2026
+**Agente**: opencode (build agent)
+**Rama**: develop
+**Commit**: `02e7452` (último; push aplicado — `origin/develop` en sincronía `0/0`)
+
+---
+
+## Sesión de Auditoría Fase 0 — Fixes de falsos positivos + deuda técnica (A1–A5)
+
+**Objetivo**: corregir los falsos positivos detectados en la auditoría y dejar lista la Fase B (módulos 7–16). Todo verificado con tests en verde antes de commitear.
+
+### A1 — Recomendaciones rotas en la app (fix)
+**Root cause**: `RecommendationsService` (app) leía la respuesta como array plano, pero el backend la envuelve en `{success, data, timestamp}` (TransformInterceptor). El endpoint sí respondía 200; el parsing fallaba silenciosamente.
+**Fix** (`app/lib/features/recommendations/data/recommendations_service.dart`): desempaquetar `body['data']`. `dart analyze` limpio.
+
+### A2 — Seed de reservas en todos los estados (pre-requisito Fase 0)
+- Agregado a `api/prisma/seed.ts` un bloque de **8 reservas** (r1–r8) en los estados `pending` (instantánea + solicitud), `confirmed`, `rejected`, `completed`, `cancelled`, `expirada`, `no_show` — cubriendo tanto `instantanea` como `solicitud`, con precios reales (no 0).
+- **6 pagos escrow** asociados (`PAY-SEED-1..6`): `pending` (QR banca local), `held`, `released`, `refunded`, `cancelled`, con montos USD reales y referencias `hotelProducts`/`mesaProducts`/experiencias.
+- Fixes dentro del seed: `Reservation.date` es `DateTime` (no string) → se pasan fechas directas; helper de fecha renombrado a `isoD` (evita colisión con `isoDate`); guard ampliado (≥8 mesas, ≥3 hoteles).
+- **Verificado**: `npx ts-node prisma/seed.ts` crea 8 reservas + 6 pagos; `verify-seed.tmp.ts` confirmó reserva+6 pagos enlazados con montos reales (`40.23`, `17.24`, `22.99`, ...) y `price` como `Decimal` objetivo.
+- **Pantalla app** (`my_reservations_screen.dart`): etiquetas/colores de pagos ampliados a `held/released/refunded/processing/cancelled/failed` + default (antes solo `completed/cancelled`).
+
+### A3 — Tap en círculos de zonas de seguridad del mapa
+**Root cause**: `GoogleMap.onCircleTapped` no existe en google_maps_flutter 2.14.2; los círculos se enganchan vía `Circle.onTap` + `consumeTapEvents: true`.
+**Fix** (`map_provider.dart` + `map_screen.dart`): `onSafetyZoneTap` callback en `MapNotifier`, `_buildSafetyCircles` con `onTap`/`consumeTapEvents`, asignación desde `MapScreen`. `dart analyze` limpio.
+
+### A4 — Precios monetarios Float → Decimal
+- Migrados a `Decimal` en **ambos schemas** (`schema.prisma` + `schema.sqlite.prisma`): `Product.price`, `Product.pricePerAdult`, `Tour.price`, `Ticket.price`.
+- Aritmética corregida con `Number(...)` en `reservations.service.ts` (:219,541), `hotels.service.ts:78` (`Number(g._min.price)`), `restaurants.service.ts` (`minMesaPrice`) y el seed.
+- **Nota de infraestructura**: `api/prisma/schema.prisma` y `api/prisma/schema.sqlite.prisma` están **byte-idénticos** tras la auditoría (falta de diffs legítimos; Prisma valida ambos). Los schemas legacy `schema.postgres.prisma` no se tocan (legacy).
+- Aplicado con `npx prisma db push` + `npx prisma generate`; `npx prisma validate` OK en ambos.
+
+### Verificación completa (gates previos al commit)
+- **API**: `npm run build` OK · `npm test` **216/216** · `npx tsc --noEmit` limpio · `prisma validate` OK · seed vivo 8+6.
+- **App**: `dart analyze lib/features/map` + `lib/features/recommendations` sin issues.
+- Cambios en `plans/plan.md` (Fase 0 marcada como **completa** con criterio cumplido).
+
+### Pendiente para la siguiente sesión
+- **Fase B** (módulos 7–16) — roadmap detallado en `plans/plan.md` (análisis "Qué no se hizo"). Confirmar orden con el usuario (Recomendaciones ya conectado como Módulo 1; siguiente candidato: Módulo 9 — Onboarding con preferencias).
+- `exchange_rate_usd_bob` ya en el seed (6.96) y consumido por la aritmética de pagos.
+
+---
+
+## Handoff de Sesión — BoliviaExperience
+
 **Fecha**: 16 de agosto, 2026
 **Agente**: opencode (build agent)
 **Rama**: develop
