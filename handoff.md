@@ -3,7 +3,7 @@
 **Fecha**: 22 de septiembre, 2026
 **Agente**: opencode (build agent)
 **Rama**: develop
-**Commit**: `302f1ab` (Módulo 7; push aplicado — `origin/develop` en sincronía `0/0`)
+**Commit**: `4c37917` (Módulo 8; push aplicado — `origin/develop` en sincronía `0/0`)
 
 ---
 
