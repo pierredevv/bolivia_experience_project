@@ -11,7 +11,8 @@ class RecommendationsService {
     final response = await _dio.get(ApiConstants.recommendationsPersonalized(
       limit: limit,
     ));
-    final data = response.data;
+    final body = response.data;
+    final data = body is Map<String, dynamic> ? body['data'] : null;
     if (data is Map<String, dynamic>) {
       return PersonalizedRecommendations.fromJson(data);
     }

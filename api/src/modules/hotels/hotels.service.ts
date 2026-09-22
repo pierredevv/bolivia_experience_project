@@ -75,7 +75,7 @@ export class HotelsService {
     const minPriceByPlace = new Map<string, number>();
     let maxMinPrice = 0;
     for (const g of groups) {
-      const price = g._min.price;
+      const price = g._min.price == null ? null : Number(g._min.price);
       if (g.placeId && price !== null && price !== undefined) {
         const current = minPriceByPlace.get(g.placeId);
         if (current === undefined || price < current) {

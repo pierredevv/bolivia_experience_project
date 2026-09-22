@@ -111,8 +111,8 @@ export class RestaurantsService {
 
   private minMesaPrice(place: any): number | null {
     const prices = (place.products ?? [])
-      .map((prod: any) => prod.price)
-      .filter((price: any) => typeof price === "number");
+      .map((prod: any) => Number(prod.price))
+      .filter((price: any) => Number.isFinite(price));
     if (prices.length === 0) return null;
     return Math.min(...prices);
   }

@@ -216,7 +216,7 @@ export class ReservationsService {
       "instantanea_payment_minutes",
       15,
     );
-    const totalAmount = Math.round(product.price * dto.partySize * 100) / 100;
+    const totalAmount = Math.round(Number(product.price) * dto.partySize * 100) / 100;
     const escrow = await this.computeEscrow(totalAmount);
     // Monto de cobro en USD del proveedor (productos en BOB → USD).
     const usdRate = await this.config.getFloat("exchange_rate_usd_bob", 1);
@@ -538,7 +538,7 @@ export class ReservationsService {
     }
     const product = reservation.product!;
     const totalAmount =
-      Math.round(product.price * reservation.partySize * 100) / 100;
+      Math.round(Number(product.price) * reservation.partySize * 100) / 100;
     const escrow = await this.computeEscrow(totalAmount);
 
     const result = await this.withAtomicTx(async (tx) => {

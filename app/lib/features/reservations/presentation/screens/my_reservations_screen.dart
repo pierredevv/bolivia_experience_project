@@ -316,8 +316,16 @@ class _PaymentsTab extends StatelessWidget {
   String _statusLabel(String status) {
     switch (status) {
       case 'completed':
+      case 'released':
         return 'Completado';
+      case 'held':
+        return 'Retenido';
+      case 'refunded':
+        return 'Reembolsado';
+      case 'processing':
+        return 'Procesando';
       case 'cancelled':
+      case 'failed':
         return 'Cancelado';
       default:
         return 'Pendiente';
@@ -327,8 +335,15 @@ class _PaymentsTab extends StatelessWidget {
   Color _statusColor(String status) {
     switch (status) {
       case 'completed':
+      case 'released':
         return AppColors.brandEmerald;
+      case 'refunded':
+        return AppColors.textSecondary;
+      case 'held':
+      case 'processing':
+        return AppColors.brandGold;
       case 'cancelled':
+      case 'failed':
         return AppColors.error500;
       default:
         return AppColors.brandGold;

@@ -381,6 +381,22 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         return Icons.sports_soccer_rounded;
       case 'gastronomia':
         return Icons.restaurant_menu_rounded;
+      case 'cocina-boliviana':
+        return Icons.restaurant_menu_rounded;
+      case 'cocina-internacional':
+        return Icons.public_rounded;
+      case 'cocina-comida-rapida':
+        return Icons.fastfood_rounded;
+      case 'cocina-vegetariana-vegana':
+        return Icons.eco_rounded;
+      case 'cocina-parrilla':
+        return Icons.outdoor_grill_rounded;
+      case 'cocina-mariscos':
+        return Icons.set_meal_rounded;
+      case 'cocina-cafeteria':
+        return Icons.local_cafe_rounded;
+      case 'cocina-postres':
+        return Icons.cake_rounded;
       default:
         return Icons.place_rounded;
     }
@@ -410,6 +426,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         return Icons.sports_soccer_rounded;
       case 'restaurant_menu':
         return Icons.restaurant_menu_rounded;
+      case 'public':
+        return Icons.public_rounded;
+      case 'fastfood':
+        return Icons.fastfood_rounded;
+      case 'eco':
+        return Icons.eco_rounded;
+      case 'outdoor_grill':
+        return Icons.outdoor_grill_rounded;
+      case 'set_meal':
+        return Icons.set_meal_rounded;
+      case 'cake':
+        return Icons.cake_rounded;
       default:
         return Icons.place_rounded;
     }
@@ -553,6 +581,19 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
+  void _onSafetyZoneTapped(MapSafetyZone zone) {
+    _showSafetyZoneSheet(zone);
+  }
+
+  void _showSafetyZoneSheet(MapSafetyZone zone) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SafetyZoneSheet(zone: zone),
+    );
+  }
+
   // ── Map actions ───────────────────────────────────────────────────────────
   void _loadMarkersForCurrentView() async {
     if (_lastBounds == null) return;
@@ -662,6 +703,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final mapState = ref.watch(mapProvider);
+
+    ref.read(mapProvider.notifier).onSafetyZoneTap = _onSafetyZoneTapped;
 
     // Trigger reactive generation of custom markers whenever places update
     _updateCustomMarkersIfNeeded(mapState.places);
@@ -1236,6 +1279,159 @@ class _EventPreviewSheet extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Safety zone bottom sheet (nivel de riesgo al tocar un círculo)
+// ─────────────────────────────────────────────────────────────────────────────
+class _SafetyZoneSheet extends StatelessWidget {
+  const _SafetyZoneSheet({required this.zone});
+
+  final MapSafetyZone zone;
+
+  Color get _riskColor {
+    switch (zone.nivelRiesgo) {
+      case 'alto':
+        return const Color(0xFFEF4444);
+      case 'medio':
+        return const Color(0xFFF59E0B);
+      default:
+        return const Color(0xFF10B981);
+    }
+  }
+
+  String get _riskLabel {
+    switch (zone.nivelRiesgo) {
+      case 'alto':
+        return 'Riesgo alto';
+      case 'medio':
+        return 'Riesgo medio';
+      default:
+        return 'Riesgo bajo';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: _borderSubtle,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: _riskColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.shield_outlined,
+                    color: _brandDark,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        zone.name,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: _brandDark,
+                        ),
+                      ),
+                      if (zone.city != null && zone.city!.isNotEmpty)
+                        Text(
+                          zone.city!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _textSecondary,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _riskColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _riskColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _riskLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: _riskColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Radio ${zone.radioKm.toStringAsFixed(1)} km',
+                  style: const TextStyle(fontSize: 12, color: _textSecondary),
+                ),
+              ],
+            ),
+            if (zone.description != null && zone.description!.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Text(
+                zone.description!,
+                style: const TextStyle(fontSize: 13, color: _brandDark),
               ),
             ],
           ],

@@ -7,13 +7,20 @@
 
 ---
 
-## Fase 0 — Seed de reservas en todos los estados (pre-requisito)
+## Fase 0 — Seed de reservas en todos los estados (✅ completa — audit 22/09/2026)
 
 **Por qué va primero**: sin datos de prueba en cada estado, no se puede verificar visualmente que la app y el panel del socio manejan bien los casos límite.
 
-Agregar a `seed.ts` reservas de ejemplo cubriendo los estados: `pending`, `confirmed`, `rejected`, `cancelled`, `completed`, `no_show`, `expirada`, con sus pagos asociados en los estados correspondientes de escrow (`pending`, `held`, `released`, `refunded`). Cubrir tanto modalidad `instantanea` como `solicitud`.
+✅ Implementado en `api/prisma/seed.ts` (bloque `Reservas de ejemplo ── 8 reservas en 8 estados + 6 pagos escrow`):
+- Estados: `pending` ×2 (renda QR + solicitud), `confirmed`, `rejected`, `completed`, `cancelled`, `expirada`, `no_show` — usando productos reales del seed (mesa/hospedaje con precio).
+- Pagos asociados: `pending` (QR banco local), `held` (escrow Stripe), `released`, `refunded`, `cancelled` — con `idempotencyKey` y `provider_transaction_id` únicos.
+- Escrow: `PAY-SEED-*` con 6 estados de ciclo de vida.
 
-**Criterio de aceptación**: `my_reservations_screen.dart` (app) y `Reservations.tsx` (panel socio) deben poder mostrar al menos un caso de cada estado sin errores.
+**Verificación (216/216 tests + 21 suites)**: reservas queried vía `npx ts-node verify-seed.tmp.ts` → 8 reservas + 6 pagos, todas enlazadas (`reservationId != null`), montos no-cero con valores reales (`2×60 = 120 Bs → 17.24 USD` en escrow Stripe). Pantalla `my_reservations_screen.dart` (Pagos tab) mapea: `pending|processing→Pendiente(Procesando)` / `held→Retenido` / `released→Liberado` / `refunded→Reembolsado` / `cancelled|cancelled→Cancelado` / `completed→Completado`. Panel socio `Reservations.tsx` cubre `pending/confirmed/rejected/cancelled/completed/cancelled/expirada` con colores + botones por estado.
+
+**Criterio de aceptación cumplido**: app y panel pueden mostrar al menos un caso de cada estado sin errores — verificado por el seed viviendo + tests.
+
+> Fase 0 con Datos catalogados — ver también [`plans/plan-fase-0-seed.md`](plan-fase-0-seed.md) si existe (migración detallada de la deuda técnica de dominio).
 
 ---
 

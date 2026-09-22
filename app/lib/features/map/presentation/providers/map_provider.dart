@@ -81,6 +81,8 @@ final mapProvider = StateNotifierProvider<MapNotifier, MapState>((ref) {
 class MapNotifier extends StateNotifier<MapState> {
   final MapService _mapService;
 
+  void Function(MapSafetyZone)? onSafetyZoneTap;
+
   MapNotifier(this._mapService) : super(const MapState());
 
   Marker _buildMarker(MapPlace place) {
@@ -111,6 +113,8 @@ class MapNotifier extends StateNotifier<MapState> {
         fillColor: color.withValues(alpha: 0.12),
         strokeColor: color.withValues(alpha: 0.55),
         strokeWidth: 2,
+        consumeTapEvents: true,
+        onTap: () => onSafetyZoneTap?.call(zone),
       );
     }).toSet();
   }

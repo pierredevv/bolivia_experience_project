@@ -66,6 +66,7 @@ model Category {
   createdAt     DateTime @default(now()) @map("created_at")
 
   places Place[]
+  productsCocina Product[] @relation("CategoryCocina")
 
   @@map("categories")
 }
@@ -97,6 +98,10 @@ model Place {
   priceProposedBy String?   @map("price_proposed_by")
   specialFeature  String?   @map("special_feature")
   cuisineType     String?   @map("cuisine_type")
+  // Categoría del lugar definida por el administrador (ej. "Shopping mall", "Punto de interés")
+  categoriaPlace  String?   @map("categoria_place")
+  // Colección curada "Experiencias imprescindibles" (gestionado por admin)
+  esImprescindible  Boolean  @default(false) @map("es_imprescindible")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
@@ -446,7 +451,7 @@ model Product {
   name                String
   description         String?
   descriptionEn       String?  @map("description_en")
-  price               Float    @default(0)
+  price               Decimal  @default(0)
   currency            String   @default("BOB")
   // Cupo/inventario por fecha-hora para modalidad instantanea (null = sin límite)
   capacity            Int?
@@ -479,8 +484,10 @@ model Product {
   pagoDiferido       Boolean  @default(false) @map("pago_diferido")
   // Experiencias: categoría (ej. "Tours de Noche") y precio por adulto
   experienceCategory  String?  @map("experience_category")
-  pricePerAdult       Float?   @map("price_per_adult")
+  pricePerAdult       Decimal? @map("price_per_adult")
   priceVarByGroup     Boolean  @default(false) @map("price_var_by_group")
+  // Tramo de precio por tamaño de grupo, JSON: [{ "min": 1, "max": 3, "precio": 50 }]
+  tramosPrecioJson    String?  @map("tramos_precio_json")
   photoUrl            String?  @map("photo_url")
   // Detalle de experiencia (completado por el socio)
   duration            String?  @map("duration")
@@ -492,6 +499,13 @@ model Product {
   advanceDays         Int?     @default(23) @map("advance_days")
   // Políticas como array JSON, ej. ["Garantía de precio más bajo", "Cancelación gratuita"]
   policiesJson        String   @default("[]") @map("policies_json")
+  // Colección curada "Experiencias imprescindibles" (gestionado por admin)
+  esImprescindible   Boolean  @default(false) @map("es_imprescindible")
+  // Tipo de cocina (referencia a Category con slug cocina-*)
+  tipoCocinaId       String?  @map("tipo_cocina_id")
+  duracionDias        Int?     @map("duracion_dias")
+  // Subcategoría de tour (definida por el socio): naturaleza_vida_salvaje | cultural_rural | multi_dia | visita_privada |
+  subcategoriaTour    String?  @map("subcategoria_tour")
   ratingAvg           Float    @default(0) @map("rating_avg")
   ratingCount         Int      @default(0) @map("rating_count")
   isActive            Boolean  @default(true) @map("is_active")
@@ -505,6 +519,7 @@ model Product {
   reservations  Reservation[]
   productReviews ProductReview[]
   slots         ProductSlot[]
+  cocina        Category?     @relation("CategoryCocina", fields: [tipoCocinaId], references: [id], onDelete: SetNull)
 
   @@index([socioId])
   @@index([placeId])
@@ -596,7 +611,7 @@ model Tour {
   name        String
   description String
   descriptionEn String? @map("description_en")
-  price       Float
+  price       Decimal
   currency    String   @default("BOB")
   duration    String
   maxGroup    Int      @map("max_group")
@@ -621,7 +636,7 @@ model Ticket {
   eventId      String   @map("event_id")
   userId       String?  @map("user_id")
   ticketType   String   @map("ticket_type")
-  price        Float
+  price        Decimal
   currency     String   @default("BOB")
   status       String   @default("available")
   qrCode       String?  @unique @map("qr_code")
