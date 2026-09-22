@@ -13,6 +13,7 @@ import {
   FolderOpen,
   Settings,
   Store,
+  MessageSquare,
 } from 'lucide-react'
 
 const navigation = [
@@ -21,6 +22,7 @@ const navigation = [
   { name: 'Usuarios', href: '/admin-panel/users', icon: Users },
   { name: 'Lugares', href: '/admin-panel/places', icon: MapPin },
   { name: 'Reseñas', href: '/admin-panel/reviews', icon: Star },
+  { name: 'Soporte', href: '/admin-panel/support', icon: MessageSquare },
   { name: 'Eventos', href: '/admin-panel/events', icon: Calendar },
   { name: 'Promociones', href: '/admin-panel/promotions', icon: Tag },
   { name: 'Categorías', href: '/admin-panel/categories', icon: FolderOpen },

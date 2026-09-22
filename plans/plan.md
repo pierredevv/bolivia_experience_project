@@ -146,6 +146,8 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 4. Panel admin: lista de tickets, filtro por estado, responder.
 5. Notificación al socio cuando se abre un ticket relacionado con una reserva suya.
 
+**Verificación (226/226 tests API + build OK)**: modelos `SupportTicket` + `SupportTicketMessage` en los 3 schemas con `supportTickets` bidireccional en `User` y `Reservation` (`schema.sqlite.prisma:44` `User.supportTickets`, `:428` `Reservation.supportTickets`); `prisma validate` OK en los 3, `db push` aplicado a `dev.db`. Backend en `api/src/modules/support/`: `support.service.ts` (create con message inicial + `notify(host)` vía `findHostForReservation` → `NotificationsService.notify()` L69; `findMine`/`findOne`/`addMessage` con ownership check; `adminFindAll`/`adminFindOne`/`adminUpdateStatus`/`adminAddMessage` que notifican al usuario). Controllers: `support.controller.ts` (`POST /support`, `GET /support`, `GET /support/:id`, `PATCH /support/:id/messages`) + `support.admin.controller.ts` (`GET/POST /admin/support`, `PATCH :id/status`, `PATCH :id/messages`) con `@Roles("admin")`. `support.service.spec.ts` (10 tests) cubre create/notify-host/ownership/admin. Seed incluye 1 ticket de ejemplo ligado a la primera reserva. App Flutter: feature `lib/features/support/` (service, provider con `supportTicketsProvider`, `support_tickets_screen.dart` listado, `create_ticket_screen.dart` con selector de reserva contextual, `support_ticket_detail_screen.dart` hilo de mensajes + responder); rutas `/support`, `/support/create`, `/support/:id` en `router.dart` (+ protegidas) y entrada "Soporte y Ayuda" en `profile_screen.dart`. Panel admin web: `web/src/pages/admin/Support.tsx` (lista con filtro por estado, modal de detalle con hilo + cambiar estado + responder) + `useSupport.ts` + `supportApi` en `api.ts` + ruta/nav en `App.tsx`/`AdminLayout.tsx`. `dart analyze` sin issues, `flutter test` 50/50, web `tsc --noEmit` OK y vitest 46/46.
+
 ---
 
 ## Módulo 8 — Onboarding con preferencias (ampliación)
@@ -275,7 +277,7 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 | Módulo 4 — Itinerario automático por reglas | ✅ Completado | `POST /trips/:id/generate` (trips.service.ts), botón en trip_detail_screen |
 | Módulo 5 — Mapa mejorado + Zonas de seguridad | ✅ Completado | Modelo `SafetyZone` + seed 6 zonas; `GET /map/safety-zones` (±bounds), `GET /map/safety-zones/check` (Haversine), `GET /map/events`; admin CRUD `/admin/safety-zones`; mapa: markers por categoría, capa de eventos y círculos por riesgo (map_screen.dart) |
 | Módulo 6 — Gamificación | ✅ Completado | Puntos por reserva completada con `totalAmount` (`reservations.service.ts:complete`); modelo `Badge`/`UserBadge` (3 schemas) + seed 5 badges; lógica de asignación (`gamification.service.ts`); endpoints `GET /gamification/me` y `/gamification/badges`; `points`+`userBadges` en `users/me`; pantalla `gamification_screen.dart` + menú "Mis Logros" y puntos en `profile_screen.dart`. Smoke test: completar reserva de 160 BOB → +160 pts (350→510). 196 tests backend OK; flutter analyze limpio |
-| Módulo 7 — Soporte y resolución de conflictos | ⏳ | — |
+| Módulo 7 — Soporte y resolución de conflictos | ✅ | Ver Módulo 7 abajo |
 | Módulo 8 — Onboarding con preferencias | ⏳ | — |
 | Módulo 9 — Eventos publicados por usuarios | ⏳ | — |
 | Módulo 10 — Clima mejorado | ⏳ | — |

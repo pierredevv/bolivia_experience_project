@@ -17,6 +17,7 @@ const AdminPromotions = lazy(() => import('./pages/admin/Promotions'))
 const AdminCategories = lazy(() => import('./pages/admin/Categories'))
 const AdminSettings = lazy(() => import('./pages/admin/Settings'))
 const AdminBusinesses = lazy(() => import('./pages/admin/Businesses'))
+const AdminSupport = lazy(() => import('./pages/admin/Support'))
 
 // Business Pages
 const BusinessLoginPage = lazy(() => import('./pages/business/BusinessLoginPage'))
@@ -80,6 +81,7 @@ function App() {
               <Route path="users" element={<AdminUsers />} />
               <Route path="places" element={<AdminPlaces />} />
               <Route path="reviews" element={<AdminReviews />} />
+              <Route path="support" element={<AdminSupport />} />
               <Route path="events" element={<AdminEvents />} />
               <Route path="promotions" element={<AdminPromotions />} />
               <Route path="categories" element={<AdminCategories />} />

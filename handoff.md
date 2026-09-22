@@ -7,6 +7,19 @@
 
 ---
 
+## Módulo 7 — Soporte y resolución de conflictos (sesión)
+
+**Fecha**: 22 de septiembre, 2026
+**Estado**: completado en backend + app + panel admin web; verificado (gates abajo).
+
+- **Schemas**: `SupportTicket` + `SupportTicketMessage` en los 3 schemas. Bidireccional `supportTickets` en `User` y `Reservation` (`schema.sqlite.prisma:44` y `:427`; `schema.prisma` byte-igual). `schema.postgres.prisma` NO tiene `Reservation` (schema mínimo de prod) → allí `SupportTicket` va sin relación a reserva (ticket sin reserva válido). `prisma validate` OK ×3; gen + `db push` a `dev.db` OK (tablas `support_tickets`/`support_ticket_messages` creadas).
+- **Backend** (`api/src/modules/support/`): `support.service.ts` — `create` (crea ticket + mensaje inicial + **notifica al socio** vía `findHostForReservation` → `NotificationsService.notify`, L100), `findMine`/`findOne`/`addMessage` con ownership check, `adminFindAll`/`adminFindOne`/`adminUpdateStatus`/`adminAddMessage` (notifican al dueño del ticket). Controllers: `support.controller.ts` (`POST /support`, `GET /support`, `GET /support/:id`, `PATCH /support/:id/messages`) y `support.admin.controller.ts` (`GET /admin/support?status&page&limit`, `GET /admin/support/:id`, `PATCH /admin/support/:id/status`, `PATCH /admin/support/:id/messages`) con `@Roles("admin")`. DTOs en `support/dto/index.ts` (types `reservation/payment/tours/bill/opinion/other`; status `open/in_progress/resolved/closed`). Registrado en `app.module.ts`.
+- **Seed**: `deleteMany` de `supportTicketMessage`/`supportTicket` + ticket de ejemplo ligado a la primera reserva (asunto "Mi reserva no aparece confirmada") — `api/prisma/seed.ts:2475`.
+- **App Flutter**: feature `lib/features/support/` (service + provider `supportTicketsProvider` + screens `support_tickets_screen.dart`, `create_ticket_screen.dart` con selector contextual de reserva, `support_ticket_detail_screen.dart` con hilo de mensajes y barra de respuesta). Rutas `/support`, `/support/create`, `/support/:id` en `config/router.dart` (+ protegidas). Entrada "Soporte y Ayuda" en `profile_screen.dart`. Endpoints en `config/api_constants.dart`.
+- **Panel admin web**: `web/src/pages/admin/Support.tsx` (lista con filtro por estado + paginación, modal de detalle con hilo de mensajes, cambiar estado y responder), `web/src/hooks/useSupport.ts`, `supportApi` en `web/src/services/api.ts` (Módulo 7), ruta `/admin-panel/support` en `App.tsx` y nav en `AdminLayout.tsx`.
+- **Tracking**: `plans/plan.md` Módulo 7 → ✅ con evidencia archivo:línea.
+- **Verificación**: API `npm run build` OK · `npm test` **226/226** (22 suites) · `dart analyze lib` limpio · `flutter test` **50/50** · web `tsc --noEmit` OK · web vitest **46/46** · `prisma validate` OK ×3.
+
 ## Sesión de Auditoría Fase 0 — Fixes de falsos positivos + deuda técnica (A1–A5)
 
 **Objetivo**: corregir los falsos positivos detectados en la auditoría y dejar lista la Fase B (módulos 7–16). Todo verificado con tests en verde antes de commitear.

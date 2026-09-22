@@ -132,4 +132,10 @@ class ApiConstants {
   // Gamification
   static const gamificationMe = '/gamification/me';
   static const gamificationBadges = '/gamification/badges';
+
+  // Support
+  static const support = '/support';
+  static const supportMine = '/support';
+  static String supportById(String id) => '/support/$id';
+  static String supportMessages(String id) => '/support/$id/messages';
 }

@@ -12,8 +12,10 @@ async function main() {
   // Clean existing data (order matters for foreign keys)
 await prisma.chatMessage.deleteMany();                                    
   await prisma.chatConversation.deleteMany();                               
-  await prisma.reservation.deleteMany();                                   
+await prisma.reservation.deleteMany();                                   
   await prisma.payment.deleteMany();
+  await prisma.supportTicketMessage.deleteMany();
+  await prisma.supportTicket.deleteMany();
   await prisma.ticket.deleteMany();
   await prisma.tour.deleteMany();
   await prisma.coupon.deleteMany();
@@ -2468,6 +2470,35 @@ await prisma.chatMessage.deleteMany();
     console.log(`Created 8 example reservations (pending, solicitud, confirmed, rejected, completed, cancelled, expirada, no_show)`);
   } else {
     console.warn('Skipped example reservations: seed de productos insuficiente');
+  }
+
+  // ———— Soporte y resolución de conflictos (Módulo 7) ————
+  try {
+    const firstReservation = await prisma.reservation.findFirst({
+      orderBy: { createdAt: 'asc' },
+    });
+    if (firstReservation) {
+      const user = await prisma.user.findUnique({ where: { id: firstReservation.userId } });
+      const ticket = await prisma.supportTicket.create({
+        data: {
+          userId: firstReservation.userId,
+          reservationId: firstReservation.id,
+          type: 'reservation',
+          subject: 'Mi reserva no aparece confirmada',
+          description: 'Reservé una mesa el sábado pasado y el pago aparece retenido. Ya no aparece confirmada.',
+        },
+      });
+      await prisma.supportTicketMessage.create({
+        data: {
+          ticketId: ticket.id,
+          authorId: user?.id ?? firstReservation.userId,
+          body: 'Reservé una mesa el sábado pasado y el pago aparece retenido. Ya no aparece confirmada.',
+        },
+      });
+      console.log(`Created 1 example support ticket (${ticket.id})`);
+    }
+  } catch (e) {
+    console.warn('Skipped example support ticket:', (e as Error).message);
   }
 
   // â”€â”€ Fotos especÃ­ficas de hoteles y plaza â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

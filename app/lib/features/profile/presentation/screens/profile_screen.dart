@@ -362,6 +362,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: () => context.push('/reservations'),
                 ),
                 _MenuItem(
+                  icon: Icons.support_agent_outlined,
+                  title: 'Soporte y Ayuda',
+                  subtitle: 'Tickets, reembolsos e incidencias',
+                  onTap: () => context.push('/support'),
+                ),
+                _MenuItem(
                   icon: Icons.rate_review_outlined,
                   title: 'Mis Reseñas (${state.totalReviews})',
                   onTap: () => context.push('/profile/reviews'),

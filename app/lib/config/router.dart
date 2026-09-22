@@ -48,6 +48,10 @@ import '../features/things_to_do/presentation/screens/essential_screen.dart';
 import '../features/things_to_do/presentation/screens/things_to_do_screen.dart';
 import '../features/things_to_do/presentation/screens/all_categories_screen.dart';
 import '../features/restaurants/presentation/screens/restaurants_screen.dart';
+import '../features/support/presentation/screens/support_tickets_screen.dart';
+import '../features/support/presentation/screens/create_ticket_screen.dart';
+import '../features/support/presentation/screens/support_ticket_detail_screen.dart';
+import '../features/support/data/support_service.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -62,7 +66,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/splash' ||
           state.matchedLocation == '/onboarding';
 
-      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/profile/reviews', '/profile/gamification', '/settings', '/reservations', '/traveler-photos/create'];
+      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/profile/reviews', '/profile/gamification', '/settings', '/reservations', '/traveler-photos/create', '/support'];
       final isProtectedRoute = protectedRoutes.any((r) => state.matchedLocation.startsWith(r));
       final isReviewRoute = state.matchedLocation.contains('/review');
       final isReserveRoute = state.matchedLocation.contains('/reserve');
@@ -306,6 +310,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/recommendations',
         builder: (context, state) => const RecommendationsScreen(),
+      ),
+      GoRoute(
+        path: '/support',
+        builder: (context, state) => const SupportTicketsScreen(),
+      ),
+      GoRoute(
+        path: '/support/create',
+        builder: (context, state) => const CreateTicketScreen(),
+      ),
+      GoRoute(
+        path: '/support/:id',
+        builder: (context, state) => SupportTicketDetailScreen(
+          ticketId: state.pathParameters['id']!,
+          initial: state.extra is SupportTicket
+              ? state.extra as SupportTicket
+              : null,
+        ),
       ),
     ],
   );

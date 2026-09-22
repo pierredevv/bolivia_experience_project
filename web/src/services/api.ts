@@ -126,6 +126,16 @@ export const adminApi = {
   togglePremium: (id: string) => api.patch(`/admin/businesses/${id}/premium`),
 }
 
+// Support (Módulo 7)
+export const supportApi = {
+  getTickets: (params?: any) => api.get('/admin/support', { params }),
+  getTicket: (id: string) => api.get(`/admin/support/${id}`),
+  updateStatus: (id: string, status: string) =>
+    api.patch(`/admin/support/${id}/status`, { status }),
+  addMessage: (id: string, body: string) =>
+    api.patch(`/admin/support/${id}/messages`, { body }),
+}
+
 // Places
 export const placesApi = {
   getAll: (params?: any) => api.get('/places', { params }),
