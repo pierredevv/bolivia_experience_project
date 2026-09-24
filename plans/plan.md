@@ -198,6 +198,14 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 3. Integrar la pantalla de gamificación (del módulo 6) dentro del perfil.
 4. Agregar historial de pagos en el perfil.
 
+**Verificación (completado)**:
+- Backend: `api/src/modules/users/users.service.ts` — `getProfile` ahora incluye `isPremium` y `_count.{reviews, favorites, userBadges, reservations, payments}` en el `select`. Nuevo spec `api/src/modules/users/users.service.spec.ts` (5 tests). `npm test`: 243/243 (23 suites).
+- App: `app/lib/features/profile/data/profile_service.dart` — `UserProfile` ahora incluye `isPremium`, `reservationCount` y `paymentCount` (desde `_count`); nuevo modelo `PaymentHistoryItem` y método `getPaymentHistory()` (GET `/payments/my/history`, el endpoint ya existía en M3).
+- App: `app/lib/features/profile/presentation/screens/profile_screen.dart` — badge "Premium" junto al nombre en la identity card; estadísticas ampliadas a 2 filas de 3 (Favoritos, Reseñas, Puntos / Rating, Reservas, Pagos); nuevo ítem de menú "Historial de Pagos" → `/profile/payments`.
+- App: nueva pantalla `app/lib/features/profile/presentation/screens/payment_history_screen.dart` con cards (monto, proveedor, estado, fecha) y estados vacío/error; provider `paymentHistoryProvider` en `profile_provider.dart`; ruta `/profile/payments` protegida en `router.dart`.
+- Punto 3 ya cumplido desde M6: menú "Mis Logros" → `/profile/gamification` existía en `profile_screen.dart`.
+- Gates: `flutter analyze` sin issues, `flutter test` 50/50, `prisma validate` OK (sin cambios de schema), API build OK.
+
 ---
 
 ## Módulo 12 — IA conversacional (chat en la app)
@@ -287,7 +295,7 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 | Módulo 8 — Onboarding con preferencias | ✅ | Ver Módulo 8 abajo |
 | Módulo 9 — Eventos publicados por usuarios | ✅ | Ver Módulo 9 arriba |
 | Módulo 10 — Clima mejorado | ✅ | Ver Módulo 10 arriba |
-| Módulo 11 — Perfil mejorado | ⏳ | — |
+| Módulo 11 — Perfil mejorado | ✅ | Ver Módulo 11 abajo |
 | Módulo 12 — IA conversacional (chat) | ⏳ | — |
 | Módulo 13 — Armado de viaje mejorado | ⏳ | — |
 | Módulo 14 — Tips de viaje | ⏳ | — |

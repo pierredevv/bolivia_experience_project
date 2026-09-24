@@ -3,7 +3,22 @@
 **Fecha**: 24 de septiembre, 2026
 **Agente**: opencode (build agent)
 **Rama**: develop
-**Commit**: `11141ed` (Módulo 10; docs en commit separado)
+**Commit**: `6bbe231` (Módulo 11; docs en commit separado)
+
+---
+
+## Módulo 11 — Perfil mejorado (sesión)
+
+**Fecha**: 24 de septiembre, 2026
+**Estado**: completado; verificado (gates abajo).
+
+- **Backend** (`api/src/modules/users/users.service.ts`): `getProfile` ahora expone `isPremium` y amplía `_count` con `reservations` y `payments` en el `select`. Nuevo `users.service.spec.ts` (5 tests: isPremium+counts en el select, parseo de interests JSON, NotFound, updateProfile).
+- **App Flutter** (`features/profile/`): `UserProfile` ahora incluye `isPremium`, `reservationCount`, `paymentCount` (desde `_count`); nuevo modelo `PaymentHistoryItem` y `getPaymentHistory()` (GET `/payments/my/history`, endpoint ya existía desde M3, devuelve array crudo).
+- `profile_screen.dart`: badge "Premium" junto al nombre; estadísticas en 2 filas de 3 (Favoritos, Reseñas, Puntos / Rating, Reservas, Pagos); nuevo ítem menú "Historial de Pagos" → `/profile/payments`.
+- Nueva `payment_history_screen.dart`: cards (proveedor, monto moneda, descripción, badge de estado, fecha) + estados vacío ("Todavía no realizaste pagos") y error con retry; provider `paymentHistoryProvider` (`profile_provider.dart`); ruta protegida `/profile/payments` en `router.dart`.
+- Punto 3 del plan (gamificación en perfil) ya estaba cumplido desde M6: menú "Mis Logros" → `/profile/gamification`.
+- **Tracking**: `plans/plan.md` Módulo 11 → ✅ con evidencia archivo:línea.
+- **Verificación**: API `npm run build` OK · `npm test` **243/243** (23 suites, +5 vs 238 del M10) · `dart analyze` limpio · `flutter test` **50/50** · `prisma validate` OK (sin cambios de schema).
 
 ---
 
