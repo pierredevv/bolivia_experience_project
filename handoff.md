@@ -3,7 +3,27 @@
 **Fecha**: 24 de septiembre, 2026
 **Agente**: opencode (build agent)
 **Rama**: develop
-**Commit**: `6bbe231` (Módulo 11; docs en commit separado)
+**Commit**: `47d23c4` (Módulo 12; docs en commit separado)
+
+---
+
+## Módulo 12 — IA conversacional (chat en la app) (sesión)
+
+**Fecha**: 24 de septiembre, 2026
+**Estado**: completado; verificado (gates abajo).
+
+- **Backend** (`api/src/modules/chatbot/`): el `chatbot.service.ts` ya existía (OpenAI GPT-3.5-turbo, M1) y se amplió:
+  - `getProductsContext`: productos reservables (`modalidadReserva != ninguna`) de places activos con **disponibilidad real** (cupos restantes = `capacity − reservas activas pending/confirmed/held` vía `groupBy`).
+  - `getRecommendationsContext`: usa `RecommendationsService.getPersonalized(userId, 5)` (motor M1) como fuente de sugerencias del chat; fallback silencioso si falla.
+  - `assertApiKeyConfigured` → **503** si falta `OPENAI_API_KEY` (mismo patrón que el weather del M10).
+  - Prompt del sistema incluye lugares, productos con cupos y sugerencias personalizadas, e instruye cerrar con la oferta literal "¿Quieres que te armo esto directamente en la app?".
+  - Nuevo `getConversationMessages(conversationId, userId)` (valida ownership → `NotFoundException`).
+- `chatbot.module.ts`: importa `RecommendationsModule`. `chatbot.controller.ts`: nuevo `GET /chatbot/conversations/:id`.
+- Nuevo `chatbot.service.spec.ts` (8 tests). Login clave: `HttpService.post` debe devolver **Observable** (`of`/`throwError`), no Promise, porque el service usa `firstValueFrom`; los asserts de error usan `status` (no `statusCode`) de `HttpException`.
+- **App Flutter** (`features/chat/`): `chat_service.dart`, `chat_provider.dart` (conversationId persistido en SharedPreferences + historial al reabrir la pantalla), pantalla `chat_screen.dart` (burbujas, typing, input, errores amigables por status, botón "Armar itinerario" que crea `Trip` + `generateItinerary` del M4 y navega a `/trips/:id`), ruta protegida `/chat` y entrada "Asistente IA" en el menú del perfil.
+- `api/.env.example`: + `OPENAI_API_KEY`.
+- **Tracking**: `plans/plan.md` Módulo 12 → ✅ con evidencia archivo:línea.
+- **Verificación**: API `npm run build` OK · `npm test` **251/251** (23 suites, +8 vs 243 del M11) · `dart analyze` limpio · `flutter test` **50/50** · `prisma validate` OK (sin cambios de schema).
 
 ---
 

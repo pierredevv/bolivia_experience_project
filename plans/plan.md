@@ -218,6 +218,14 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 4. Ofrecer explícitamente "¿Quieres que te arme esto directamente en la app?" al final de la respuesta del chat, generando un itinerario (módulo 4) que el usuario pueda revisar y reservar.
 5. Requiere `OPENAI_API_KEY` configurada en `.env`.
 
+**Verificación (completado)**:
+- El backend `chatbot.service.ts` existía desde M1 (GPT-3.5-turbo vía OpenAI) y se **amplió**: ahora integra catálogo de productos con **disponibilidad real** (`getProductsContext`: productos `modalidadReserva != ninguna` de places activos, cupos restantes = `capacity − reservas activas (pending/confirmed/held)` vía `groupBy`), el **motor de recomendación del M1** (`RecommendationsService.getPersonalized`) como fuente de sugerencias, y el prompt instruye cerrar con la oferta literal "¿Quieres que te arme esto directamente en la app?".
+- `api/src/modules/chatbot/chatbot.service.ts`: `assertApiKeyConfigured` → 503 si falta `OPENAI_API_KEY` (lección del M10 weather); `getConversationMessages` nuevo (historial de una conversación, valida ownership → NotFound).
+- `api/src/modules/chatbot/chatbot.module.ts`: importa `RecommendationsModule`. `chatbot.controller.ts`: nuevo `GET /chatbot/conversations/:id`.
+- Nuevo spec `api/src/modules/chatbot/chatbot.service.spec.ts` (8 tests: prompt con lugares+productos+cupos restantes+sugerencias, historial persistido, fallback sin recomendaciones, 503 sin key vía `status`, 502 en fallo OpenAI vía Observable `throwError`, historial propio/ajeno). `npm test`: **251/251** (23 suites, +8 vs 243 del M11).
+- App Flutter (`features/chat/`): `chat_service.dart` (ChatMessage/ChatReply/sendMessage/getConversationMessages), `chat_provider.dart` (ChatNotifier con persistencia de `conversationId` en SharedPreferences e historial al reabrir), pantalla `chat_screen.dart` (burbujas de chat, typing, barra de input, errores amigables, botón **"Armar itinerario"** que crea un `Trip` vía `TripsService.createTrip` + `generateItinerary` del M4 y navega a `/trips/:id` para revisar y reservar), ruta protegida `/chat` en `router.dart` y entrada "Asistente IA" en `profile_screen.dart`.
+- Gates: API `npm run build` OK · `dart analyze` limpio · `flutter test` 50/50 · `prisma validate` OK (sin cambios de schema). `openai_api_key` documentada en `api/.env.example`.
+
 ---
 
 ## Módulo 13 — Armado de viaje mejorado
@@ -296,7 +304,7 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 | Módulo 9 — Eventos publicados por usuarios | ✅ | Ver Módulo 9 arriba |
 | Módulo 10 — Clima mejorado | ✅ | Ver Módulo 10 arriba |
 | Módulo 11 — Perfil mejorado | ✅ | Ver Módulo 11 abajo |
-| Módulo 12 — IA conversacional (chat) | ⏳ | — |
+| Módulo 12 — IA conversacional (chat) | ✅ | Ver Módulo 12 abajo |
 | Módulo 13 — Armado de viaje mejorado | ⏳ | — |
 | Módulo 14 — Tips de viaje | ⏳ | — |
 | Módulo 15 — Efemérides | ⏳ | — |
