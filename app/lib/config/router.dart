@@ -22,6 +22,7 @@ import '../features/reviews/presentation/screens/create_review_screen.dart';
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/profile/presentation/screens/settings_screen.dart';
 import '../features/profile/presentation/screens/my_reviews_screen.dart';
+import '../features/profile/presentation/screens/payment_history_screen.dart';
 import '../features/profile/presentation/screens/privacy_policy_screen.dart';
 import '../features/home/presentation/screens/main_shell.dart';
 import '../features/trips/presentation/screens/trips_list_screen.dart';
@@ -68,7 +69,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/splash' ||
           state.matchedLocation == '/onboarding';
 
-      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/profile/reviews', '/profile/gamification', '/settings', '/reservations', '/traveler-photos/create', '/support', '/events/create'];
+      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/profile/reviews', '/profile/gamification', '/profile/payments', '/settings', '/reservations', '/traveler-photos/create', '/support', '/events/create'];
       final isProtectedRoute = protectedRoutes.any((r) => state.matchedLocation.startsWith(r));
       final isReviewRoute = state.matchedLocation.contains('/review');
       final isReserveRoute = state.matchedLocation.contains('/reserve');
@@ -201,6 +202,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile/gamification',
         builder: (context, state) => const GamificationScreen(),
+      ),
+      GoRoute(
+        path: '/profile/payments',
+        builder: (context, state) => const PaymentHistoryScreen(),
       ),
       GoRoute(
         path: '/profile/privacy',

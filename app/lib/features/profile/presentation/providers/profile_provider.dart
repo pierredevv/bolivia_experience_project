@@ -55,6 +55,12 @@ final profileProvider = StateNotifierProvider<ProfileNotifier, ProfileState>((re
   );
 });
 
+final paymentHistoryProvider =
+    FutureProvider<List<PaymentHistoryItem>>((ref) async {
+  final service = ref.read(profileServiceProvider);
+  return service.getPaymentHistory();
+});
+
 class ProfileNotifier extends StateNotifier<ProfileState> {
   final ProfileService _profileService;
   final ReviewsService _reviewsService;

@@ -270,14 +270,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Text(
-                    profile?.name ?? 'Usuario',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: _brandDark,
-                      letterSpacing: -0.3,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          profile?.name ?? 'Usuario',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: _brandDark,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                      ),
+                      if (profile?.isPremium == true) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: _brandGold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: _brandGold.withValues(alpha: 0.4)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.workspace_premium_rounded,
+                                  size: 12, color: _brandGold),
+                              SizedBox(width: 3),
+                              Text(
+                                'Premium',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: _brandGold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -306,37 +342,60 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       color: _canvas,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    child: Column(
                       children: [
-                        _StatItem(
-                          value: '${favoritesState.favorites.length}',
-                          label: 'Favoritos',
-                          icon: Icons.favorite_rounded,
-                          iconColor: const Color(0xFFFC7B7B),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _StatItem(
+                              value: '${favoritesState.favorites.length}',
+                              label: 'Favoritos',
+                              icon: Icons.favorite_rounded,
+                              iconColor: const Color(0xFFFC7B7B),
+                            ),
+                            _VerticalDivider(),
+                            _StatItem(
+                              value: '${state.totalReviews}',
+                              label: 'Reseñas',
+                              icon: Icons.rate_review_rounded,
+                              iconColor: _brandEmerald,
+                            ),
+                            _VerticalDivider(),
+                            _StatItem(
+                              value: '${profile?.points ?? 0}',
+                              label: 'Puntos',
+                              icon: Icons.emoji_events_rounded,
+                              iconColor: _brandGold,
+                            ),
+                          ],
                         ),
-                        _VerticalDivider(),
-                        _StatItem(
-                          value: '${state.totalReviews}',
-                          label: 'Reseñas',
-                          icon: Icons.rate_review_rounded,
-                          iconColor: _brandEmerald,
-                        ),
-                        _VerticalDivider(),
-                        _StatItem(
-                          value: '${profile?.points ?? 0}',
-                          label: 'Puntos',
-                          icon: Icons.emoji_events_rounded,
-                          iconColor: _brandGold,
-                        ),
-                        _VerticalDivider(),
-                        _StatItem(
-                          value: state.averageRating > 0
-                              ? state.averageRating.toStringAsFixed(1)
-                              : '-',
-                          label: 'Rating',
-                          icon: Icons.star_rounded,
-                          iconColor: _brandGold,
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _StatItem(
+                              value: state.averageRating > 0
+                                  ? state.averageRating.toStringAsFixed(1)
+                                  : '-',
+                              label: 'Rating',
+                              icon: Icons.star_rounded,
+                              iconColor: _brandGold,
+                            ),
+                            _VerticalDivider(),
+                            _StatItem(
+                              value: '${profile?.reservationCount ?? 0}',
+                              label: 'Reservas',
+                              icon: Icons.event_available_rounded,
+                              iconColor: _brandEmerald,
+                            ),
+                            _VerticalDivider(),
+                            _StatItem(
+                              value: '${profile?.paymentCount ?? 0}',
+                              label: 'Pagos',
+                              icon: Icons.payments_rounded,
+                              iconColor: AppColors.primary700,
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -360,6 +419,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icons.event_available_outlined,
                   title: 'Mis Reservas',
                   onTap: () => context.push('/reservations'),
+                ),
+                _MenuItem(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'Historial de Pagos',
+                  subtitle:
+                      '${profile?.paymentCount ?? 0} pagos registrados',
+                  onTap: () => context.push('/profile/payments'),
                 ),
                 _MenuItem(
                   icon: Icons.support_agent_outlined,
