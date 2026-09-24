@@ -183,6 +183,9 @@ export const eventsApi = {
   create: (data: any) => api.post('/events', data),
   update: (id: string, data: any) => api.put(`/events/${id}`, data),
   delete: (id: string) => api.delete(`/events/${id}`),
+  adminGetAll: (params?: any) => api.get('/admin/events', { params }),
+  updateStatus: (id: string, status: 'pending' | 'approved' | 'rejected') =>
+    api.patch(`/admin/events/${id}/status`, { status }),
 }
 
 // Promotions

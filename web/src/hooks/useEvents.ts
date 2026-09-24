@@ -48,3 +48,37 @@ export function useDeleteEvent() {
     },
   })
 }
+
+export function useAdminEvents(params?: {
+  page?: number
+  limit?: number
+  status?: string
+}) {
+  return useQuery({
+    queryKey: ['events-admin', params],
+    queryFn: async () => {
+      const response = await eventsApi.adminGetAll(params)
+      return response.data.data
+    },
+  })
+}
+
+export function useUpdateEventStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: string
+      status: 'pending' | 'approved' | 'rejected'
+    }) => {
+      const response = await eventsApi.updateStatus(id, status)
+      return response.data.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events-admin'] })
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+    },
+  })
+}

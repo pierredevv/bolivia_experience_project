@@ -67,10 +67,9 @@ export class EventsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("admin")
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Create event (Admin only)" })
-  @ApiResponse({ status: 201, description: "Event created" })
+  @ApiOperation({ summary: "Create event (any authenticated user)" })
+  @ApiResponse({ status: 201, description: "Event created (pending moderation)" })
   async create(@Body() body: any) {
     return this.eventsService.create(body);
   }

@@ -223,6 +223,9 @@ model Event {
   longitude     Float?
   photoUrl      String?  @map("photo_url")
   category      String?
+  status        String   @default("pending")
+  organizer     String?  @map("organizer")
+  price         Float?
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")

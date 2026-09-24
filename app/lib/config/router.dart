@@ -16,6 +16,7 @@ import '../features/favorites/presentation/screens/favorites_screen.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
 import '../features/places/presentation/screens/place_detail_screen.dart';
 import '../features/places/presentation/screens/places_list_screen.dart';
+import '../features/events/presentation/screens/create_event_screen.dart';
 import '../features/events/presentation/screens/event_detail_screen.dart';
 import '../features/reviews/presentation/screens/create_review_screen.dart';
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
@@ -66,7 +67,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/splash' ||
           state.matchedLocation == '/onboarding';
 
-      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/profile/reviews', '/profile/gamification', '/settings', '/reservations', '/traveler-photos/create', '/support'];
+      final protectedRoutes = ['/favorites', '/profile', '/profile/edit', '/profile/reviews', '/profile/gamification', '/settings', '/reservations', '/traveler-photos/create', '/support', '/events/create'];
       final isProtectedRoute = protectedRoutes.any((r) => state.matchedLocation.startsWith(r));
       final isReviewRoute = state.matchedLocation.contains('/review');
       final isReserveRoute = state.matchedLocation.contains('/reserve');
@@ -170,6 +171,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               ? state.extra as HomeExperience
               : null,
         ),
+      ),
+      GoRoute(
+        path: '/events/create',
+        builder: (context, state) => const CreateEventScreen(),
       ),
       GoRoute(
         path: '/events/:id',

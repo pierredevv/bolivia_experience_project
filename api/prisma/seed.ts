@@ -897,6 +897,11 @@ await prisma.reservation.deleteMany();
       },
     }),
   ]);
+  // All seeded events must be publicly visible (approved) — Módulo 9
+  await prisma.event.updateMany({
+    where: { status: 'pending' },
+    data: { status: 'approved' },
+  });
   console.log(`Created ${events.length} events`);
 
   // â”€â”€ Safety Zones (Santa Cruz de la Sierra) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

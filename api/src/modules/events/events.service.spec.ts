@@ -11,6 +11,7 @@ describe("EventsService", () => {
     event: {
       findMany: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -56,7 +57,10 @@ describe("EventsService", () => {
       expect(result.meta.total).toBe(1);
       expect(mockPrisma.event.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ isActive: true }),
+          where: expect.objectContaining({
+            isActive: true,
+            status: "approved",
+          }),
         }),
       );
     });
@@ -95,22 +99,40 @@ describe("EventsService", () => {
   });
 
   describe("findById", () => {
-    it("should return event by id", async () => {
+    it("should return approved event by id", async () => {
       const mockEvent = {
         id: "event-1",
         name: "Festival de la Vera Cruz",
         dateStart: new Date("2026-09-14"),
+        status: "approved",
       };
 
-      mockPrisma.event.findUnique.mockResolvedValue(mockEvent);
+      mockPrisma.event.findFirst.mockResolvedValue(mockEvent);
 
       const result = await service.findById("event-1");
 
       expect(result).toEqual(mockEvent);
+      expect(mockPrisma.event.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: "event-1",
+            isActive: true,
+            status: "approved",
+          }),
+        }),
+      );
+    });
+
+    it("should throw NotFoundException for pending event", async () => {
+      mockPrisma.event.findFirst.mockResolvedValue(null);
+
+      await expect(service.findById("pending-id")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw NotFoundException for invalid id", async () => {
-      mockPrisma.event.findUnique.mockResolvedValue(null);
+      mockPrisma.event.findFirst.mockResolvedValue(null);
 
       await expect(service.findById("invalid-id")).rejects.toThrow(
         NotFoundException,
@@ -119,7 +141,7 @@ describe("EventsService", () => {
   });
 
   describe("create", () => {
-    it("should create event", async () => {
+    it("should create event as pending and inactive", async () => {
       const createData = {
         name: "New Event",
         description: "A new event",
@@ -130,7 +152,8 @@ describe("EventsService", () => {
       const mockCreatedEvent = {
         id: "event-new",
         ...createData,
-        isActive: true,
+        status: "pending",
+        isActive: false,
       };
 
       mockPrisma.event.create.mockResolvedValue(mockCreatedEvent);
@@ -139,8 +162,62 @@ describe("EventsService", () => {
 
       expect(result).toEqual(mockCreatedEvent);
       expect(mockPrisma.event.create).toHaveBeenCalledWith({
-        data: createData,
+        data: {
+          ...createData,
+          status: "pending",
+          isActive: false,
+        },
       });
+    });
+  });
+
+  describe("findAllAdmin", () => {
+    it("should list all events with status filter", async () => {
+      mockPrisma.event.findMany.mockResolvedValue([]);
+      mockPrisma.event.count.mockResolvedValue(0);
+
+      await service.findAllAdmin({ status: "pending" });
+
+      expect(mockPrisma.event.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { status: "pending" },
+        }),
+      );
+    });
+  });
+
+  describe("updateStatus", () => {
+    it("should approve an event and activate it", async () => {
+      const mockEvent = { id: "event-1", name: "Test" };
+      mockPrisma.event.findUnique.mockResolvedValue(mockEvent);
+      mockPrisma.event.update.mockResolvedValue({
+        ...mockEvent,
+        status: "approved",
+        isActive: true,
+      });
+
+      const result = await service.updateStatus("event-1", "approved");
+
+      expect(result.status).toBe("approved");
+      expect(result.isActive).toBe(true);
+      expect(mockPrisma.event.update).toHaveBeenCalledWith({
+        where: { id: "event-1" },
+        data: { status: "approved", isActive: true },
+      });
+    });
+
+    it("should reject an event and deactivate it", async () => {
+      mockPrisma.event.findUnique.mockResolvedValue({ id: "event-1" });
+      mockPrisma.event.update.mockResolvedValue({
+        id: "event-1",
+        status: "rejected",
+        isActive: false,
+      });
+
+      const result = await service.updateStatus("event-1", "rejected");
+
+      expect(result.status).toBe("rejected");
+      expect(result.isActive).toBe(false);
     });
   });
 

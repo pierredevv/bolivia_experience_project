@@ -52,6 +52,11 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
       appBar: AppBar(
         title: const Text('Eventos'),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/events/create'),
+        icon: const Icon(Icons.add),
+        label: const Text('Crear'),
+      ),
       body: Column(
         children: [
           // Filter chips

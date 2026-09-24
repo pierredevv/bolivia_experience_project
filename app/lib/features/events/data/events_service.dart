@@ -12,6 +12,9 @@ class Event {
   final double? longitude;
   final String? photoUrl;
   final String? category;
+  final String? status;
+  final String? organizer;
+  final double? price;
 
   Event({
     required this.id,
@@ -24,6 +27,9 @@ class Event {
     this.longitude,
     this.photoUrl,
     this.category,
+    this.status,
+    this.organizer,
+    this.price,
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
@@ -38,6 +44,9 @@ class Event {
       longitude: json['longitude'] != null ? double.tryParse(json['longitude'].toString()) : null,
       photoUrl: json['photoUrl'],
       category: json['category'],
+      status: json['status'],
+      organizer: json['organizer'],
+      price: json['price'] != null ? double.tryParse(json['price'].toString()) : null,
     );
   }
 }
@@ -71,5 +80,11 @@ class EventsService {
     final response = await _dio.get('${ApiConstants.events}/$id');
     final data = response.data;
     return Event.fromJson(data['data'] ?? data);
+  }
+
+  Future<Event> createEvent(Map<String, dynamic> data) async {
+    final response = await _dio.post(ApiConstants.events, data: data);
+    final responseData = response.data;
+    return Event.fromJson(responseData['data'] ?? responseData);
   }
 }

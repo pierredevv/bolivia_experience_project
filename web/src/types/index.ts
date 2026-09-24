@@ -110,6 +110,9 @@ export interface Event {
   longitude?: number
   photoUrl?: string
   category?: string
+  status: 'pending' | 'approved' | 'rejected'
+  organizer?: string
+  price?: number
   isActive: boolean
   createdAt: string
   updatedAt: string

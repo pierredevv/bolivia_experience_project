@@ -1,6 +1,12 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, Loader2, Calendar } from 'lucide-react'
-import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from '../../hooks/useEvents'
+import { Plus, Pencil, Trash2, Loader2, Calendar, CheckCircle, XCircle } from 'lucide-react'
+import {
+  useAdminEvents,
+  useCreateEvent,
+  useUpdateEvent,
+  useDeleteEvent,
+  useUpdateEventStatus,
+} from '../../hooks/useEvents'
 import Modal from '../../components/ui/Modal'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import Input from '../../components/ui/Input'
@@ -21,6 +27,8 @@ interface EventForm {
   longitude: string
   photoUrl: string
   category: string
+  organizer: string
+  price: string
 }
 
 const defaultForm: EventForm = {
@@ -35,19 +43,58 @@ const defaultForm: EventForm = {
   longitude: '',
   photoUrl: '',
   category: '',
+  organizer: '',
+  price: '',
+}
+
+const statusTabs = [
+  { value: 'all', label: 'Todos' },
+  { value: 'pending', label: 'Pendientes' },
+  { value: 'approved', label: 'Aprobados' },
+  { value: 'rejected', label: 'Rechazados' },
+]
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === 'pending') {
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+        Pendiente
+      </span>
+    )
+  }
+  if (status === 'rejected') {
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+        Rechazado
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+      Aprobado
+    </span>
+  )
 }
 
 export default function AdminEvents() {
   const [page, setPage] = useState(1)
+  const [statusFilter, setStatusFilter] = useState('all')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<EventForm>(defaultForm)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [approveId, setApproveId] = useState<string | null>(null)
+  const [rejectId, setRejectId] = useState<string | null>(null)
 
-  const { data, isLoading } = useEvents({ page, limit: 10 })
+  const { data, isLoading } = useAdminEvents({
+    page,
+    limit: 10,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+  })
   const createEvent = useCreateEvent()
   const updateEvent = useUpdateEvent()
   const deleteEvent = useDeleteEvent()
+  const updateStatus = useUpdateEventStatus()
 
   const events = data?.data || []
   const meta = data?.meta
@@ -66,6 +113,8 @@ export default function AdminEvents() {
       longitude: form.longitude ? parseFloat(form.longitude) : undefined,
       photoUrl: form.photoUrl || undefined,
       category: form.category || undefined,
+      organizer: form.organizer || undefined,
+      price: form.price ? parseFloat(form.price) : undefined,
     }
 
     try {
@@ -74,7 +123,7 @@ export default function AdminEvents() {
         toast.success('Evento actualizado')
       } else {
         await createEvent.mutateAsync(payload)
-        toast.success('Evento creado')
+        toast.success('Evento creado. Queda pendiente de aprobación.')
       }
       setIsModalOpen(false)
       setEditingId(null)
@@ -98,6 +147,8 @@ export default function AdminEvents() {
       longitude: event.longitude?.toString() || '',
       photoUrl: event.photoUrl || '',
       category: event.category || '',
+      organizer: event.organizer || '',
+      price: event.price?.toString() || '',
     })
     setIsModalOpen(true)
   }
@@ -110,6 +161,28 @@ export default function AdminEvents() {
       setDeleteId(null)
     } catch {
       toast.error('Error al eliminar el evento')
+    }
+  }
+
+  const handleApprove = async () => {
+    if (!approveId) return
+    try {
+      await updateStatus.mutateAsync({ id: approveId, status: 'approved' })
+      toast.success('Evento aprobado y publicado')
+      setApproveId(null)
+    } catch {
+      toast.error('Error al aprobar el evento')
+    }
+  }
+
+  const handleReject = async () => {
+    if (!rejectId) return
+    try {
+      await updateStatus.mutateAsync({ id: rejectId, status: 'rejected' })
+      toast.success('Evento rechazado')
+      setRejectId(null)
+    } catch {
+      toast.error('Error al rechazar el evento')
     }
   }
 
@@ -126,7 +199,7 @@ export default function AdminEvents() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Eventos</h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Gestiona los eventos turísticos</p>
+          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Gestiona y modera los eventos turísticos</p>
         </div>
         <button
           onClick={() => { setEditingId(null); setForm(defaultForm); setIsModalOpen(true) }}
@@ -137,6 +210,22 @@ export default function AdminEvents() {
         </button>
       </div>
 
+      <div className="mb-4 flex flex-wrap gap-2">
+        {statusTabs.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => { setStatusFilter(tab.value); setPage(1) }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              statusFilter === tab.value
+                ? 'bg-primary-700 text-white'
+                : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary-700" />
@@ -145,7 +234,7 @@ export default function AdminEvents() {
         <EmptyState
           icon={Calendar}
           title="No hay eventos"
-          description="Crea el primer evento turístico."
+          description="No hay eventos con el filtro seleccionado."
           action={{ label: 'Crear Evento', onClick: () => { setEditingId(null); setForm(defaultForm); setIsModalOpen(true) } }}
         />
       ) : (
@@ -170,6 +259,7 @@ export default function AdminEvents() {
                         <div>
                           <p className="font-medium text-neutral-900 dark:text-neutral-100">{event.name}</p>
                           {event.nameEn && <p className="text-xs text-neutral-500 dark:text-neutral-400">{event.nameEn}</p>}
+                          {event.organizer && <p className="text-xs text-neutral-400 dark:text-neutral-500">por {event.organizer}</p>}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">
@@ -183,12 +273,31 @@ export default function AdminEvents() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${event.isActive ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
-                          {event.isActive ? 'Activo' : 'Inactivo'}
-                        </span>
+                        <StatusBadge status={event.status} />
+                        {event.price != null && event.price > 0 && (
+                          <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Bs. {event.price}</div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-1">
+                          {event.status !== 'approved' && (
+                            <button
+                              onClick={() => setApproveId(event.id)}
+                              className="p-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 text-neutral-500 dark:text-neutral-400 hover:text-green-600"
+                              title="Aprobar y publicar"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </button>
+                          )}
+                          {event.status !== 'rejected' && (
+                            <button
+                              onClick={() => setRejectId(event.id)}
+                              className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-neutral-500 dark:text-neutral-400 hover:text-red-600"
+                              title="Rechazar"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          )}
                           <button onClick={() => handleEdit(event)} className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 hover:text-primary-700">
                             <Pencil className="h-4 w-4" />
                           </button>
@@ -239,6 +348,10 @@ export default function AdminEvents() {
             <Input label="Categoría" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Música, Gastronomía..." />
             <Input label="URL Foto" value={form.photoUrl} onChange={(e) => setForm({ ...form, photoUrl: e.target.value })} />
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Organizador" value={form.organizer} onChange={(e) => setForm({ ...form, organizer: e.target.value })} placeholder="Opcional" />
+            <Input label="Precio (Bs.)" type="number" step="any" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="Gratuito si se deja vacío" />
+          </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
             <button type="button" onClick={() => { setIsModalOpen(false); setEditingId(null) }} className="px-4 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
               Cancelar
@@ -259,6 +372,27 @@ export default function AdminEvents() {
         confirmLabel="Eliminar"
         variant="danger"
         isLoading={deleteEvent.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={!!approveId}
+        onClose={() => setApproveId(null)}
+        onConfirm={handleApprove}
+        title="Aprobar Evento"
+        message="¿Deseas aprobar y publicar este evento para todos los usuarios?"
+        confirmLabel="Aprobar"
+        isLoading={updateStatus.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={!!rejectId}
+        onClose={() => setRejectId(null)}
+        onConfirm={handleReject}
+        title="Rechazar Evento"
+        message="¿Deseas rechazar este evento? No será visible para los usuarios."
+        confirmLabel="Rechazar"
+        variant="danger"
+        isLoading={updateStatus.isPending}
       />
     </div>
   )
