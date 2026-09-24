@@ -1,9 +1,23 @@
 # Handoff de Sesión — BoliviaExperience
 
-**Fecha**: 22 de septiembre, 2026
+**Fecha**: 24 de septiembre, 2026
 **Agente**: opencode (build agent)
 **Rama**: develop
-**Commit**: `4c37917` (Módulo 8; push aplicado — `origin/develop` en sincronía `0/0`)
+**Commit**: `6c501a8` (Módulo 9; docs en commit separado)
+
+---
+
+## Módulo 9 — Eventos publicados por usuarios (sesión)
+
+**Fecha**: 24 de septiembre, 2026
+**Estado**: completado; verificado (gates abajo).
+
+- **Schemas** (`model Event`): `status` (`@default("pending")`), `organizer` (`String?`), `price` (`Float?`). `schema.sqlite.prisma` L213-234, `schema.prisma` byte-igual; postgres con `@db.VarChar(20)`/`@db.VarChar(255)`/`@db.Decimal(10,2)`. `prisma validate` OK ×2 (postgres solo ambiental) + gen + `db push` a `dev.db`. Seed: `updateMany` a `approved` para los eventos sembrados (`api/prisma/seed.ts`).
+- **Backend** (`api/src/modules/events/`): `events.service.ts` — lecturas públicas con `{ isActive: true, status: "approved" }` (`findAll` L62, `findToday` L90, `findById` L98-106); `create` fuerza `pending + isActive:false` (L108-116); `update`/`remove` via `findByIdRaw` (NotFound, L51-57); `findAllAdmin` (filtro status, sin isActive, L15-38); `updateStatus` (approved → activo, resto inactivo, L40-49). `events.controller.ts` — `POST /events` sin `@Roles("admin")` (L68-75); PUT/DELETE admin-only. Nuevo `events.admin.controller.ts` (`GET /admin/events?status&page&limit`, `PATCH /admin/events/:id/status` con `@IsIn pending/approved/rejected`) → registrado en `events.module.ts`. `events.service.spec.ts` +5 tests.
+- **App Flutter**: `Event` model con `status/organizer/price` + `createEvent` (POST /events) en `events_service.dart`; pantalla `create_event_screen.dart` (nombre, ubicación, fecha/hora inicio+fin, toggle gratuito→precio Bs., opcionales descripción/organizador/tipo); ruta protegida `/events/create` en `router.dart` (antes de `/events/:id`) + FAB en `events_screen.dart`.
+- **Panel admin web**: `Events.tsx` lista vía `GET /admin/events` con tabs de filtro de estado + badge + botones Aprobar/Rechazar → `PATCH /admin/events/:id/status`; form con organizador/precio. `api.ts` `eventsApi.adminGetAll`/`updateStatus`; hooks `useAdminEvents`/`useUpdateEventStatus`.
+- **Tracking**: `plans/plan.md` Módulo 9 → ✅ con evidencia archivo:línea.
+- **Verificación**: API `npm run build` OK · `npm test` **232/232** (22 suites, +4 vs 228 del M8) · `dart analyze` limpio · `flutter test` **50/50** · web `tsc --noEmit` OK · vitest **46/46** (3 errors = timeouts infra pool runner, baseline) · `prisma validate` OK ×2.
 
 ---
 
