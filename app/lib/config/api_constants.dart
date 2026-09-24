@@ -139,4 +139,10 @@ class ApiConstants {
   static const supportMine = '/support';
   static String supportById(String id) => '/support/$id';
   static String supportMessages(String id) => '/support/$id/messages';
+
+  // Chatbot
+  static const chatMessage = '/chatbot/message';
+  static const chatConversations = '/chatbot/conversations';
+  static String chatConversationMessages(String id) =>
+      '/chatbot/conversations/$id';
 }

@@ -428,6 +428,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: () => context.push('/profile/payments'),
                 ),
                 _MenuItem(
+                  icon: Icons.smart_toy_outlined,
+                  title: 'Asistente IA',
+                  subtitle: 'Conversá y armá tu itinerario',
+                  onTap: () => context.push('/chat'),
+                ),
+                _MenuItem(
                   icon: Icons.support_agent_outlined,
                   title: 'Soporte y Ayuda',
                   subtitle: 'Tickets, reembolsos e incidencias',

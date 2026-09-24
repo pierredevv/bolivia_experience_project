@@ -31,4 +31,18 @@ export class ChatbotController {
   async getConversations(@CurrentUser("id") userId: string) {
     return this.chatbotService.getConversations(userId);
   }
+
+  @Get("conversations/:id")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get messages of a conversation" })
+  async getConversationMessages(
+    @CurrentUser("id") userId: string,
+    @Param("id") conversationId: string,
+  ) {
+    return this.chatbotService.getConversationMessages(
+      conversationId,
+      userId,
+    );
+  }
 }
