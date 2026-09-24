@@ -185,6 +185,8 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 3. Crear pantalla dedicada "Pronóstico de Clima".
 4. Manejar de forma robusta el caso en que la API key de OpenWeatherMap no esté configurada (no debe romper la app).
 
+**Verificación (238/238 tests API + build OK, 50/50 tests Flutter + analyze OK, prisma validate OK ×2 — sin cambios de schema)**: Backend — `weather.service.ts`: lista `cities` con 10 ciudades bolivianas (id, name, query, lat/lon, L20-31), `getCities()` (L40-42), `resolveQuery` mapea `cityId → query` con default Santa Cruz (L50-53), `assertApiKeyConfigured` lanza 503 "API key not configured" si falta `OPENWEATHER_API_KEY` (L44-48) — la app lo absorbe y oculta, no rompe; `getCurrent(cityId?)` (L55) y `getForecast(cityId?)` pasan la ciudad seleccionada. `weather.controller.ts`: nuevo `GET /weather/cities` + `@Query('city')` opcional en `current` y `forecast`. `weather.service.spec.ts` +6 tests (getCities, city seleccionada, default Santa Cruz, forecast por ciudad, 503 sin key en current y forecast → 10 total). App — `weather_service.dart`: modelos `WeatherCity`/`WeatherCurrent`/`WeatherForecastDay`/`WeatherForecast` + `getCities`/`getCurrent(cityId)`/`getForecast(cityId)`. `weather_provider.dart`: `weatherCitiesProvider` (FutureProvider), `selectedWeatherCityProvider` (StateNotifier persistiendo `selected_weather_city` en `SharedPreferences`) y `weatherBundleProvider` (clima actual + pronóstico por ciudad). `weather_widget.dart` refactorizado a `ConsumerWidget` con pronóstico activo y navegación a `/weather`; `home_screen.dart` usa `WeatherWidget(showForecast: true)`. Nueva `forecast_weather_screen.dart`: selector de ciudad con `ChoiceChip` (desde `GET /weather/cities`), botón "Usar mi ubicación" (`LocationService.getCurrentLocation` + `calculateDistance` → ciudad más cercana), tarjeta del clima actual (temp/sensación/humedad/viento) y lista de 5 días; si el servicio no responde (API key ausente) muestra estado amigable "Servicio de clima no disponible" sin romper. Ruta pública `/weather` en `router.dart`; `api_constants.dart` +`weatherCities`. `weather_widget_test.dart` adaptado a `ProviderScope`. Probado con HTTP mock: 50/50.
+
 ---
 
 ## Módulo 11 — Perfil mejorado
@@ -284,7 +286,7 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 | Módulo 7 — Soporte y resolución de conflictos | ✅ | Ver Módulo 7 abajo |
 | Módulo 8 — Onboarding con preferencias | ✅ | Ver Módulo 8 abajo |
 | Módulo 9 — Eventos publicados por usuarios | ✅ | Ver Módulo 9 arriba |
-| Módulo 10 — Clima mejorado | ⏳ | — |
+| Módulo 10 — Clima mejorado | ✅ | Ver Módulo 10 arriba |
 | Módulo 11 — Perfil mejorado | ⏳ | — |
 | Módulo 12 — IA conversacional (chat) | ⏳ | — |
 | Módulo 13 — Armado de viaje mejorado | ⏳ | — |

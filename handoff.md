@@ -3,7 +3,20 @@
 **Fecha**: 24 de septiembre, 2026
 **Agente**: opencode (build agent)
 **Rama**: develop
-**Commit**: `6c501a8` (Módulo 9; docs en commit separado)
+**Commit**: `11141ed` (Módulo 10; docs en commit separado)
+
+---
+
+## Módulo 10 — Clima mejorado (sesión)
+
+**Fecha**: 24 de septiembre, 2026
+**Estado**: completado; verificado (gates abajo).
+
+- **Backend** (`api/src/modules/weather/`): `weather.service.ts` — lista `cities` de 10 ciudades bolivianas con lat/lon (L20-31), `getCities()` (L40-42), `resolveQuery` cityId→OpenWeather query (default Santa Cruz, L50-53), `assertApiKeyConfigured` → 503 si falta `OPENWEATHER_API_KEY` (L44-48); `getCurrent(cityId?)` (L55) y `getForecast(cityId?)` parametrizan la ciudad. `weather.controller.ts` — nuevo `GET /weather/cities` + `@Query('city')` en `current`/`forecast`. `weather.service.spec.ts` +6 tests → 10 (getCities, ciudad seleccionada, default, forecast por ciudad, 503 sin key ×2).
+- **App Flutter**: `weather_service.dart` (modelos WeatherCity/Current/ForecastDay/Forecast + getCities/getCurrent/getForecast); `weather_provider.dart` (weatherCitiesProvider, selectedWeatherCityProvider con persistencia `SharedPreferences`, weatherBundleProvider); `weather_widget.dart` → `ConsumerWidget` con pronóstico y tap → `/weather`; `home_screen.dart` activa `WeatherWidget(showForecast: true)`; nueva `forecast_weather_screen.dart` (chips de ciudad, "Usar mi ubicación" vía `LocationService` → ciudad más cercana, tarjeta actual + lista 5 días, estado amigable si el servicio no responde); ruta pública `/weather` en `router.dart`; `api_constants.dart` + `weatherCities`; `weather_widget_test.dart` adaptado a `ProviderScope`.
+- **Sin cambios de schema** → `prisma validate` OK ×2 sin `db push`.
+- **Tracking**: `plans/plan.md` Módulo 10 → ✅ con evidencia archivo:línea.
+- **Verificación**: API `npm run build` OK · `npm test` **238/238** (22 suites, +6 vs 232 del M9) · `dart analyze` limpio · `flutter test` **50/50**.
 
 ---
 
