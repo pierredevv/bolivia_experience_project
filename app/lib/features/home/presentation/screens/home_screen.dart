@@ -248,7 +248,7 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 18),
 
                     // ── Weather widget ───────────────────────────────
-                    const WeatherWidget(),
+                    const WeatherWidget(showForecast: true),
                     const SizedBox(height: 20),
 
                     // ── Hero banner ──────────────────────────────────

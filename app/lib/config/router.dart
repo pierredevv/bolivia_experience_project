@@ -28,6 +28,7 @@ import '../features/trips/presentation/screens/trips_list_screen.dart';
 import '../features/trips/presentation/screens/trip_detail_screen.dart';
 import '../features/trips/presentation/screens/create_trip_screen.dart';
 import '../features/events/presentation/screens/events_screen.dart';
+import '../features/weather/presentation/screens/forecast_weather_screen.dart';
 import '../features/promotions/presentation/screens/promotions_screen.dart';
 
 import '../features/gamification/presentation/screens/gamification_screen.dart';import '../features/promotions/presentation/screens/promotion_detail_screen.dart';
@@ -230,6 +231,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/promotions',
         builder: (context, state) => const PromotionsScreen(),
+      ),
+      GoRoute(
+        path: '/weather',
+        builder: (context, state) => const ForecastWeatherScreen(),
       ),
       GoRoute(
         path: '/promotions/:id',

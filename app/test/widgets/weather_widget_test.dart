@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bolivia_experience/features/weather/presentation/widgets/weather_widget.dart';
 
 class TestHttpOverrides extends HttpOverrides {
@@ -71,6 +73,7 @@ class _FakeHttpClientResponse implements HttpClientResponse {
 void main() {
   setUp(() {
     HttpOverrides.global = TestHttpOverrides();
+    SharedPreferences.setMockInitialValues({});
   });
 
   tearDown(() {
@@ -80,8 +83,10 @@ void main() {
   group('WeatherWidget', () {
     testWidgets('builds without crashing', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: WeatherWidget()),
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(body: WeatherWidget()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -91,8 +96,10 @@ void main() {
 
     testWidgets('builds with showForecast parameter', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: WeatherWidget(showForecast: true)),
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(body: WeatherWidget(showForecast: true)),
+          ),
         ),
       );
       await tester.pumpAndSettle();

@@ -89,6 +89,7 @@ class ApiConstants {
   // Weather
   static const weatherCurrent = '/weather/current';
   static const weatherForecast = '/weather/forecast';
+  static const weatherCities = '/weather/cities';
 
   // Trips
   static const trips = '/trips';
