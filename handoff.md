@@ -3,7 +3,7 @@
 **Fecha**: 24 de septiembre, 2026
 **Agente**: opencode (build agent)
 **Rama**: develop
-**Commit**: `cc788b6` (Módulo 13; docs en commit separado)
+**Commit**: `41d110f` (Módulo 14 app; backend en `3adf151`)
 
 ---
 
@@ -18,6 +18,23 @@
   - **Productos/experiencias como items**: `trip_detail_screen.dart` reescribe `_addItemToDay` (L430-530) como diálogo con **dos modos** (manual "Lugar" vs catálogo "Experiencia" vía `DropdownButtonFormField<String>` con tours de `toursService.getTours()`, mostrando fallback si no hay tours — L510-530); `trips_service.dart` `addItem` acepta `productId` (L73-93); `trip_item_tile.dart` (L1-145) nuevo campo `productId` + badge pill "Experiencia" (`Icons.tour_outlined` + `AppColors.neutral*`, L69-99) diferenciando items de lugar manual (chevron) vs experiencia (badge).
   - **Exportar itinerario (compartir)**: `trip_detail_screen.dart` `_shareTrip` (L600-606) + `ShareButton` en AppBar (icono `share`, L45-47) ahora comparten **texto real del itinerario** con `SharePlus.share` (`share_plus` ya en `pubspec.yaml` L46-47), incluyendo header del viaje + lista de días → título/lugar/experiencia de cada item. Punto 3 (integración con generador M4) ya existía: botón "Generar itinerario" en `trip_detail_screen.dart` (L143-166) dispara `generateItinerary` del backend (M4) — integración verificada sin cambios.
 - **Verificación**: API `npm run build` OK · `npm test` **257/257** (24 suites) · `prisma validate` OK · `flutter analyze` 0 issues · `flutter test` **50/50**. **Commit de código**: `cc788b6`.
+
+---
+
+## Módulo 14 — Tips de viaje
+
+**Fecha**: 25 de septiembre, 2026
+**Estado**: completado; verificado (gates abajo).
+
+- **Backend** (`api/src/modules/travel-tips/`): modelo `TravelTip` en `api/prisma/schema.prisma` (L79-91: id/text/category/categoryEn/city/icon/isActive/createdAt + `@@index([category, isActive])` + `@@map("travel_tips")`), replicado en `schema.sqlite.prisma` y `schema.postgres.prisma`; `prisma db push` + `generate` OK. Seed re-ejecutable: `deleteMany` (L44) + **20 tips reales curados de Santa Cruz** (`api/src/prisma/seed.ts` `tipsDefs` L142-166 — transporte/seguridad/cultura/gastronomia con `text`, `category`, `categoryEn`, `city`, `icon`) → `Created 20 travel tips`. Endpoint **público** `GET /travel-tips` con filtros `category`/`city` (`travel-tips.controller.ts` L24-36) + `travel-tips.service.ts` `findAll({category, city})` (solo `isActive`, ordenado por `createdAt`); registro en `app.module.ts` (import L36 + `TravelTipsModule` L91, una sola vez). Espec `travel-tips.service.spec.ts`: **+4** (listado default, filtro category, filtro city, solo activos).
+- **App Flutter** (`app/lib/features/travel_tips/`):
+  - `data/travel_tips_service.dart` — modelo `TravelTip` con `fromJson` null-safe + `TravelTipsService.getTips({category, city})` vía `dioProvider` + provider `travelTipsServiceProvider` (réplica del patrón `weather_service`, **imports por paquete** `package:bolivia_experience/...` para evitar errores de profundidad de ruta).
+  - `presentation/providers/travel_tips_provider.dart` — `travelTipsListProvider` (`FutureProvider<List<TravelTip>>`).
+  - `presentation/screens/travel_tips_screen.dart` — pantalla dedicada `/travel-tips`: chips de categoría (Todos/transporte/seguridad/cultura/gastronomia) con `_categoryLabel`/`_categoryIcon`, lista de `_TipCard` con texto + pill de categoría, estados loading/error con botón "Reintentar" (`ref.invalidate`). Las categorías usan **el slug exacto del seed** (`gastronomia` sin acento) para que el filtro coincida.
+  - `presentation/widgets/travel_tips_home_card.dart` — card tappable en home (icono `tips_and_updates_outlined`, gradiente `primary50→primary100`, subtítulo).
+  - Integración: `ApiConstants.travelTips` (`config/api_constants.dart`, tras la sección Weather) · import + `GoRoute(path: '/travel-tips')` en `config/router.dart` (L34 + L252-255, tras `/weather`) · sección en home `home_screen.dart` (import L9 + `TravelTipsHomeCard(onTap: () => context.go('/travel-tips'))` tras el `WeatherWidget`).
+- **Corrección de un commit previo roto**: el commit `350ac31` había dejado la app **sin compilar** (el router referenciaba `TravelTipsScreen` sin import y sin archivo, y el service no tenía el modelo `TravelTip` ni import de riverpod). Se completó en `41d110f`.
+- **Verificación**: API `npm run build` OK · `npm test` **261/261** (25 suites) · App `dart analyze` **No issues found** · `flutter test` **52/52** (incluye `test/widgets/travel_tips_home_card_test.dart`: builds + onTap). **Commits**: `3adf151` (backend), `350ac31` + `41d110f` (app).
 
 ---
 
