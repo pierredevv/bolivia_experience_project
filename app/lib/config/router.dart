@@ -249,6 +249,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ForecastWeatherScreen(),
       ),
       GoRoute(
+        path: '/travel-tips',
+        builder: (context, state) => const TravelTipsScreen(),
+      ),
+      GoRoute(
         path: '/promotions/:id',
         builder: (context, state) => PromotionDetailScreen(
           promotionId: state.pathParameters['id']!,
