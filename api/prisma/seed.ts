@@ -41,6 +41,7 @@ await prisma.reservation.deleteMany();
   await prisma.category.deleteMany();
   await prisma.userBadge.deleteMany();
   await prisma.badge.deleteMany();
+  await prisma.travelTip.deleteMany();
   await prisma.user.deleteMany();
   console.log('Cleaned existing data');
 
@@ -136,6 +137,34 @@ await prisma.reservation.deleteMany();
     cats.map((c) => prisma.category.create({ data: c })),
   );
   console.log(`Created ${categories.length} categories`);
+
+  // �"?"? Travel Tips (M14) �"?"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�
+  const tipsDefs = [
+    { text: 'Usa taxis con app (InDrive/Uber) para tarifas fijas; evita taxis sin identificación de noche.', category: 'transporte', categoryEn: 'Transport', city: 'santa-cruz', icon: 'directions_car' },
+    { text: 'El micro urbano cuesta Bs 2,50; lleva cambio exacto ya que muchos cobradores no tienen vuelto.', category: 'transporte', categoryEn: 'Transport', city: 'santa-cruz', icon: 'directions_bus' },
+    { text: 'El aeropuerto Viru Viru está a 14 km del centro: el taxi autorizado cuesta ~Bs 80 y tarda 25 min.', category: 'transporte', categoryEn: 'Transport', city: 'santa-cruz', icon: 'flight' },
+    { text: 'En el centro, guarda el celular al cruzar las avenidas; circula por el Primer Anillo bien iluminado.', category: 'seguridad', categoryEn: 'Safety', city: 'santa-cruz', icon: 'shield' },
+    { text: 'No exhibas joyas ni efectivo en mercados; usa el bolsillo interior y omite fotos ostentosas.', category: 'seguridad', categoryEn: 'Safety', city: 'santa-cruz', icon: 'lock' },
+    { text: 'Guarda una copia digital de tu pasaporte en la nube por si lo pierdes.', category: 'seguridad', categoryEn: 'Safety', city: 'santa-cruz', icon: 'cloud' },
+    { text: 'Las salteñas se comen antes de las 10:00; la mejor calificación local incluye el limón al servir.', category: 'gastronomia', categoryEn: 'Food', city: 'santa-cruz', icon: 'restaurant' },
+    { text: 'Prueba el majadito con lomo al horno en el Mercado Los Pozos: porción generosa por Bs 25.', category: 'gastronomia', categoryEn: 'Food', city: 'santa-cruz', icon: 'ramen_dining' },
+    { text: 'El helado de copa en La Pacena o el "fresquito con", clásico cruceño, se disfruta a mediodía.', category: 'gastronomia', categoryEn: 'Food', city: 'santa-cruz', icon: 'icecream' },
+    { text: 'La sidra y el cuñape son el acompañamiento típico; pídelo en el desayuno del Mercado Abasto.', category: 'gastronomia', categoryEn: 'Food', city: 'santa-cruz', icon: 'bakery_dining' },
+    { text: 'Visita el centro: Catedral, Plaza 24 de Septiembre y la casa de la Cultura en una mañana caminando.', category: 'cultura', categoryEn: 'Culture', city: 'santa-cruz', icon: 'account_balance' },
+    { text: 'El Museo de Historia Regional tiene entrada libre los domingos; pide el recorrido guiado en español.', category: 'cultura', categoryEn: 'Culture', city: 'santa-cruz', icon: 'museum' },
+    { text: 'Los domingos la Tacuaral cierra al tráfico: paseo familiar con ferias de artesanía y antojos.', category: 'cultura', categoryEn: 'Culture', city: 'santa-cruz', icon: 'celebration' },
+    { text: 'La tapiz ecuatoriana y el mateo son artesanías locales; compra en la Feria de la Siberia, no en la calle.', category: 'cultura', categoryEn: 'Culture', city: 'santa-cruz', icon: 'handshake' },
+    { text: 'En temporada de lluvias (nov–mar) las calles del centro se inundan: usa zapatos impermeables.', category: 'seguridad', categoryEn: 'Safety', city: 'santa-cruz', icon: 'water_drop' },
+    { text: 'El carnaval cruceño es de altura; hidrátate y evita el alcohol en camino (hay controles de alcoholemia).', category: 'seguridad', categoryEn: 'Safety', city: 'santa-cruz', icon: 'local_bar' },
+    { text: 'Para ir al Fuerte de Samaipata el mejor transporte es el micro desde el Terminal Bimodal (Bs 20).', category: 'transporte', categoryEn: 'Transport', city: 'santa-cruz', icon: 'fort' },
+    { text: 'En el Parque Urbano renta bicicleta y recorre el circuito de 4 km al amanecer, antes del calor.', category: 'cultura', categoryEn: 'Culture', city: 'santa-cruz', icon: 'directions_bike' },
+    { text: 'El Pilón y el camba-cheese acompañan la merienda; el costo promedio por persona es Bs 15–20.', category: 'gastronomia', categoryEn: 'Food', city: 'santa-cruz', icon: 'lunch_dining' },
+    { text: 'Verifica tus reservas y pagos en la app: los escaneos QR en zonas turísticas previenen estafas.', category: 'seguridad', categoryEn: 'Safety', city: 'santa-cruz', icon: 'qr_code_scanner' },
+  ];
+  const travelTips = await Promise.all(
+    tipsDefs.map((t) => prisma.travelTip.create({ data: t })),
+  );
+  console.log(`Created ${travelTips.length} travel tips`);
 
   const [catRestaurantes, catHoteles, catBares, catCafes, catAtracciones, catParques, catMuseos, catComercios, catDeportes, catGastro] = categories;
 

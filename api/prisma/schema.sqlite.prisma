@@ -75,6 +75,22 @@ model Category {
   @@map("categories")
 }
 
+// Consejos de viaje (Módulo 14) — contenido curado por admin, endpoint público
+model TravelTip {
+  id         String    @id @default(cuid())
+  text       String
+  category   String // transporte | seguridad | cultura | gastronomia
+  categoryEn String    @map("category_en")
+  city       String    @default("santa-cruz")
+  isActive   Boolean   @default(true) @map("is_active")
+  icon       String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@index([category, isActive])
+  @@map("travel_tips")
+}
+
 model Place {
   id            String   @id @default(cuid())
   name          String

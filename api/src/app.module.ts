@@ -33,6 +33,7 @@ import { TripsModule } from "./modules/trips/trips.module";
 import { TravelerPhotosModule } from "./modules/traveler-photos/traveler-photos.module";
 import { GamificationModule } from "./modules/gamification/gamification.module";
 import { SupportModule } from "./modules/support/support.module";
+import { TravelTipsModule } from "./modules/travel-tips/travel-tips.module";
 import { HealthController } from "./common/controllers/health.controller";
 import configuration from "./config/configuration";
 
@@ -87,6 +88,7 @@ import configuration from "./config/configuration";
     TravelerPhotosModule,
     GamificationModule,
     SupportModule,
+    TravelTipsModule,
   ],
   controllers: [HealthController],
   providers: [
