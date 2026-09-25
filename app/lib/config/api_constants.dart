@@ -91,6 +91,9 @@ class ApiConstants {
   static const weatherForecast = '/weather/forecast';
   static const weatherCities = '/weather/cities';
 
+  // Travel Tips
+  static const travelTips = '/travel-tips';
+
   // Trips
   static const trips = '/trips';
 

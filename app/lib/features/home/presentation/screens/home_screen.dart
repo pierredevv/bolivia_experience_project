@@ -6,6 +6,7 @@ import '../../../../core/currency/currency.dart';
 import '../providers/home_provider.dart';
 import '../../data/home_experience.dart';
 import '../../../weather/presentation/widgets/weather_widget.dart';
+import '../../../travel_tips/presentation/widgets/travel_tips_home_card.dart';
 import '../../../traveler_photos/presentation/providers/traveler_photos_provider.dart';
 import '../../../traveler_photos/presentation/widgets/traveler_photos_carousel.dart';
 import '../../../recommendations/presentation/providers/recommendations_provider.dart';
@@ -249,6 +250,12 @@ class HomeScreen extends ConsumerWidget {
 
                     // ── Weather widget ───────────────────────────────
                     const WeatherWidget(showForecast: true),
+                    const SizedBox(height: 20),
+
+                    // ── Tips de viaje (M14) ──────────────────────────
+                    TravelTipsHomeCard(
+                      onTap: () => context.go('/travel-tips'),
+                    ),
                     const SizedBox(height: 20),
 
                     // ── Hero banner ──────────────────────────────────

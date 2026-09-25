@@ -255,6 +255,10 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 3. Endpoint público.
 4. Sección en home o pantalla dedicada.
 
+**Verificación (completado)**:
+- Backend: `TravelTip` en `api/prisma/schema.prisma` (L79-91: id/text/category/categoryEn/city/icon/isActive/createdAt + `@@index([category, isActive])` + `@@map("travel_tips")`), replicado en `schema.sqlite.prisma` y `schema.postgres.prisma`; `prisma db push` + `generate` OK. Seed: `deleteMany` (L44) + **20 tips reales curados de Santa Cruz** (`api/src/prisma/seed.ts` `tipsDefs` L142-166: transporte/seguridad/cultura/gastronomía con `text`, `category`, `categoryEn`, `city`, `icon`) → `Created 20 travel tips`. Endpoint **público** `GET /travel-tips` con filtros `category`/`city` en `api/src/modules/travel-tips/travel-tips.controller.ts` (L24-36) + `travel-tips.service.ts` `findAll({category, city})` (L18-30, ordenado por `createdAt`, solo `isActive`), registro en `app.module.ts` (import L36 + `TravelTipsModule` L77) + seed re-ejecutable. Espec `travel-tips.service.spec.ts` (**+4**: listado default, filtro category, filtro city, solo activos). Gates: `npm run build` OK · `npm test` **261/261** (25 suites) · `npx prisma validate` OK · `npx tsc --noEmit` OK.
+- App: `app/lib/features/travel_tips/data/travel_tips_service.dart` (modelo `TravelTip` con `fromJson` + `TravelTipsService.getTips({category, city})` vía `dioProvider` + provider `travelTipsServiceProvider`, siguiendo el patrón de `weather_service`) + `presentation/providers/travel_tips_provider.dart` (`travelTipsListProvider` `FutureProvider<List<TravelTip>>`) + `presentation/screens/travel_tips_screen.dart` (chips de categoría Todos/transporte/seguridad/cultura/gastronomia con `_categoryLabel`/`_categoryIcon`, lista de `_TipCard` tappables, estados loading/error/reintento vía `ref.invalidate`) + `presentation/widgets/travel_tips_home_card.dart` (card tappable con icono `tips_and_updates_outlined` + subtítulo, `onTap → /travel-tips`) + sección en **home** (`home_screen.dart`: import L9 + `TravelTipsHomeCard(onTap: () => context.go('/travel-tips'))` tras `WeatherWidget`) + ruta `/travel-tips` en `app/lib/config/router.dart` (import L34 + `GoRoute` L252-255 tras `/weather`) + `ApiConstants.travelTips` (`config/api_constants.dart`). Gates: `dart analyze` **No issues found** · `flutter test` **52/52** (incluye `test/widgets/travel_tips_home_card_test.dart`: builds + onTap).
+
 ---
 
 ## Módulo 15 — Efemérides ("El día de hoy")
@@ -313,7 +317,7 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 | Módulo 11 — Perfil mejorado | ✅ | Ver Módulo 11 abajo |
 | Módulo 12 — IA conversacional (chat) | ✅ | Ver Módulo 12 abajo |
 | Módulo 13 — Armado de viaje mejorado | ✅ Completado | Ver evidencia Módulo 13 arriba (hub) + detalle en `handoff.md` "Sesión 13" |
-| Módulo 14 — Tips de viaje | ⏳ | — |
+| Módulo 14 — Tips de viaje | ✅ Completado | Ver Módulo 14 abajo |
 | Módulo 15 — Efemérides | ⏳ | — |
 | Módulo 16 — Realidad aumentada | ⏳ | — |
 | Módulo 17 — Catálogo de lugares | ✅ Ya implementado (solo regresión) | — |
