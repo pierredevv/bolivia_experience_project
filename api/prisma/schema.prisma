@@ -529,6 +529,7 @@ model Product {
   productReviews ProductReview[]
   slots         ProductSlot[]
   cocina        Category?     @relation("CategoryCocina", fields: [tipoCocinaId], references: [id], onDelete: SetNull)
+  tripItems     TripItem[]    @relation("ProductTripItems")
 
   @@index([socioId])
   @@index([placeId])
@@ -830,15 +831,18 @@ model TripItem {
   id          String   @id @default(cuid())
   tripDayId   String   @map("trip_day_id")
   placeId     String?  @map("place_id")
+  productId   String?  @map("product_id")
   title       String
   description String?
   timeSlot    String?  @map("time_slot")
   orderIndex  Int      @default(0) @map("order_index")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  tripDay TripDay @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
+  tripDay TripDay  @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
+  product Product? @relation("ProductTripItems", fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([tripDayId])
+  @@index([productId])
   @@map("trip_items")
 }
 

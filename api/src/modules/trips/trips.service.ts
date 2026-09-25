@@ -45,7 +45,25 @@ export class TripsService {
         isPublic: data.isPublic || false,
       },
       include: {
-        days: { include: { items: true }, orderBy: { dayNumber: "asc" } },
+        days: {
+          include: {
+            items: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    price: true,
+                    currency: true,
+                    photoUrl: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { dayNumber: "asc" },
+        },
       },
     });
   }
@@ -55,7 +73,22 @@ export class TripsService {
       where: { userId },
       include: {
         days: {
-          include: { items: true },
+          include: {
+            items: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    price: true,
+                    currency: true,
+                    photoUrl: true,
+                  },
+                },
+              },
+            },
+          },
           orderBy: { dayNumber: "asc" },
         },
       },
@@ -68,7 +101,22 @@ export class TripsService {
       where: { id: tripId, userId },
       include: {
         days: {
-          include: { items: true },
+          include: {
+            items: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    price: true,
+                    currency: true,
+                    photoUrl: true,
+                  },
+                },
+              },
+            },
+          },
           orderBy: { dayNumber: "asc" },
         },
         user: { select: { id: true, name: true, email: true } },
@@ -107,7 +155,22 @@ export class TripsService {
         date: new Date(data.date),
         description: data.description,
       },
-      include: { items: true },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+                price: true,
+                currency: true,
+                photoUrl: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -116,7 +179,8 @@ export class TripsService {
     userId: string,
     data: {
       placeId?: string;
-      title: string;
+      productId?: string;
+      title?: string;
       description?: string;
       timeSlot?: string;
       orderIndex?: number;
@@ -130,14 +194,50 @@ export class TripsService {
     if (day.trip.userId !== userId)
       throw new NotFoundException("Día no encontrado");
 
+    if (data.placeId && data.productId) {
+      throw new BadRequestException(
+        "Un item no puede ser lugar y producto a la vez",
+      );
+    }
+
+    if (!data.productId && !data.title) {
+      throw new BadRequestException("Se requiere título o producto");
+    }
+
+    const createData: any = {
+      tripDayId: dayId,
+      placeId: data.placeId,
+      productId: data.productId,
+      timeSlot: data.timeSlot,
+      orderIndex: data.orderIndex ?? 0,
+    };
+
+    if (data.productId) {
+      const product = await this.prisma.product.findFirst({
+        where: { id: data.productId },
+      });
+      if (!product) throw new NotFoundException("Producto no encontrado");
+      createData.title = product.name;
+      createData.description =
+        data.description ?? product.description ?? null;
+    } else {
+      createData.title = data.title;
+      createData.description = data.description;
+    }
+
     return this.prisma.tripItem.create({
-      data: {
-        tripDayId: dayId,
-        placeId: data.placeId,
-        title: data.title,
-        description: data.description,
-        timeSlot: data.timeSlot,
-        orderIndex: data.orderIndex ?? 0,
+      data: createData,
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            price: true,
+            currency: true,
+            photoUrl: true,
+          },
+        },
       },
     });
   }

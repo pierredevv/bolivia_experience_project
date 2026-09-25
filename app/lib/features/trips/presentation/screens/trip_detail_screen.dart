@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
 import '../../../../core/currency/currency.dart';
+import '../../../things_to_do/data/tour.dart';
+import '../../../things_to_do/presentation/providers/things_to_do_provider.dart';
 import '../providers/trips_provider.dart';
 import '../widgets/trip_day_card.dart';
 
@@ -442,6 +444,8 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
     final descController = TextEditingController();
 
     String? selectedTimeSlot;
+    String mode = 'manual';
+    Tour? selectedTour;
 
     await showDialog(
       context: context,
@@ -452,13 +456,87 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre del lugar',
-                    border: OutlineInputBorder(),
-                  ),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 'manual',
+                      icon: Icon(Icons.add_location_alt_outlined),
+                      label: Text('Lugar'),
+                    ),
+                    ButtonSegment(
+                      value: 'experiencia',
+                      icon: Icon(Icons.tour_outlined),
+                      label: Text('Experiencia'),
+                    ),
+                  ],
+                  selected: {mode},
+                  onSelectionChanged: (selection) {
+                    setDialogState(() => mode = selection.first);
+                  },
                 ),
+                const SizedBox(height: 12),
+                if (mode == 'manual')
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre del lugar',
+                      border: OutlineInputBorder(),
+                    ),
+                  )
+                else
+                  FutureBuilder<List<Tour>>(
+                    future: ref.read(toursServiceProvider).getTours(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState != ConnectionState.done) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        return Text(
+                          'No se pudo cargar las experiencias: ${snapshot.error}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.error500,
+                          ),
+                        );
+                      }
+                      final tours = snapshot.data ?? [];
+                      if (tours.isEmpty) {
+                        return const Text(
+                          'No hay experiencias disponibles',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.neutral500,
+                          ),
+                        );
+                      }
+                      return DropdownButtonFormField<String>(
+                        initialValue: selectedTour?.id,
+                        decoration: const InputDecoration(
+                          labelText: 'Experiencia',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: tours
+                            .map((t) => DropdownMenuItem(
+                                  value: t.id,
+                                  child: Text(
+                                    t.name,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            selectedTour = tours.firstWhere((t) => t.id == value);
+                          });
+                        },
+                      );
+                    },
+                  ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: selectedTimeSlot,
@@ -478,14 +556,16 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
                     });
                   },
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: descController,
-                  decoration: const InputDecoration(
-                    labelText: 'Descripcion (opcional)',
-                    border: OutlineInputBorder(),
+                if (mode == 'manual') ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: descController,
+                    decoration: const InputDecoration(
+                      labelText: 'Descripcion (opcional)',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -495,22 +575,35 @@ class _TripDetailScreenState extends ConsumerState<TripDetailScreen> {
               child: const Text('Cancelar'),
             ),
             FilledButton(
-              onPressed: () async {
-                if (titleController.text.trim().isEmpty) return;
+              onPressed: () {
+                if (mode == 'manual') {
+                  if (titleController.text.trim().isEmpty) return;
+                } else {
+                  if (selectedTour == null) return;
+                }
                 Navigator.pop(ctx);
 
                 final tripsService = ref.read(tripsServiceProvider);
                 try {
-                  await tripsService.addItem(
-                    dayId,
-                    title: titleController.text.trim(),
-                    description: descController.text.isNotEmpty
-                        ? descController.text
-                        : null,
-                    timeSlot: selectedTimeSlot,
-                  );
+                  if (mode == 'experiencia' && selectedTour != null) {
+                    tripsService.addItem(
+                      dayId,
+                      productId: selectedTour!.id,
+                      description: selectedTour!.description,
+                      timeSlot: selectedTimeSlot,
+                    );
+                  } else {
+                    tripsService.addItem(
+                      dayId,
+                      title: titleController.text.trim(),
+                      description: descController.text.isNotEmpty
+                          ? descController.text
+                          : null,
+                      timeSlot: selectedTimeSlot,
+                    );
+                  }
                   if (context.mounted) {
-                    await ref.read(tripsProvider.notifier).loadTripDetail(
+                    ref.read(tripsProvider.notifier).loadTripDetail(
                           ref.read(tripsProvider).selectedTrip!['id'],
                         );
                   }

@@ -1,16 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/colors.dart';
 
+/// Tile de un item del itinerario. Puede referenciar un lugar (ver lugares),
+/// un item manual o una experiencia/producto del catÃ¡logo (badge "Experiencia").
 class TripItemTile extends StatelessWidget {
   final Map<String, dynamic> item;
   final VoidCallback? onDelete;
 
-  const TripItemTile({
-    super.key,
-    required this.item,
-    this.onDelete,
-  });
+  const TripItemTile({super.key, required this.item, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +16,10 @@ class TripItemTile extends StatelessWidget {
     final title = item['title'] as String? ?? '';
     final description = item['description'] as String?;
     final placeId = item['placeId'] as String?;
+    final productId = item['productId'] as String?;
+    final isProduct = productId != null ||
+        (item['placeId'] == null && item['title'] != null &&
+            (item['tipo'] != null || item['product'] != null));
 
     return InkWell(
       onTap: placeId != null ? () => context.push('/places/$placeId') : null,
@@ -35,7 +37,7 @@ class TripItemTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.primary50,
+                  color: AppColors.neutral200,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -43,7 +45,7 @@ class TripItemTile extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary700,
+                    color: AppColors.neutral600,
                   ),
                 ),
               ),
@@ -64,12 +66,44 @@ class TripItemTile extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (placeId != null)
+                      if (isProduct) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.neutral100,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.tour_outlined,
+                                size: 11,
+                                color: AppColors.neutral500,
+                              ),
+                              SizedBox(width: 2),
+                              Text(
+                                'Experiencia',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.neutral500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else ...[
                         const Icon(
                           Icons.chevron_right,
                           size: 18,
-                          color: AppColors.neutral400,
+                          color: AppColors.neutral300,
                         ),
+                      ],
                     ],
                   ),
                   if (description != null && description.isNotEmpty) ...[
@@ -88,13 +122,17 @@ class TripItemTile extends StatelessWidget {
               ),
             ),
             if (onDelete != null) ...[
-              const SizedBox(width: 8),
-              GestureDetector(
+              const SizedBox(width: 4),
+              InkWell(
                 onTap: onDelete,
-                child: const Icon(
-                  Icons.close,
-                  size: 16,
-                  color: AppColors.neutral400,
+                borderRadius: BorderRadius.circular(6),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(
+                    Icons.clear,
+                    size: 16,
+                    color: AppColors.neutral400,
+                  ),
                 ),
               ),
             ],
@@ -104,3 +142,4 @@ class TripItemTile extends StatelessWidget {
     );
   }
 }
+

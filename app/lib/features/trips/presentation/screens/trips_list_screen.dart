@@ -147,6 +147,9 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
       {'name': 'La Paz', 'icon': Icons.terrain},
       {'name': 'Sucre', 'icon': Icons.museum},
       {'name': 'Samaipata', 'icon': Icons.forest},
+      {'name': 'Cochabamba', 'icon': Icons.looks_two},
+      {'name': 'Tarija', 'icon': Icons.wine_bar},
+      {'name': 'Potosi', 'icon': Icons.landscape},
     ];
 
     return Column(
@@ -155,7 +158,7 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Proximos destinos',
+            'Destinos',
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
@@ -168,59 +171,46 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
             itemCount: upcoming.length,
             itemBuilder: (context, index) {
               final dest = upcoming[index];
-              return Container(
-                width: 160,
-                margin: const EdgeInsets.only(right: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.neutral100,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.neutral200),
-                ),
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            dest['icon'] as IconData,
-                            size: 32,
-                            color: AppColors.neutral300,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            dest['name'] as String,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.neutral500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+              return InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => context.go('/trips/create',
+                    extra: dest['name']),
+                child: Container(
+                  width: 160,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.neutral100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.neutral200),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          dest['icon'] as IconData,
+                          size: 32,
+                          color: AppColors.primary500,
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColors.neutral300,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Proximamente',
-                          style: TextStyle(
-                            fontSize: 9,
+                        const SizedBox(height: 8),
+                        Text(
+                          dest['name'] as String,
+                          style: const TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: AppColors.neutral700,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Crear viaje',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.neutral500,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               );
             },

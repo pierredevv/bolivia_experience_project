@@ -5,7 +5,8 @@ import '../../../../config/colors.dart';
 import '../providers/trips_provider.dart';
 
 class CreateTripScreen extends ConsumerStatefulWidget {
-  const CreateTripScreen({super.key});
+  final String? initialDestination;
+  const CreateTripScreen({super.key, this.initialDestination});
 
   @override
   ConsumerState<CreateTripScreen> createState() => _CreateTripScreenState();
@@ -16,21 +17,28 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  String _selectedDestination = 'Santa Cruz';
+  late String _selectedDestination;
+
   String? _selectedBudgetType;
   DateTime? _startDate;
   DateTime? _endDate;
 
   final _destinations = [
-    {'name': 'Santa Cruz', 'enabled': true},
-    {'name': 'La Paz', 'enabled': false},
-    {'name': 'Cochabamba', 'enabled': false},
-    {'name': 'Sucre', 'enabled': false},
-    {'name': 'Uyuni', 'enabled': false},
-    {'name': 'Samaipata', 'enabled': false},
-    {'name': 'Tarija', 'enabled': false},
-    {'name': 'Potosi', 'enabled': false},
+    'Santa Cruz',
+    'La Paz',
+    'Cochabamba',
+    'Sucre',
+    'Uyuni',
+    'Samaipata',
+    'Tarija',
+    'Potosi',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDestination = widget.initialDestination ?? 'Santa Cruz';
+  }
 
   @override
   void dispose() {
@@ -75,35 +83,10 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
                   labelText: 'Destino',
                   border: OutlineInputBorder(),
                 ),
-                items: _destinations.map((dest) {
-                  return DropdownMenuItem(
-                    value: dest['name'] as String,
-                    enabled: dest['enabled'] as bool,
-                    child: Row(
-                      children: [
-                        Text(dest['name'] as String),
-                        if (!(dest['enabled'] as bool)) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.neutral200,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'Proximamente',
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: AppColors.neutral500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                items: _destinations.map((name) {
+                  return DropdownMenuItem<String>(
+                    value: name,
+                    child: Text(name),
                   );
                 }).toList(),
                 onChanged: (value) {

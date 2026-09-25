@@ -222,7 +222,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/trips/create',
-        builder: (context, state) => const CreateTripScreen(),
+        builder: (context, state) => CreateTripScreen(
+          initialDestination: state.extra as String?,
+        ),
       ),
       GoRoute(
         path: '/trips/:id',

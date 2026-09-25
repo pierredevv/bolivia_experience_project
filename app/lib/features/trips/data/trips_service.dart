@@ -72,8 +72,9 @@ class TripsService {
 
   Future<Map<String, dynamic>> addItem(
     String dayId, {
-    required String title,
+    String? title,
     String? placeId,
+    String? productId,
     String? description,
     String? timeSlot,
     int? orderIndex,
@@ -81,8 +82,9 @@ class TripsService {
     final response = await _dio.post(
       '${ApiConstants.trips}/$dayId/items',
       data: {
-        'title': title,
+        if (title != null) 'title': title,
         if (placeId != null) 'placeId': placeId,
+        if (productId != null) 'productId': productId,
         if (description != null) 'description': description,
         if (timeSlot != null) 'timeSlot': timeSlot,
         if (orderIndex != null) 'orderIndex': orderIndex,

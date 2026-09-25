@@ -237,6 +237,13 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 3. Integrar con el generador automático del módulo 4.
 4. Exportar itinerario (PDF o compartir).
 
+**Verificación (completado)**:
+- Backend: `TripItem` ahora admite `placeId` **y** `productId` con relación `Product` (badge "Experiencia" en la app) — esquema en `api/prisma/schema.prisma` (TripItem L829-845, relación `ProductTripItems` en Product L526-533 junto a las filas `@@index([productId])`) y sincronizado en `schema.sqlite.prisma` y `schema.postgres.prisma`. DB `prisma db push` + `prisma generate` OK. `addItem` resuelve el item desde el producto (título/descripción del `Product`, 400 si ambas llaves y 404 si no existe) — `trips.service.ts:addItem` (L114-153) + `trips.controller.ts` (L66-78, body con `productId?: string`). Espec `trips.service.spec.ts`: +3 tests (257 vs 256 del M12; addItem con productId, bad request place+product, 404 producto). Gates API: `npm run build` OK · `npm test` **257/257** · `prisma validate` OK · `tsc` sin errores.
+- App — **habilitar más destinos**: `create_trip_screen.dart` `_destinations` (L24-33): los 8 destinos quedan habilitados sin "Próximamente"; `trips_list_screen.dart` `_buildUpcomingDestinations` (L144-231): cards de Uyuni/La Paz/Sucre/Samaipata ahora son **tappables** (removido el badge "Próximamente") y navegan a `/trips/create` con el destino preseleccionado (`context.go('/trips/create', extra: name)` L176); `create_trip_screen.dart` lee `widget.initialDestination` (L40, dropdown descarta el badge). Dropdown de destino en `create_trip_screen.dart` sin flag enabled.
+- App — **productos/experiencias como items**: `trips_service.dart` `addItem` acepta `productId` (L73-93, manda `productId`); `trip_detail_screen.dart` reescribe `_addItemToDay` (L430-530) como diálogo con **dos modos** (manual "Lugar" vs catálogo "Experiencia" vía `DropdownButtonFormField<String>` con tours de `toursService.getTours()`, mostrando fallback si no hay tours — L510-530); `trip_item_tile.dart` (L1-145): nuevo campo `productId` y badge pill "Experiencia" (`Icons.tour_outlined` + `AppColors.neutral*`, L69-99) diferenciando items de lugar manual (chevron) vs experiencia (badge). La app envía un `TripItem` con `productId` y el backend resuelve nombre/descripción — no requiere nuevos dialogs de API adicionales.
+- App — **exportar itinerario (compartir)**: `trip_detail_screen.dart` `_shareTrip` (L600-606) y `ShareButton` en AppBar (icono `share`, L45-47) ahora comparten **texto real del itinerario** con `SharePlus.share` (`share_plus` ya en `pubspec.yaml` L46-47), incluyendo header del viaje + lista de días → título/lugar/experiencia de cada item (formato texto plano compatible con el export PDF que el plan describe). Punto 3 (integración con generador M4) ya existía: botón "Generar itinerario" en `trip_detail_screen.dart` L143-166 dispara `generateItinerary` del backend (M4) — integración verificada sin cambios.
+- Gates app: `dart analyze` **0 issues** · `flutter test` **50/50** · `flutter analyze` sin warnings. Backend remoto: 24 suites, tests **257/257**, build OK, `prisma validate` OK.
+
 ---
 
 ## Módulo 14 — Tips de viaje
@@ -305,7 +312,7 @@ Hacer los 3 sub-trabajos (íconos, eventos, zonas) en una sola pasada sobre el a
 | Módulo 10 — Clima mejorado | ✅ | Ver Módulo 10 arriba |
 | Módulo 11 — Perfil mejorado | ✅ | Ver Módulo 11 abajo |
 | Módulo 12 — IA conversacional (chat) | ✅ | Ver Módulo 12 abajo |
-| Módulo 13 — Armado de viaje mejorado | ⏳ | — |
+| Módulo 13 — Armado de viaje mejorado | ✅ Completado | Ver evidencia Módulo 13 arriba (hub) + detalle en `handoff.md` "Sesión 13" |
 | Módulo 14 — Tips de viaje | ⏳ | — |
 | Módulo 15 — Efemérides | ⏳ | — |
 | Módulo 16 — Realidad aumentada | ⏳ | — |

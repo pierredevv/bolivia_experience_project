@@ -68,7 +68,8 @@ export class TripsController {
     @Body()
     body: {
       placeId?: string;
-      title: string;
+      productId?: string;
+      title?: string;
       description?: string;
       timeSlot?: string;
       orderIndex?: number;
