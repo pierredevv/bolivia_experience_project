@@ -3,7 +3,21 @@
 **Fecha**: 24 de septiembre, 2026
 **Agente**: opencode (build agent)
 **Rama**: develop
-**Commit**: `47d23c4` (Módulo 12; docs en commit separado)
+**Commit**: `cc788b6` (Módulo 13; docs en commit separado)
+
+---
+
+## Módulo 13 — Armado de viaje mejorado
+
+**Fecha**: 24 de septiembre, 2026
+**Estado**: completado; verificado (gates abajo).
+
+- **Backend** (`api/src/modules/trips/`): `TripItem` ahora admite `placeId` **y** `productId` con relación `Product` — esquema en `api/prisma/schema.prisma` (TripItem L829-845, relación `ProductTripItems` con `@@index([productId])`), sincronizado en `schema.sqlite.prisma` y `schema.postgres.prisma`; `prisma db push` + `prisma generate` OK. `addItem` (`trips.service.ts` L114-157) resuelve el item desde el producto (título/descripción del `Product`; 400 si se manda `placeId`+`productId` a la vez y 404 si el producto no existe), e incluye los items con `productId` en `findAllByUser`/`findOne`/`addItem`. `trips.controller.ts` (L66-79) `POST /trips/:dayId/items` acepta `productId?: string` en el body. Espec `trips.service.spec.ts`: +3 tests (257 vs 256 del M12; addItem con productId, bad request place+product, 404 producto).
+- **App Flutter**:
+  - **Habilitar más destinos**: `create_trip_screen.dart` `_destinations` (L24-33) — los 8 destinos quedan habilitados sin flag "Próximamente"; `trips_list_screen.dart` `_buildUpcomingDestinations` (L144-231) — las cards de Uyuni/La Paz/Sucre/Samaipata son ahora **tappables** (removido el badge "Próximamente") y navegan a `/trips/create` con el destino preseleccionado (`context.go('/trips/create', extra: name)` L176); `create_trip_screen.dart` lee `widget.initialDestination` (L40, dropdown con destino preseleccionado).
+  - **Productos/experiencias como items**: `trip_detail_screen.dart` reescribe `_addItemToDay` (L430-530) como diálogo con **dos modos** (manual "Lugar" vs catálogo "Experiencia" vía `DropdownButtonFormField<String>` con tours de `toursService.getTours()`, mostrando fallback si no hay tours — L510-530); `trips_service.dart` `addItem` acepta `productId` (L73-93); `trip_item_tile.dart` (L1-145) nuevo campo `productId` + badge pill "Experiencia" (`Icons.tour_outlined` + `AppColors.neutral*`, L69-99) diferenciando items de lugar manual (chevron) vs experiencia (badge).
+  - **Exportar itinerario (compartir)**: `trip_detail_screen.dart` `_shareTrip` (L600-606) + `ShareButton` en AppBar (icono `share`, L45-47) ahora comparten **texto real del itinerario** con `SharePlus.share` (`share_plus` ya en `pubspec.yaml` L46-47), incluyendo header del viaje + lista de días → título/lugar/experiencia de cada item. Punto 3 (integración con generador M4) ya existía: botón "Generar itinerario" en `trip_detail_screen.dart` (L143-166) dispara `generateItinerary` del backend (M4) — integración verificada sin cambios.
+- **Verificación**: API `npm run build` OK · `npm test` **257/257** (24 suites) · `prisma validate` OK · `flutter analyze` 0 issues · `flutter test` **50/50**. **Commit de código**: `cc788b6`.
 
 ---
 
